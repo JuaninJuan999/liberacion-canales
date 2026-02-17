@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-semibold mb-4">Nuevo hallazgo</h3>
 
@@ -137,32 +137,35 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hallazgo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evidencia</th>
+                                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Evidencia</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($registrosRecientes as $registro)
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {{ $registro->fecha_operacion->format('d/m/Y H:i') }}
+                                                {{ $registro->fecha_operacion->format('d/m/Y') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {{ $registro->codigo }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td class="px-6 py-4 text-sm text-gray-900">
                                                 {{ $registro->producto->nombre }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td class="px-6 py-4 text-sm text-gray-900">
                                                 {{ $registro->tipoHallazgo->nombre }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <td class="px-6 py-4 text-center">
                                                 @if($registro->evidencia_path)
                                                     <img src="{{ Storage::url($registro->evidencia_path) }}" 
                                                          alt="Evidencia" 
-                                                         class="w-14 h-14 object-cover rounded-lg border-2 border-gray-200 hover:border-indigo-300 cursor-pointer transition-all"
-                                                         onclick="window.open('{{ Storage::url($registro->evidencia_path) }}', '_blank')">
+                                                         class="w-20 h-20 object-cover rounded-lg border-2 border-gray-300 hover:border-blue-400 cursor-pointer transition-all mx-auto shadow-sm hover:shadow-md"
+                                                         onclick="window.open('{{ Storage::url($registro->evidencia_path) }}', '_blank')"
+                                                         title="Click para ver en tamaño completo">
                                                 @else
-                                                    <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">📷 Sin foto</span>
+                                                    <span class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
+                                                        📷 Sin foto
+                                                    </span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -172,7 +175,7 @@
                         </div>
                     @else
                         <div class="text-center py-12">
-                            <div class="text-gray-400 mb-4">📋</div>
+                            <div class="text-gray-400 mb-4 text-4xl">📋</div>
                             <p class="text-gray-500">No hay registros aún. ¡Registra el primero!</p>
                         </div>
                     @endif
