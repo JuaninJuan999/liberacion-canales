@@ -1,0 +1,116 @@
+-- CONFIGURACIÓN GENERAL
+configuracion_app
+├── id
+├── nombre
+├── logo
+├── mensaje_bienvenida
+└── timestamps
+
+-- USUARIOS Y ROLES
+users
+├── id
+├── nombre
+├── email
+├── password
+├── rol_id
+└── timestamps
+
+roles
+├── id
+└── nombre (Admin, Calidad, Operaciones, Gerencia)
+
+-- CATÁLOGOS
+productos
+├── id
+└── nombre (Media Canal 1 Lengua, Media Canal 2 Cola)
+
+tipos_hallazgo
+├── id
+└── nombre (Cobertura de grasa, Hematomas, etc.)
+
+ubicaciones
+├── id
+└── nombre (Cadera, Pierna)
+
+lados
+├── id
+└── nombre (Par, Impar)
+
+-- PUESTOS Y OPERARIOS
+puestos_trabajo
+├── id
+└── nombre (Primera par, Primera impar, Segunda par, etc.)
+
+operarios
+├── id
+├── nombre
+├── documento (opcional)
+├── activo
+└── timestamps
+
+-- ASIGNACIÓN DIARIA DE OPERARIOS A PUESTOS
+operarios_por_dia
+├── id
+├── fecha_operacion
+├── puesto_trabajo_id
+├── operario_id
+└── timestamps
+
+-- ANIMALES PROCESADOS
+animales_procesados
+├── id
+├── fecha_operacion
+├── cantidad_animales
+├── usuario_id
+└── timestamps
+
+-- REGISTROS DE HALLAZGOS (TABLA PRINCIPAL)
+registros_hallazgos
+├── id
+├── fecha_registro
+├── fecha_operacion
+├── codigo
+├── producto_id
+├── tipo_hallazgo_id
+├── ubicacion_id (nullable - solo para cobertura)
+├── lado_id (nullable - solo para cortes/cobertura)
+├── cantidad (default 1)
+├── evidencia_path (foto)
+├── operario_id (nullable)
+├── usuario_id (quien registra)
+└── timestamps
+
+-- INDICADORES CALCULADOS
+indicadores_diarios
+├── id
+├── fecha_operacion
+├── animales_procesados
+├── medias_canales_total
+├── medias_canal_1
+├── medias_canal_2
+├── total_hallazgos
+├── cobertura_grasa
+├── hematomas
+├── cortes_piernas
+├── sobrebarriga_rota
+├── participacion_total (%)
+├── mes
+├── año
+└── timestamps
+
+-- MENÚ Y PERMISOS
+menu_modulos
+├── id
+├── nombre
+├── vista
+├── icono
+├── orden
+└── roles (JSON array)
+
+-- FILTROS GUARDADOS
+filtros_usuario
+├── id
+├── usuario_id
+├── tipo (dashboard_dia, dashboard_mes)
+├── configuracion (JSON)
+└── timestamps

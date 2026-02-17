@@ -1,0 +1,40 @@
+Estructura de Directorios Laravel
+app/
+├── Models/
+│   ├── User.php
+│   ├── Rol.php
+│   ├── Producto.php
+│   ├── TipoHallazgo.php
+│   ├── Ubicacion.php
+│   ├── Lado.php
+│   ├── PuestoTrabajo.php
+│   ├── Operario.php
+│   ├── OperarioPorDia.php
+│   ├── AnimalProcesado.php
+│   ├── RegistroHallazgo.php
+│   ├── IndicadorDiario.php
+│   └── MenuModulo.php
+│
+├── Http/
+│   ├── Controllers/
+│   │   ├── HallazgoController.php
+│   │   ├── DashboardController.php
+│   │   ├── IndicadorController.php
+│   │   ├── OperarioController.php
+│   │   ├── AnimalesController.php
+│   │   └── UsuarioController.php
+│   │
+│   └── Livewire/
+│       ├── RegistroHallazgo.php
+│       ├── HistorialRegistros.php
+│       ├── DashboardDia.php
+│       ├── DashboardMes.php
+│       ├── IndicadoresDia.php
+│       └── GestionOperarios.php
+│
+├── Services/
+│   ├── CalculadoraIndicadores.php
+│   └── GeneradorReportes.php
+│
+└── Observers/
+    └── RegistroHallazgoObserver.php
