@@ -137,7 +137,6 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hallazgo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evidencia</th>
                                     </tr>
                                 </thead>
@@ -156,7 +155,6 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ $registro->tipoHallazgo->nombre }}
                                             </td>
-
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                 @if($registro->evidencia_path)
                                                     <img src="{{ Storage::url($registro->evidencia_path) }}" 
