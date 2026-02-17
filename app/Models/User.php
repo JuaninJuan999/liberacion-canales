@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -21,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'rol_id',
     ];
 
     /**
@@ -44,5 +47,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // Relación: Pertenece a un rol
+    public function rol(): BelongsTo
+    {
+        return $this->belongsTo(Rol::class, 'rol_id');
+    }
+
+    // Relación: Tiene muchos registros de hallazgos
+    public function registrosHallazgos(): HasMany
+    {
+        return $this->hasMany(RegistroHallazgo::class, 'usuario_id');
+    }
+
+    // Relación: Tiene muchos animales procesados registrados
+    public function animalesProcesados(): HasMany
+    {
+        return $this->hasMany(AnimalProcesado::class, 'usuario_id');
+    }
+
+    // Relación: Tiene muchos filtros guardados
+    public function filtros(): HasMany
+    {
+        return $this->hasMany(FiltroUsuario::class, 'usuario_id');
     }
 }
