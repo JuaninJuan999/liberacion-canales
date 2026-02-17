@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\OperarioController;
+use App\Http\Controllers\AnimalesController;
 
 Route::view('/', 'welcome');
 
@@ -24,6 +25,11 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('operarios', OperarioController::class);
     Route::patch('/operarios/{operario}/toggle-estado', [OperarioController::class, 'toggleEstado'])
         ->name('operarios.toggle-estado');
+    
+    // Animales Procesados
+    Route::resource('animales', AnimalesController::class)->except(['show', 'create']);
+    Route::get('/animales/estadisticas', [AnimalesController::class, 'estadisticas'])
+        ->name('animales.estadisticas');
 });
 
 require __DIR__ . '/auth.php';
