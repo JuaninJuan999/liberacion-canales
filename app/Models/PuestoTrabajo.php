@@ -2,19 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PuestoTrabajo extends Model
 {
+    use HasFactory;
+
     protected $table = 'puestos_trabajo';
 
     protected $fillable = [
         'nombre',
+        'descripcion',
+        'orden',
     ];
 
-    // Relación: Un puesto tiene muchas asignaciones diarias
-    public function operariosPorDia(): HasMany
+    /**
+     * Orden por defecto
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('ordered', function ($builder) {
+            $builder->orderBy('orden', 'asc');
+        });
+    }
+
+    public function operariosPorDia()
     {
         return $this->hasMany(OperarioPorDia::class, 'puesto_trabajo_id');
     }
