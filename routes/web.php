@@ -9,11 +9,13 @@ use App\Http\Controllers\DashboardController;
 Route::view('/', 'welcome');
 
 // Dashboard como página principal autenticada
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-    Route::get('/dashboard/mensual', [DashboardController::class, 'mensual'])->name('dashboard.mensual');
-});
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+Route::get('/dashboard/mensual', [DashboardController::class, 'mensual'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard.mensual');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])
