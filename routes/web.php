@@ -24,13 +24,14 @@ Route::get('/', function () {
 // Rutas autenticadas (requieren login)
 Route::middleware(['auth'])->group(function () {
     
-    // Dashboard principal - Ahora funciona con __invoke() y index()
+    // Dashboard principal
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     
-    // Dashboard mensual - RUTA AGREGADA
+    // Dashboard mensual
     Route::get('/dashboard/mensual', [DashboardController::class, 'mensual'])->name('dashboard.mensual');
     
     // Gestión de Operarios
+    Route::get('/operarios/dia', GestionOperariosDia::class)->name('operarios-dia.index'); // ⭐ AGREGADA
     Route::get('/operarios/gestion-dia', GestionOperariosDia::class)->name('operarios.gestion-dia');
     Route::get('/operarios/asignacion', AsignacionOperarios::class)->name('operarios.asignacion');
     Route::resource('operarios', OperarioController::class);
