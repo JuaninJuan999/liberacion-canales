@@ -23,8 +23,8 @@ class GestionOperariosDia extends Component
 
     public function cargarDatos()
     {
-        // Cargar puestos de trabajo
-        $this->puestos = PuestoTrabajo::orderBy('nombre')->get();
+        // Cargar puestos de trabajo ORDENADOS POR ORDEN
+        $this->puestos = PuestoTrabajo::orderBy('orden', 'asc')->orderBy('id', 'asc')->get();
         
         // Cargar operarios activos
         $this->operariosDisponibles = Operario::where('activo', true)
