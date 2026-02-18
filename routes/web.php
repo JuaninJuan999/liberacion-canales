@@ -1,54 +1,76 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\AnimalesController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\IndicadorController;
+use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\ReporteController;
+use App\Livewire\RegistroHallazgo;
+use App\Livewire\HistorialRegistros;
+use App\Livewire\DashboardDia;
+use App\Livewire\DashboardMes;
+use App\Livewire\IndicadoresDia;
+use App\Livewire\GestionOperariosDia;
+use App\Livewire\AsignacionOperarios;
 
-Route::view('/', 'welcome');
+// Rutas públicas (sin autenticación)
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');
 
-// Dashboard como página principal autenticada
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::get('/dashboard/mensual', [DashboardController::class, 'mensual'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard.mensual');
-
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
-
-// Rutas protegidas por login
+// Rutas autenticadas (requieren login)
 Route::middleware(['auth'])->group(function () {
-    // Hallazgos
-    Route::get('/hallazgos', [HallazgoController::class, 'index'])->name('hallazgos.index');
-    Route::post('/hallazgos', [HallazgoController::class, 'store'])->name('hallazgos.store');
     
-    // Operarios
+    // Dashboard principal
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    
+    // Gestión de Operarios
+    Route::get('/operarios/gestion-dia', GestionOperariosDia::class)->name('operarios.gestion-dia');
+    Route::get('/operarios/asignacion', AsignacionOperarios::class)->name('operarios.asignacion');
     Route::resource('operarios', OperarioController::class);
-    Route::patch('/operarios/{operario}/toggle-estado', [OperarioController::class, 'toggleEstado'])
-        ->name('operarios.toggle-estado');
+    
+    // Registro y Historial de Hallazgos
+    Route::get('/hallazgos/registrar', RegistroHallazgo::class)->name('hallazgos.registrar');
+    Route::get('/hallazgos/historial', HistorialRegistros::class)->name('hallazgos.historial');
+    Route::resource('hallazgos', HallazgoController::class);
     
     // Animales Procesados
-    Route::resource('animales', AnimalesController::class)->except(['show', 'create']);
-    Route::get('/animales/estadisticas', [AnimalesController::class, 'estadisticas'])
-        ->name('animales.estadisticas');
+    Route::resource('animales', AnimalesController::class);
     
-    // Operarios por Día (Asignación)
-    Route::view('/operarios-dia', 'operarios-dia.index')
-        ->name('operarios-dia.index');
+    // Dashboards e Indicadores
+    Route::get('/indicadores/dia', DashboardDia::class)->name('indicadores.dia');
+    Route::get('/indicadores/mes', DashboardMes::class)->name('indicadores.mes');
+    Route::get('/indicadores/detalle-dia', IndicadoresDia::class)->name('indicadores.detalle-dia');
+    Route::get('/indicadores', [IndicadorController::class, 'indicadoresDia'])->name('indicadores.index');
+    Route::get('/indicadores/{fecha}', [IndicadorController::class, 'indicadoresDia'])->name('indicadores.dia.fecha');
     
-    // Reportes
-    Route::get('/reportes/mensual/pdf', [ReporteController::class, 'mensualPdf'])
-        ->name('reportes.mensual.pdf');
-    Route::get('/reportes/mensual/excel', [ReporteController::class, 'mensualExcel'])
-        ->name('reportes.mensual.excel');
-    Route::get('/reportes/hallazgos-dia/pdf', [ReporteController::class, 'hallazgosDiaPdf'])
-        ->name('reportes.hallazgos-dia.pdf');
+    // Gestión de Usuarios (Solo Admin)
+    Route::middleware('admin')->group(function () {
+        Route::resource('usuarios', UsuarioController::class);
+    });
+    
+    // Reportes y Exportaciones
+    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::get('/reportes/diario/{fecha}', [ReporteController::class, 'diario'])->name('reportes.diario');
+    Route::get('/reportes/mensual/{mes}/{anio}', [ReporteController::class, 'mensual'])->name('reportes.mensual');
 });
 
-require __DIR__ . '/auth.php';
+// Rutas de API (para AJAX y componentes)
+Route::prefix('api')->middleware(['auth'])->group(function () {
+    Route::get('/indicadores/graficos', [IndicadorController::class, 'datosGraficos'])->name('api.indicadores.graficos');
+    Route::post('/indicadores/recalcular', [IndicadorController::class, 'recalcular'])->name('api.indicadores.recalcular');
+    Route::get('/usuarios/activos', [UsuarioController::class, 'activos'])->name('api.usuarios.activos');
+    Route::post('/usuarios/{usuario}/toggle-activo', [UsuarioController::class, 'toggleActivo'])->name('api.usuarios.toggle');
+});
+
+// Exportaciones de reportes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/exportar/hallazgos', [ReporteController::class, 'exportarHallazgos'])->name('exportar.hallazgos');
+    Route::get('/exportar/indicadores', [IndicadorController::class, 'exportarExcel'])->name('exportar.indicadores');
+});
+
+require __DIR__.'/auth.php';
+
