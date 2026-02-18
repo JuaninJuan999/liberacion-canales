@@ -5,6 +5,7 @@ use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\AnimalesController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReporteController;
 
 Route::view('/', 'welcome');
 
@@ -40,6 +41,14 @@ Route::middleware(['auth'])->group(function () {
     // Operarios por Día (Asignación)
     Route::view('/operarios-dia', 'operarios-dia.index')
         ->name('operarios-dia.index');
+    
+    // Reportes
+    Route::get('/reportes/mensual/pdf', [ReporteController::class, 'mensualPdf'])
+        ->name('reportes.mensual.pdf');
+    Route::get('/reportes/mensual/excel', [ReporteController::class, 'mensualExcel'])
+        ->name('reportes.mensual.excel');
+    Route::get('/reportes/hallazgos-dia/pdf', [ReporteController::class, 'hallazgosDiaPdf'])
+        ->name('reportes.hallazgos-dia.pdf');
 });
 
 require __DIR__ . '/auth.php';
