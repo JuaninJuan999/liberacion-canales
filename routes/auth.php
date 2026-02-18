@@ -29,10 +29,6 @@ Route::middleware('auth')->group(function () {
     Volt::route('confirm-password', 'pages.auth.confirm-password')
         ->name('password.confirm');
     
-    // ⭐ RUTAS DEL PERFIL DE USUARIO (AGREGADAS)
-    Volt::route('profile', 'pages.auth.profile')
-        ->name('profile.edit');
-    
     // Ruta de logout
     Route::post('logout', function () {
         auth()->logout();
