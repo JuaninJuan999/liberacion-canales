@@ -30,6 +30,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('animales', AnimalesController::class)->except(['show', 'create']);
     Route::get('/animales/estadisticas', [AnimalesController::class, 'estadisticas'])
         ->name('animales.estadisticas');
+    
+    // Operarios por Día (Asignación)
+    Route::view('/operarios-dia', 'operarios-dia.index')
+        ->name('operarios-dia.index');
 });
 
 require __DIR__ . '/auth.php';
