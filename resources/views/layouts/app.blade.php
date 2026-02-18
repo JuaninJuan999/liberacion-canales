@@ -25,7 +25,7 @@
         <div class="min-h-screen bg-gray-100">
             <!-- Sidebar -->
             <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen sidebar-transition bg-gray-800">
-                <div class="h-full px-3 py-4 overflow-y-auto">
+                <div class="h-full px-3 py-4 overflow-y-auto pb-24">
                     <!-- Logo/Título -->
                     <div class="mb-5 px-3">
                         <h2 class="text-xl font-bold text-white">Liberación de Canales</h2>
@@ -115,12 +115,9 @@
                     <div class="absolute bottom-4 left-0 right-0 px-3">
                         <div class="p-3 bg-gray-700 rounded-lg">
                             <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name }}</p>
-                            <form method="POST" action="{{ route('logout') }}" class="mt-2">
-                                @csrf
-                                <button type="submit" class="text-xs text-gray-300 hover:text-white">
-                                    Cerrar sesión
-                                </button>
-                            </form>
+                            <button wire:click="logout" class="mt-2 text-xs text-gray-300 hover:text-white">
+                                Cerrar sesión
+                            </button>
                         </div>
                     </div>
                 </div>
