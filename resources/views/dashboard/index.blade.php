@@ -16,7 +16,7 @@
             
             {{-- Selector de Fecha --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-4">
-                <form method="GET" action="{{ route('dashboard.index') }}" class="flex items-center gap-4">
+                <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-4">
                     <label class="text-sm font-medium text-gray-700">Fecha:</label>
                     <input type="date" 
                            name="fecha" 
