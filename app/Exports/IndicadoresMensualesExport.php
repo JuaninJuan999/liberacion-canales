@@ -24,7 +24,7 @@ class IndicadoresMensualesExport implements FromCollection, WithHeadings, WithMa
     public function collection()
     {
         return IndicadorDiario::where('mes', $this->mes)
-            ->where('anio', $this->anio)
+            ->where('año', $this->anio)
             ->orderBy('fecha_operacion')
             ->get();
     }

@@ -72,7 +72,7 @@ class DashboardController extends Controller
         $anio = $request->get('anio', now()->year);
         
         $indicadores = IndicadorDiario::where('mes', $mes)
-            ->where('anio', $anio)
+            ->where('año', $anio)
             ->orderBy('fecha_operacion')
             ->get();
         

@@ -110,7 +110,7 @@ class RegistroHallazgoObserver
                 'sobrebarriga_rota' => $sobebarrigaRota,
                 'participacion_total' => $participacionTotal,
                 'mes' => date('m', strtotime($fecha)),
-                'anio' => date('Y', strtotime($fecha)),
+                'año' => date('Y', strtotime($fecha)),
             ];
 
             // Actualizar o crear indicador
