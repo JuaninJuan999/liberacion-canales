@@ -11,6 +11,14 @@ use Carbon\Carbon;
 class DashboardController extends Controller
 {
     /**
+     * Método __invoke() para usar DashboardController::class en rutas
+     */
+    public function __invoke(Request $request)
+    {
+        return $this->index($request);
+    }
+    
+    /**
      * Dashboard principal con indicadores del día
      */
     public function index(Request $request)

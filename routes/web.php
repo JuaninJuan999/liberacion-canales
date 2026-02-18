@@ -24,7 +24,7 @@ Route::get('/', function () {
 // Rutas autenticadas (requieren login)
 Route::middleware(['auth'])->group(function () {
     
-    // Dashboard principal
+    // Dashboard principal - Ahora funciona con __invoke() y index()
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     
     // Gestión de Operarios
@@ -73,4 +73,3 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
