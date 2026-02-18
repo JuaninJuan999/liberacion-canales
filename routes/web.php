@@ -4,12 +4,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\AnimalesController;
+use App\Http\Controllers\DashboardController;
 
 Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+// Dashboard como página principal autenticada
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    Route::get('/dashboard/mensual', [DashboardController::class, 'mensual'])->name('dashboard.mensual');
+});
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])
