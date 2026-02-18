@@ -11,16 +11,9 @@ return new class extends Migration
         Schema::create('puestos_trabajo', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->unique();
+            $table->string('descripcion')->nullable();
             $table->timestamps();
         });
-
-        // Insertar puestos por defecto
-        DB::table('puestos_trabajo')->insert([
-            ['nombre' => 'Primera Par', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Primera Impar', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Segunda Par', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Segunda Impar', 'created_at' => now(), 'updated_at' => now()],
-        ]);
     }
 
     public function down(): void

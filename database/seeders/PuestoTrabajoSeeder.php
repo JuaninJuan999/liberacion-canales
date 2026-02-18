@@ -26,7 +26,10 @@ class PuestoTrabajoSeeder extends Seeder
         ];
 
         foreach ($puestos as $puesto) {
-            PuestoTrabajo::create($puesto);
+            PuestoTrabajo::firstOrCreate(
+                ['nombre' => $puesto['nombre']],
+                ['descripcion' => $puesto['descripcion']]
+            );
         }
     }
 }
