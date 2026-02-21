@@ -59,6 +59,14 @@ class MenuModuloSeeder extends Seeder
                 'orden' => 7,
                 'roles' => ['Operaciones', 'Admin'],
             ],
+            // Módulo añadido
+            [
+                'nombre' => 'Puestos de Trabajo',
+                'vista' => 'puestos_trabajo.index',
+                'icono' => 'briefcase',
+                'orden' => 7.5, 
+                'roles' => ['Admin'],
+            ],
             [
                 'nombre' => 'Gestión de Usuarios',
                 'vista' => 'usuarios.gestion',
@@ -69,7 +77,7 @@ class MenuModuloSeeder extends Seeder
         ];
 
         foreach ($modulos as $modulo) {
-            MenuModulo::create($modulo);
+            MenuModulo::firstOrCreate(['nombre' => $modulo['nombre']], $modulo);
         }
     }
 }

@@ -47,12 +47,12 @@
                 </div>
                 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-sm text-gray-500 uppercase">Total Animales</p>
+                    <p class="text-sm text-gray-500 uppercase">Total de Animales</p>
                     <p class="text-3xl font-bold text-green-600">{{ number_format($totales['animales'], 0, ',', '.') }}</p>
                 </div>
                 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-sm text-gray-500 uppercase">Total Hallazgos</p>
+                    <p class="text-sm text-gray-500 uppercase">Total de Hallazgos</p>
                     <p class="text-3xl font-bold text-red-600">{{ number_format($totales['hallazgos'], 0, ',', '.') }}</p>
                 </div>
                 
@@ -62,7 +62,7 @@
                 </div>
                 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <p class="text-sm text-gray-500 uppercase">Cobertura</p>
+                    <p class="text-sm text-gray-500 uppercase">Cobertura Grasa</p>
                     <p class="text-3xl font-bold text-yellow-600">{{ number_format($totales['cobertura'], 0, ',', '.') }}</p>
                 </div>
             </div>
@@ -73,7 +73,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">Indicadores por Día</h3>
                         <div class="flex gap-2">
-                            <a href="{{ route('reportes.mensual.pdf', ['mes' => $mes, 'anio' => $anio]) }}" 
+                            <a href="{{ route('reportes.mensual', ['mes' => $mes, 'anio' => $anio]) }}" 
                                class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm"
                                target="_blank">
                                 📝 PDF
@@ -95,8 +95,8 @@
                                         <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Hallazgos</th>
                                         <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Participación %</th>
                                         <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Hematomas</th>
-                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cobertura</th>
-                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cortes</th>
+                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cobertura Grasa</th>
+                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cortes en Piernas</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">

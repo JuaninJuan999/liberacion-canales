@@ -1,1 +1,28 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>User Profile</title>\n</head>\n<body>\n    <h1>User Profile</h1>\n    <p><strong>Name:</strong> {{ $user->name }}</p>\n    <p><strong>Email:</strong> {{ $user->email }}</p>\n    <p><strong>Joined:</strong> {{ $user->created_at->format('Y-m-d') }}</p>\n    <!-- Add more user details as needed -->\n</body>\n</html>
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Mi Perfil') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    <div class="mb-4">
+                        <p class="font-semibold">Nombre:</p>
+                        <p>{{ $user->name }}</p>
+                    </div>
+                    <div class="mb-4">
+                        <p class="font-semibold">Email:</p>
+                        <p>{{ $user->email }}</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold">Miembro desde:</p>
+                        <p>{{ $user->created_at->format('d/m/Y') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

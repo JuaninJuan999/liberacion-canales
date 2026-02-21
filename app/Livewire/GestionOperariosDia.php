@@ -113,6 +113,7 @@ class GestionOperariosDia extends Component
 
     public function render()
     {
-        return view('livewire.gestion-operarios-dia');
+        return view('livewire.gestion-operarios-dia')
+            ->layout('layouts.app');
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\AnimalesController;
 use App\Http\Controllers\IndicadorController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\PuestoTrabajoController; // Importar el nuevo controlador
 use App\Livewire\RegistroHallazgo;
 use App\Livewire\HistorialRegistros;
 use App\Livewire\DashboardDia;
@@ -40,6 +41,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/operarios/gestion-dia', GestionOperariosDia::class)->name('operarios.gestion-dia');
     Route::get('/operarios/asignacion', AsignacionOperarios::class)->name('operarios.asignacion');
     Route::resource('operarios', OperarioController::class);
+    Route::patch('/operarios/{operario}/toggle-estado', [OperarioController::class, 'toggleEstado'])->name('operarios.toggle-estado');
+
     
     // Registro y Historial de Hallazgos
     Route::get('/hallazgos/registrar', RegistroHallazgo::class)->name('hallazgos.registrar');
@@ -56,15 +59,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/indicadores', [IndicadorController::class, 'indicadoresDia'])->name('indicadores.index');
     Route::get('/indicadores/{fecha}', [IndicadorController::class, 'indicadoresDia'])->name('indicadores.dia.fecha');
     
-    // Gestión de Usuarios (Solo Admin)
+    // Gestión de Usuarios y Catálogos (Solo Admin)
     Route::middleware('admin')->group(function () {
         Route::resource('usuarios', UsuarioController::class);
+        // Nueva ruta para Puestos de Trabajo
+        Route::resource('puestos_trabajo', PuestoTrabajoController::class)->except(['show']);
     });
     
     // Reportes y Exportaciones
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
     Route::get('/reportes/diario/{fecha}', [ReporteController::class, 'diario'])->name('reportes.diario');
-    Route::get('/reportes/mensual/{mes}/{anio}', [ReporteController::class, 'mensual'])->name('reportes.mensual');
+    Route::get('/reportes/mensual/{mes}/{anio}', [ReporteController::class, 'mensualPdf'])->name('reportes.mensual');
+    Route::get('/reportes/mensual/{mes}/{anio}/excel', [ReporteController::class, 'mensualExcel'])->name('reportes.mensual.excel');
+
 });
 
 // Rutas de API (para AJAX y componentes)
