@@ -10,117 +10,93 @@ use Illuminate\Support\Facades\Log;
 
 class RegistroHallazgoObserver
 {
-    /**
-     * Evento después de crear un hallazgo
-     */
     public function created(RegistroHallazgo $hallazgo)
     {
         $this->recalcularIndicadores($hallazgo->fecha_operacion);
     }
 
-    /**
-     * Evento después de actualizar un hallazgo
-     */
     public function updated(RegistroHallazgo $hallazgo)
     {
         $this->recalcularIndicadores($hallazgo->fecha_operacion);
         
-        // Si cambió la fecha, recalcular también la fecha original
         if ($hallazgo->wasChanged('fecha_operacion')) {
             $this->recalcularIndicadores($hallazgo->getOriginal('fecha_operacion'));
         }
     }
 
-    /**
-     * Evento después de eliminar un hallazgo
-     */
     public function deleted(RegistroHallazgo $hallazgo)
     {
         $this->recalcularIndicadores($hallazgo->fecha_operacion);
     }
 
     /**
-     * Recalcular indicadores para una fecha específica
+     * Recalcula los indicadores para una fecha específica de forma eficiente.
      */
     protected function recalcularIndicadores($fecha)
     {
         try {
-            // Obtener cantidad de animales procesados
-            $animales = AnimalProcesado::where('fecha_operacion', $fecha)->first();
-            $animalesProcesados = $animales ? $animales->cantidad_animales : 0;
+            $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fecha)->value('cantidad_animales') ?? 0;
 
-            // Si no hay animales procesados, no calcular indicadores
             if ($animalesProcesados == 0) {
-                Log::info("No hay animales procesados para la fecha {$fecha}");
+                // Si no hay animales, se borra el indicador diario si existiera.
+                IndicadorDiario::where('fecha_operacion', $fecha)->delete();
+                Log::info("No hay animales procesados para la fecha {$fecha}. Indicador diario eliminado.");
                 return;
             }
 
-            // Contar hallazgos por tipo
-            $hallazgos = RegistroHallazgo::where('fecha_operacion', $fecha)
-                ->with('tipoHallazgo')
-                ->get();
+            // Consulta única para obtener todas las estadísticas de hallazgos
+            $stats = DB::table('registro_hallazgos as rh')
+                ->join('tipos_hallazgo as th', 'rh.tipo_hallazgo_id', '=', 'th.id')
+                ->join('productos as p', 'rh.producto_id', '=', 'p.id')
+                ->where('rh.fecha_operacion', $fecha)
+                ->selectRaw(
+                    'COUNT(rh.id) as total_hallazgos',
+                    "SUM(CASE WHEN th.nombre LIKE ? THEN 1 ELSE 0 END) as cobertura_grasa",
+                    "SUM(CASE WHEN th.nombre LIKE ? THEN 1 ELSE 0 END) as hematomas",
+                    "SUM(CASE WHEN th.nombre LIKE ? THEN 1 ELSE 0 END) as cortes_piernas",
+                    "SUM(CASE WHEN th.nombre LIKE ? OR th.nombre LIKE ? THEN 1 ELSE 0 END) as sobrebarriga_rota",
+                    "SUM(CASE WHEN p.nombre LIKE ? THEN 1 ELSE 0 END) as medias_canal_1",
+                    "SUM(CASE WHEN p.nombre LIKE ? THEN 1 ELSE 0 END) as medias_canal_2"
+                )
+                ->setBindings([
+                    '%cobertura%',
+                    '%hematoma%',
+                    '%corte%',
+                    '%sobrebarriga%', '%sobarriga%',
+                    '%Media Canal 1%',
+                    '%Media Canal 2%'
+                ])
+                ->first();
 
-            $totalHallazgos = $hallazgos->count();
-            
-            // Contar por tipo de hallazgo (asumiendo nombres estándar)
-            $coberturaGrasa = $hallazgos->filter(function($h) {
-                return stripos($h->tipoHallazgo->nombre, 'cobertura') !== false;
-            })->count();
-
-            $hematomas = $hallazgos->filter(function($h) {
-                return stripos($h->tipoHallazgo->nombre, 'hematoma') !== false;
-            })->count();
-
-            $cortesPiernas = $hallazgos->filter(function($h) {
-                return stripos($h->tipoHallazgo->nombre, 'corte') !== false;
-            })->count();
-
-            $sobebarrigaRota = $hallazgos->filter(function($h) {
-                return stripos($h->tipoHallazgo->nombre, 'sobrebarriga') !== false ||
-                       stripos($h->tipoHallazgo->nombre, 'sobarriga') !== false;
-            })->count();
-
-            // Contar medias canales por tipo de producto
-            $mediasCanal1 = $hallazgos->filter(function($h) {
-                return stripos($h->producto->nombre, 'Media Canal 1') !== false;
-            })->count();
-
-            $mediasCanal2 = $hallazgos->filter(function($h) {
-                return stripos($h->producto->nombre, 'Media Canal 2') !== false;
-            })->count();
-
-            $mediasCanalTotal = $mediasCanal1 + $mediasCanal2;
-
-            // Calcular porcentaje de participación
-            $participacionTotal = $animalesProcesados > 0 
-                ? round(($totalHallazgos / ($animalesProcesados * 2)) * 100, 2)
+            $mediasCanalTotal = ($stats->medias_canal_1 ?? 0) + ($stats->medias_canal_2 ?? 0);
+            $participacionTotal = ($animalesProcesados > 0) 
+                ? round((($stats->total_hallazgos ?? 0) / ($animalesProcesados * 2)) * 100, 2)
                 : 0;
 
-            // Datos para guardar
             $data = [
                 'fecha_operacion' => $fecha,
                 'animales_procesados' => $animalesProcesados,
                 'medias_canales_total' => $mediasCanalTotal,
-                'medias_canal_1' => $mediasCanal1,
-                'medias_canal_2' => $mediasCanal2,
-                'total_hallazgos' => $totalHallazgos,
-                'cobertura_grasa' => $coberturaGrasa,
-                'hematomas' => $hematomas,
-                'cortes_piernas' => $cortesPiernas,
-                'sobrebarriga_rota' => $sobebarrigaRota,
+                'medias_canal_1' => $stats->medias_canal_1 ?? 0,
+                'medias_canal_2' => $stats->medias_canal_2 ?? 0,
+                'total_hallazgos' => $stats->total_hallazgos ?? 0,
+                'cobertura_grasa' => $stats->cobertura_grasa ?? 0,
+                'hematomas' => $stats->hematomas ?? 0,
+                'cortes_piernas' => $stats->cortes_piernas ?? 0,
+                'sobrebarriga_rota' => $stats->sobrebarriga_rota ?? 0,
                 'participacion_total' => $participacionTotal,
                 'mes' => date('m', strtotime($fecha)),
                 'año' => date('Y', strtotime($fecha)),
             ];
 
-            // Actualizar o crear indicador
+            // Actualizar o crear el indicador diario
             IndicadorDiario::updateOrCreate(
                 ['fecha_operacion' => $fecha],
                 $data
             );
 
-            Log::info("Indicadores recalculados para {$fecha}");
-            
+            Log::info("Indicadores recalculados eficientemente para {$fecha}");
+
         } catch (\Exception $e) {
             Log::error("Error al recalcular indicadores para {$fecha}: " . $e->getMessage());
         }

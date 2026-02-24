@@ -10,6 +10,7 @@ use App\Models\PuestoTrabajo;
 use App\Models\Operario;
 use App\Models\Producto;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class HistorialRegistros extends Component
 {
@@ -55,6 +56,7 @@ class HistorialRegistros extends Component
         $this->fecha_fin = $this->fecha_fin ?: Carbon::now()->format('Y-m-d');
         
         $this->cargarOpciones();
+        $this->calcularEstadisticas();
     }
     
     public function cargarOpciones()
@@ -86,23 +88,37 @@ class HistorialRegistros extends Component
         $this->fecha_fin = Carbon::now()->format('Y-m-d');
         
         $this->resetPage();
+        $this->calcularEstadisticas();
     }
     
     public function calcularEstadisticas()
     {
-        $query = $this->construirQuery();
-        
-        $this->totalRegistros = $query->count();
-        $this->totalCriticos = $query->whereHas('tipoHallazgo', function($q) {
-            $q->where('es_critico', true);
-        })->count();
+        $query = RegistroHallazgo::query()
+            ->when($this->fecha_inicio, fn($q) => $q->whereDate('registro_hallazgos.created_at', '>=', $this->fecha_inicio))
+            ->when($this->fecha_fin, fn($q) => $q->whereDate('registro_hallazgos.created_at', '<=', $this->fecha_fin))
+            ->when($this->producto_id, fn($q) => $q->where('producto_id', $this->producto_id))
+            ->when($this->tipo_hallazgo_id, fn($q) => $q->where('tipo_hallazgo_id', $this->tipo_hallazgo_id))
+            ->when($this->puesto_trabajo_id, fn($q) => $q->where('puesto_trabajo_id', $this->puesto_trabajo_id))
+            ->when($this->operario_id, fn($q) => $q->where('operario_id', $this->operario_id))
+            ->when($this->numero_canal, fn($q) => $q->where('numero_canal', 'like', "%{$this->numero_canal}%"));
+
+        $stats = (clone $query)
+            ->join('tipos_hallazgo', 'registro_hallazgos.tipo_hallazgo_id', '=', 'tipos_hallazgo.id')
+            ->select(
+                DB::raw('COUNT(registro_hallazgos.id) as total'),
+                DB::raw('SUM(CASE WHEN tipos_hallazgo.es_critico = 1 THEN 1 ELSE 0 END) as criticos')
+            )
+            ->first();
+
+        $this->totalRegistros = $stats->total ?? 0;
+        $this->totalCriticos = $stats->criticos ?? 0;
         $this->totalLeves = $this->totalRegistros - $this->totalCriticos;
     }
     
     protected function construirQuery()
     {
         return RegistroHallazgo::query()
-            ->with(['producto', 'tipoHallazgo', 'ubicacion', 'lado', 'puestoTrabajo', 'operario'])
+            ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario'])
             ->when($this->fecha_inicio, function($query) {
                 $query->whereDate('created_at', '>=', $this->fecha_inicio);
             })
@@ -139,7 +155,6 @@ class HistorialRegistros extends Component
             
             session()->flash('message', 'Registro eliminado correctamente');
             
-            // Recalcular estadísticas
             $this->calcularEstadisticas();
             
         } catch (\Exception $e) {
@@ -149,24 +164,25 @@ class HistorialRegistros extends Component
     
     public function exportarExcel()
     {
-        return redirect()->route('hallazgos.exportar', [
+        return redirect()->route('exportar.hallazgos', [
             'fecha_inicio' => $this->fecha_inicio,
             'fecha_fin' => $this->fecha_fin,
             'producto_id' => $this->producto_id,
             'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
             'puesto_trabajo_id' => $this->puesto_trabajo_id,
-            'operario_id' => $this->operario_id
+            'operario_id' => $this->operario_id,
+            'numero_canal' => $this->numero_canal,
+            'solo_criticos' => $this->solo_criticos,
         ]);
     }
     
     public function updated($propertyName)
     {
-        // Recalcular estadísticas cuando cambia un filtro
         if (in_array($propertyName, [
             'fecha_inicio', 'fecha_fin', 'producto_id', 'tipo_hallazgo_id',
             'puesto_trabajo_id', 'operario_id', 'numero_canal', 'solo_criticos'
         ])) {
-            $this->calcularEstadisticas();
+            $this->aplicarFiltros();
         }
     }
     
