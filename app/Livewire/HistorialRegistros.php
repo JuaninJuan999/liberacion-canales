@@ -111,7 +111,7 @@ class HistorialRegistros extends Component
     protected function construirQuery()
     {
         return RegistroHallazgo::query()
-            ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario'])
+            ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario', 'usuario'])
             ->when($this->fecha_inicio, function($query) {
                 $query->whereDate('registros_hallazgos.created_at', '>=', $this->fecha_inicio);
             })

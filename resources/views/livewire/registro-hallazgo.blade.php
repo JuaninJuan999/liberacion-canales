@@ -65,7 +65,7 @@
                 <label for="tipo_hallazgo_id" class="block text-sm font-medium text-gray-700 mb-1">
                     Hallazgo <span class="text-red-500">*</span>
                 </label>
-                <select wire:model="tipo_hallazgo_id" 
+                <select wire:model.live="tipo_hallazgo_id" 
                         id="tipo_hallazgo_id"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                         required>
@@ -76,6 +76,44 @@
                 </select>
                 @error('tipo_hallazgo_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
             </div>
+
+            {{-- Conditional Ubicacion Field --}}
+            @if($mostrarUbicacion)
+                <div class="transition-all duration-300 ease-in-out">
+                    <label for="ubicacion_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        Observación <span class="text-red-500">*</span>
+                    </label>
+                    <select wire:model.live="ubicacion_id" 
+                            id="ubicacion_id"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                        <option value="">Seleccione una opción...</option>
+                        @foreach($ubicaciones as $ubicacion)
+                            <option value="{{ $ubicacion->id }}">{{ $ubicacion->nombre }}</option>
+                        @endforeach
+                    </select>
+                    @error('ubicacion_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+            @endif
+
+            {{-- Conditional Lado Field --}}
+            @if($mostrarLado)
+                <div class="transition-all duration-300 ease-in-out">
+                    <label for="lado_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        Detalle (Pierna) <span class="text-red-500">*</span>
+                    </label>
+                    <select wire:model.live="lado_id" 
+                            id="lado_id"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                        <option value="">Seleccione par/impar...</option>
+                        @foreach($lados as $lado)
+                            <option value="{{ $lado->id }}">{{ $lado->nombre }}</option>
+                        @endforeach
+                    </select>
+                    @error('lado_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+            @endif
 
             {{-- Evidencia (Foto) --}}
             <div>

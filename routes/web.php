@@ -16,6 +16,7 @@ use App\Livewire\DashboardMes;
 use App\Livewire\IndicadoresDia;
 use App\Livewire\GestionOperariosDia;
 use App\Livewire\AsignacionOperarios;
+use App\Livewire\Pages\Auth\Login;
 
 // Rutas públicas (sin autenticación)
 // Redirigir la raíz al dashboard para usuarios autenticados
@@ -23,7 +24,7 @@ Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
-    return view('auth.login'); // O la vista de bienvenida que prefieras
+    return redirect()->route('login'); // O la vista de bienvenida que prefieras
 })->name('home');
 
 

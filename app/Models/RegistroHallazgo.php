@@ -21,6 +21,8 @@ class RegistroHallazgo extends Model
         'evidencia_path',
         'operario_id',
         'usuario_id',
+        'observacion', // Added to prevent future errors
+        'puesto_trabajo_id' // Added to fix relationship error
     ];
 
     protected $casts = [
@@ -38,6 +40,11 @@ class RegistroHallazgo extends Model
     public function tipoHallazgo(): BelongsTo
     {
         return $this->belongsTo(TipoHallazgo::class, 'tipo_hallazgo_id');
+    }
+
+    public function puestoTrabajo(): BelongsTo
+    {
+        return $this->belongsTo(PuestoTrabajo::class, 'puesto_trabajo_id');
     }
 
     public function ubicacion(): BelongsTo
