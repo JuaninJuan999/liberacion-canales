@@ -18,9 +18,14 @@ use App\Livewire\GestionOperariosDia;
 use App\Livewire\AsignacionOperarios;
 
 // Rutas públicas (sin autenticación)
+// Redirigir la raíz al dashboard para usuarios autenticados
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return view('auth.login'); // O la vista de bienvenida que prefieras
 })->name('home');
+
 
 // Rutas autenticadas (requieren login)
 Route::middleware(['auth'])->group(function () {

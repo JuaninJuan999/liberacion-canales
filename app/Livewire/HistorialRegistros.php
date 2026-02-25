@@ -64,7 +64,7 @@ class HistorialRegistros extends Component
         $this->productos = Producto::orderBy('nombre')->get();
         $this->tiposHallazgo = TipoHallazgo::orderBy('nombre')->get();
         $this->puestos = PuestoTrabajo::orderBy('orden')->get();
-        $this->operarios = Operario::where('activo', true)->orderBy('nombre_completo')->get();
+        $this->operarios = Operario::where('activo', true)->orderBy('nombre')->get();
     }
     
     public function aplicarFiltros()
@@ -93,21 +93,14 @@ class HistorialRegistros extends Component
     
     public function calcularEstadisticas()
     {
-        $query = RegistroHallazgo::query()
-            ->when($this->fecha_inicio, fn($q) => $q->whereDate('registro_hallazgos.created_at', '>=', $this->fecha_inicio))
-            ->when($this->fecha_fin, fn($q) => $q->whereDate('registro_hallazgos.created_at', '<=', $this->fecha_fin))
-            ->when($this->producto_id, fn($q) => $q->where('producto_id', $this->producto_id))
-            ->when($this->tipo_hallazgo_id, fn($q) => $q->where('tipo_hallazgo_id', $this->tipo_hallazgo_id))
-            ->when($this->puesto_trabajo_id, fn($q) => $q->where('puesto_trabajo_id', $this->puesto_trabajo_id))
-            ->when($this->operario_id, fn($q) => $q->where('operario_id', $this->operario_id))
-            ->when($this->numero_canal, fn($q) => $q->where('numero_canal', 'like', "%{$this->numero_canal}%"));
+        $query = $this->construirQuery();
 
         $stats = (clone $query)
-            ->join('tipos_hallazgo', 'registro_hallazgos.tipo_hallazgo_id', '=', 'tipos_hallazgo.id')
             ->select(
-                DB::raw('COUNT(registro_hallazgos.id) as total'),
+                DB::raw('COUNT(registros_hallazgos.id) as total'),
                 DB::raw('SUM(CASE WHEN tipos_hallazgo.es_critico = 1 THEN 1 ELSE 0 END) as criticos')
             )
+            ->join('tipos_hallazgo', 'registros_hallazgos.tipo_hallazgo_id', '=', 'tipos_hallazgo.id')
             ->first();
 
         $this->totalRegistros = $stats->total ?? 0;
@@ -120,25 +113,25 @@ class HistorialRegistros extends Component
         return RegistroHallazgo::query()
             ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario'])
             ->when($this->fecha_inicio, function($query) {
-                $query->whereDate('created_at', '>=', $this->fecha_inicio);
+                $query->whereDate('registros_hallazgos.created_at', '>=', $this->fecha_inicio);
             })
             ->when($this->fecha_fin, function($query) {
-                $query->whereDate('created_at', '<=', $this->fecha_fin);
+                $query->whereDate('registros_hallazgos.created_at', '<=', $this->fecha_fin);
             })
             ->when($this->producto_id, function($query) {
-                $query->where('producto_id', $this->producto_id);
+                $query->where('registros_hallazgos.producto_id', $this->producto_id);
             })
             ->when($this->tipo_hallazgo_id, function($query) {
-                $query->where('tipo_hallazgo_id', $this->tipo_hallazgo_id);
+                $query->where('registros_hallazgos.tipo_hallazgo_id', $this->tipo_hallazgo_id);
             })
             ->when($this->puesto_trabajo_id, function($query) {
-                $query->where('puesto_trabajo_id', $this->puesto_trabajo_id);
+                $query->where('registros_hallazgos.puesto_trabajo_id', $this->puesto_trabajo_id);
             })
             ->when($this->operario_id, function($query) {
-                $query->where('operario_id', $this->operario_id);
+                $query->where('registros_hallazgos.operario_id', $this->operario_id);
             })
             ->when($this->numero_canal, function($query) {
-                $query->where('numero_canal', 'like', "%{$this->numero_canal}%");
+                $query->where('registros_hallazgos.numero_canal', 'like', "%{$this->numero_canal}%");
             })
             ->when($this->solo_criticos, function($query) {
                 $query->whereHas('tipoHallazgo', function($q) {
@@ -189,11 +182,11 @@ class HistorialRegistros extends Component
     public function render()
     {
         $registros = $this->construirQuery()
-            ->orderBy('created_at', 'desc')
+            ->orderBy('registros_hallazgos.created_at', 'desc')
             ->paginate($this->perPage);
         
         return view('livewire.historial-registros', [
             'registros' => $registros
-        ]);
+        ])->layout('layouts.app');
     }
 }
