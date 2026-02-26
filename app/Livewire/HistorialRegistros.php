@@ -6,11 +6,10 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\RegistroHallazgo;
 use App\Models\TipoHallazgo;
-use App\Models\PuestoTrabajo;
-use App\Models\Operario;
 use App\Models\Producto;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class HistorialRegistros extends Component
 {
@@ -21,19 +20,19 @@ class HistorialRegistros extends Component
     public $fecha_fin;
     public $producto_id = '';
     public $tipo_hallazgo_id = '';
-    public $puesto_trabajo_id = '';
-    public $operario_id = '';
     public $numero_canal = '';
     public $solo_criticos = false;
     
     // Opciones de filtros
     public $productos = [];
     public $tiposHallazgo = [];
-    public $puestos = [];
-    public $operarios = [];
     
     // Paginación
     public $perPage = 15;
+
+    // Modal de evidencia
+    public $mostrarModalEvidencia = false;
+    public $evidenciaMostradaUrl = '';
     
     // Estadísticas del filtro
     public $totalRegistros = 0;
@@ -45,8 +44,6 @@ class HistorialRegistros extends Component
         'fecha_fin' => ['except' => ''],
         'producto_id' => ['except' => ''],
         'tipo_hallazgo_id' => ['except' => ''],
-        'puesto_trabajo_id' => ['except' => ''],
-        'operario_id' => ['except' => ''],
     ];
     
     public function mount()
@@ -63,8 +60,21 @@ class HistorialRegistros extends Component
     {
         $this->productos = Producto::orderBy('nombre')->get();
         $this->tiposHallazgo = TipoHallazgo::orderBy('nombre')->get();
-        $this->puestos = PuestoTrabajo::orderBy('orden')->get();
-        $this->operarios = Operario::where('activo', true)->orderBy('nombre')->get();
+    }
+
+    public function mostrarEvidencia($registroId)
+    {
+        $registro = RegistroHallazgo::findOrFail($registroId);
+        if ($registro->evidencia_path) {
+            $this->evidenciaMostradaUrl = Storage::url($registro->evidencia_path);
+            $this->mostrarModalEvidencia = true;
+        }
+    }
+
+    public function cerrarModalEvidencia()
+    {
+        $this->mostrarModalEvidencia = false;
+        $this->evidenciaMostradaUrl = '';
     }
     
     public function aplicarFiltros()
@@ -78,8 +88,6 @@ class HistorialRegistros extends Component
         $this->reset([
             'producto_id',
             'tipo_hallazgo_id',
-            'puesto_trabajo_id',
-            'operario_id',
             'numero_canal',
             'solo_criticos'
         ]);
@@ -111,7 +119,7 @@ class HistorialRegistros extends Component
     protected function construirQuery()
     {
         return RegistroHallazgo::query()
-            ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario', 'usuario'])
+            ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario', 'usuario', 'ubicacion', 'lado'])
             ->when($this->fecha_inicio, function($query) {
                 $query->whereDate('registros_hallazgos.created_at', '>=', $this->fecha_inicio);
             })
@@ -123,12 +131,6 @@ class HistorialRegistros extends Component
             })
             ->when($this->tipo_hallazgo_id, function($query) {
                 $query->where('registros_hallazgos.tipo_hallazgo_id', $this->tipo_hallazgo_id);
-            })
-            ->when($this->puesto_trabajo_id, function($query) {
-                $query->where('registros_hallazgos.puesto_trabajo_id', $this->puesto_trabajo_id);
-            })
-            ->when($this->operario_id, function($query) {
-                $query->where('registros_hallazgos.operario_id', $this->operario_id);
             })
             ->when($this->numero_canal, function($query) {
                 $query->where('registros_hallazgos.numero_canal', 'like', "%{$this->numero_canal}%");
@@ -162,8 +164,6 @@ class HistorialRegistros extends Component
             'fecha_fin' => $this->fecha_fin,
             'producto_id' => $this->producto_id,
             'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
-            'puesto_trabajo_id' => $this->puesto_trabajo_id,
-            'operario_id' => $this->operario_id,
             'numero_canal' => $this->numero_canal,
             'solo_criticos' => $this->solo_criticos,
         ]);
@@ -173,7 +173,7 @@ class HistorialRegistros extends Component
     {
         if (in_array($propertyName, [
             'fecha_inicio', 'fecha_fin', 'producto_id', 'tipo_hallazgo_id',
-            'puesto_trabajo_id', 'operario_id', 'numero_canal', 'solo_criticos'
+            'numero_canal', 'solo_criticos'
         ])) {
             $this->aplicarFiltros();
         }
