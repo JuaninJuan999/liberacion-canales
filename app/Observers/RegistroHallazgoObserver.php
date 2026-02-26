@@ -2,101 +2,83 @@
 
 namespace App\Observers;
 
-use App\Models\RegistroHallazgo;
-use App\Models\IndicadorDiario;
 use App\Models\AnimalProcesado;
+use App\Models\IndicadorDiario;
+use App\Models\RegistroHallazgo;
+use App\Models\TipoHallazgo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class RegistroHallazgoObserver
 {
-    public function created(RegistroHallazgo $hallazgo)
+    public function created(RegistroHallazgo $registroHallazgo): void
     {
-        $this->recalcularIndicadores($hallazgo->fecha_operacion);
+        $this->recalcularIndicadores($registroHallazgo->fecha_operacion);
     }
 
-    public function updated(RegistroHallazgo $hallazgo)
+    public function updated(RegistroHallazgo $registroHallazgo): void
     {
-        $this->recalcularIndicadores($hallazgo->fecha_operacion);
-        
-        if ($hallazgo->wasChanged('fecha_operacion')) {
-            $this->recalcularIndicadores($hallazgo->getOriginal('fecha_operacion'));
+        $this->recalcularIndicadores($registroHallazgo->fecha_operacion);
+        if ($registroHallazgo->isDirty('fecha_operacion')) {
+            $this->recalcularIndicadores($registroHallazgo->getOriginal('fecha_operacion'));
         }
     }
 
-    public function deleted(RegistroHallazgo $hallazgo)
+    public function deleted(RegistroHallazgo $registroHallazgo): void
     {
-        $this->recalcularIndicadores($hallazgo->fecha_operacion);
+        $this->recalcularIndicadores($registroHallazgo->fecha_operacion);
     }
 
-    /**
-     * Recalcula los indicadores para una fecha específica de forma eficiente.
-     */
     protected function recalcularIndicadores($fecha)
     {
         try {
-            $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fecha)->value('cantidad_animales') ?? 0;
+            $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fecha)->sum('cantidad_animales');
+            $mediasCanalTotal = $animalesProcesados * 2;
 
-            if ($animalesProcesados == 0) {
-                IndicadorDiario::where('fecha_operacion', $fecha)->delete();
-                Log::info("No hay animales procesados para la fecha {$fecha}. Indicador diario eliminado.");
-                return;
+            // Cambiado para contar por producto_id en lugar de lado_id
+            $statsQuery = RegistroHallazgo::where('fecha_operacion', $fecha)
+                ->selectRaw("
+                    COUNT(*) as total_hallazgos,
+                    SUM(CASE WHEN producto_id = 1 THEN 1 ELSE 0 END) as medias_canal_1,
+                    SUM(CASE WHEN producto_id = 2 THEN 1 ELSE 0 END) as medias_canal_2
+                ");
+
+            $tiposHallazgo = TipoHallazgo::all();
+            $desgloseHallazgos = [];
+
+            foreach ($tiposHallazgo as $tipo) {
+                $alias = strtolower(str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tipo->nombre)));
+                $statsQuery->selectRaw("SUM(CASE WHEN tipo_hallazgo_id = ? THEN 1 ELSE 0 END) as {$alias}", [$tipo->id]);
+            }
+
+            $stats = $statsQuery->first();
+
+            foreach ($tiposHallazgo as $tipo) {
+                $alias = strtolower(str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tipo->nombre)));
+                $desgloseHallazgos[$tipo->nombre] = $stats->$alias ?? 0;
             }
             
-            $query = 'COUNT(rh.id) as total_hallazgos, '.
-                     'SUM(CASE WHEN th.nombre LIKE ? THEN 1 ELSE 0 END) as cobertura_grasa, '.
-                     'SUM(CASE WHEN th.nombre LIKE ? THEN 1 ELSE 0 END) as hematomas, '.
-                     'SUM(CASE WHEN th.nombre LIKE ? THEN 1 ELSE 0 END) as cortes_piernas, '.
-                     'SUM(CASE WHEN th.nombre LIKE ? OR th.nombre LIKE ? THEN 1 ELSE 0 END) as sobrebarriga_rota, '.
-                     'SUM(CASE WHEN p.nombre LIKE ? THEN 1 ELSE 0 END) as medias_canal_1, '.
-                     'SUM(CASE WHEN p.nombre LIKE ? THEN 1 ELSE 0 END) as medias_canal_2';
-
-            $bindings = [
-                '%cobertura%',
-                '%hematoma%',
-                '%corte%',
-                '%sobrebarriga%', '%sobarriga%',
-                '%Media Canal 1%',
-                '%Media Canal 2%'
-            ];
-
-            $stats = DB::table('registro_hallazgos as rh')
-                ->join('tipos_hallazgo as th', 'rh.tipo_hallazgo_id', '=', 'th.id')
-                ->join('productos as p', 'rh.producto_id', '=', 'p.id')
-                ->where('rh.fecha_operacion', $fecha)
-                ->selectRaw($query, $bindings)
-                ->first();
-
-            $mediasCanalTotal = ($stats->medias_canal_1 ?? 0) + ($stats->medias_canal_2 ?? 0);
-            $participacionTotal = ($animalesProcesados > 0) 
-                ? round((($stats->total_hallazgos ?? 0) / ($animalesProcesados * 2)) * 100, 2)
+            $participacionTotal = $mediasCanalTotal > 0
+                ? round((($stats->total_hallazgos ?? 0) / $mediasCanalTotal) * 100, 2)
                 : 0;
-
-            $data = [
-                'fecha_operacion' => $fecha,
-                'animales_procesados' => $animalesProcesados,
-                'medias_canales_total' => $mediasCanalTotal,
-                'medias_canal_1' => $stats->medias_canal_1 ?? 0,
-                'medias_canal_2' => $stats->medias_canal_2 ?? 0,
-                'total_hallazgos' => $stats->total_hallazgos ?? 0,
-                'cobertura_grasa' => $stats->cobertura_grasa ?? 0,
-                'hematomas' => $stats->hematomas ?? 0,
-                'cortes_piernas' => $stats->cortes_piernas ?? 0,
-                'sobrebarriga_rota' => $stats->sobrebarriga_rota ?? 0,
-                'participacion_total' => $participacionTotal,
-                'mes' => date('m', strtotime($fecha)),
-                'año' => date('Y', strtotime($fecha)),
-            ];
 
             IndicadorDiario::updateOrCreate(
                 ['fecha_operacion' => $fecha],
-                $data
+                [
+                    'animales_procesados' => $animalesProcesados,
+                    'medias_canales_total' => $mediasCanalTotal,
+                    'medias_canal_1' => $stats->medias_canal_1 ?? 0, // Ahora es hallazgos en Producto 1
+                    'medias_canal_2' => $stats->medias_canal_2 ?? 0, // Ahora es hallazgos en Producto 2
+                    'total_hallazgos' => $stats->total_hallazgos ?? 0,
+                    'participacion_total' => $participacionTotal,
+                    'desglose_hallazgos' => json_encode($desgloseHallazgos),
+                    'mes' => date('m', strtotime($fecha)),
+                    'año' => date('Y', strtotime($fecha)),
+                ]
             );
 
-            Log::info("Indicadores recalculados eficientemente para {$fecha}");
-
         } catch (\Exception $e) {
-            Log::error("Error al recalcular indicadores para {$fecha}: " . $e->getMessage());
+            Log::error("Error al recalcular indicadores para la fecha {$fecha}: " . $e->getMessage());
         }
     }
 }

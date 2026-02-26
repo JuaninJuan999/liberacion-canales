@@ -2,172 +2,72 @@
 
 namespace App\Services;
 
-use App\Models\RegistroHallazgo;
 use App\Models\IndicadorDiario;
-use App\Models\AnimalProcesado;
 use Carbon\Carbon;
 
 class CalculadoraIndicadores
 {
     /**
-     * Calcular indicadores del día
-     */
-    public function calcularIndicadoresDia($fecha)
-    {
-        $fecha = Carbon::parse($fecha)->format('Y-m-d');
-        
-        // Obtener total de animales procesados
-        $totalAnimales = AnimalProcesado::whereDate('fecha_procesamiento', $fecha)->count();
-        
-        if ($totalAnimales === 0) {
-            return null; // No hay datos para calcular
-        }
-        
-        // Obtener hallazgos del día
-        $hallazgos = RegistroHallazgo::with('tipoHallazgo')
-            ->whereDate('created_at', $fecha)
-            ->get();
-        
-        // Calcular totales por tipo
-        $totalHallazgos = $hallazgos->count();
-        $hallazgosCriticos = $hallazgos->filter(function($hallazgo) {
-            return $hallazgo->tipoHallazgo && $hallazgo->tipoHallazgo->es_critico;
-        })->count();
-        $hallazgosLeves = $totalHallazgos - $hallazgosCriticos;
-        
-        // Calcular canales liberadas (sin hallazgos críticos)
-        $canalesLiberadas = $totalAnimales - $hallazgosCriticos;
-        
-        // Calcular porcentajes
-        $porcentajeLibracion = $totalAnimales > 0 
-            ? round(($canalesLiberadas / $totalAnimales) * 100, 2) 
-            : 0;
-            
-        $porcentajeHallazgos = $totalAnimales > 0 
-            ? round(($totalHallazgos / $totalAnimales) * 100, 2) 
-            : 0;
-        
-        // Calcular indicadores por puesto de trabajo
-        $indicadoresPorPuesto = $this->calcularIndicadoresPorPuesto($fecha);
-        
-        // Guardar o actualizar indicadores
-        $indicador = IndicadorDiario::updateOrCreate(
-            ['fecha' => $fecha],
-            [
-                'total_animales' => $totalAnimales,
-                'total_hallazgos' => $totalHallazgos,
-                'hallazgos_criticos' => $hallazgosCriticos,
-                'hallazgos_leves' => $hallazgosLeves,
-                'canales_liberadas' => $canalesLiberadas,
-                'porcentaje_liberacion' => $porcentajeLibracion,
-                'porcentaje_hallazgos' => $porcentajeHallazgos,
-                'indicadores_puesto' => json_encode($indicadoresPorPuesto)
-            ]
-        );
-        
-        return $indicador;
-    }
-    
-    /**
-     * Calcular indicadores por puesto de trabajo
-     */
-    protected function calcularIndicadoresPorPuesto($fecha)
-    {
-        $hallazgosPorPuesto = RegistroHallazgo::with(['puestoTrabajo', 'tipoHallazgo'])
-            ->whereDate('created_at', $fecha)
-            ->get()
-            ->groupBy('puesto_trabajo_id');
-        
-        $indicadores = [];
-        
-        foreach ($hallazgosPorPuesto as $puestoId => $hallazgos) {
-            $puesto = $hallazgos->first()->puestoTrabajo;
-            $totalHallazgos = $hallazgos->count();
-            $criticos = $hallazgos->filter(function($hallazgo) {
-                return $hallazgo->tipoHallazgo && $hallazgo->tipoHallazgo->es_critico;
-            })->count();
-            
-            $indicadores[] = [
-                'puesto_id' => $puestoId,
-                'puesto_nombre' => $puesto ? $puesto->nombre : 'Sin puesto',
-                'total_hallazgos' => $totalHallazgos,
-                'criticos' => $criticos,
-                'leves' => $totalHallazgos - $criticos
-            ];
-        }
-        
-        return $indicadores;
-    }
-    
-    /**
-     * Calcular indicadores mensuales
+     * Calcular indicadores mensuales a partir de los registros diarios.
      */
     public function calcularIndicadoresMes($mes, $anio)
     {
         $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
         $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+
+        $indicadoresDiarios = IndicadorDiario::whereBetween('fecha_operacion', [$fechaInicio, $fechaFin])->get();
+
+        if ($indicadoresDiarios->isEmpty()) {
+            return null; // No hay datos para el mes
+        }
+
+        // Sumar todos los campos numéricos de los indicadores diarios
+        $sumas = [];
+        $columnas = array_keys($indicadoresDiarios->first()->getAttributes());
+
+        foreach ($columnas as $columna) {
+            if (is_numeric($indicadoresDiarios->first()->$columna) && !in_array($columna, ['id', 'mes', 'año'])) {
+                $sumas[$columna] = $indicadoresDiarios->sum($columna);
+            }
+        }
         
-        $indicadoresDiarios = IndicadorDiario::whereBetween('fecha', [$fechaInicio, $fechaFin])->get();
-        
-        return [
-            'total_animales' => $indicadoresDiarios->sum('total_animales'),
-            'total_hallazgos' => $indicadoresDiarios->sum('total_hallazgos'),
-            'hallazgos_criticos' => $indicadoresDiarios->sum('hallazgos_criticos'),
-            'hallazgos_leves' => $indicadoresDiarios->sum('hallazgos_leves'),
-            'canales_liberadas' => $indicadoresDiarios->sum('canales_liberadas'),
-            'promedio_liberacion' => round($indicadoresDiarios->avg('porcentaje_liberacion'), 2),
-            'dias_procesados' => $indicadoresDiarios->count()
-        ];
+        // Calcular promedios y porcentajes agregados
+        $diasProcesados = $indicadoresDiarios->count();
+        $totalAnimales = $sumas['animales_procesados'] ?? 0;
+        $totalHallazgos = $sumas['total_hallazgos'] ?? 0;
+        $mediasCanalTotal = $sumas['medias_canales_total'] ?? 0;
+
+        $participacionMensual = $mediasCanalTotal > 0 
+            ? round(($totalHallazgos / $mediasCanalTotal) * 100, 2)
+            : 0;
+
+        // Construir el resultado mensual
+        $resultado = array_merge(
+            $sumas, // Todas las sumas de los campos
+            [
+                'dias_procesados' => $diasProcesados,
+                'participacion_promedio_mensual' => $participacionMensual,
+                'mes' => $mes,
+                'año' => $anio,
+            ]
+        );
+
+        return $resultado;
     }
     
     /**
-     * Obtener tendencia semanal
+     * Obtener tendencia semanal de los últimos 7 días.
      */
     public function obtenerTendenciaSemanal()
     {
-        $fechaInicio = Carbon::now()->subDays(7);
-        
-        return IndicadorDiario::where('fecha', '>=', $fechaInicio)
-            ->orderBy('fecha', 'asc')
-            ->get()
-            ->map(function($indicador) {
-                return [
-                    'fecha' => $indicador->fecha,
-                    'porcentaje_liberacion' => $indicador->porcentaje_liberacion,
-                    'total_hallazgos' => $indicador->total_hallazgos
-                ];
-            });
-    }
-    
-    /**
-     * Calcular indicadores por operario
-     */
-    public function calcularIndicadoresPorOperario($fecha)
-    {
-        $hallazgosPorOperario = RegistroHallazgo::with(['operario', 'tipoHallazgo'])
-            ->whereDate('created_at', $fecha)
-            ->get()
-            ->groupBy('operario_id');
-        
-        $indicadores = [];
-        
-        foreach ($hallazgosPorOperario as $operarioId => $hallazgos) {
-            $operario = $hallazgos->first()->operario;
-            $totalHallazgos = $hallazgos->count();
-            $criticos = $hallazgos->filter(function($hallazgo) {
-                return $hallazgo->tipoHallazgo && $hallazgo->tipoHallazgo->es_critico;
-            })->count();
-            
-            $indicadores[] = [
-                'operario_id' => $operarioId,
-                'operario_nombre' => $operario ? $operario->nombre_completo : 'Sin operario',
-                'total_hallazgos' => $totalHallazgos,
-                'criticos' => $criticos,
-                'leves' => $totalHallazgos - $criticos,
-                'eficiencia' => $criticos > 0 ? round((1 - ($criticos / $totalHallazgos)) * 100, 2) : 100
-            ];
-        }
-        
-        return collect($indicadores)->sortByDesc('eficiencia')->values()->all();
+        $fechaInicio = Carbon::now()->subDays(7)->format('Y-m-d');
+
+        return IndicadorDiario::where('fecha_operacion', '>=', $fechaInicio)
+            ->orderBy('fecha_operacion', 'asc')
+            ->get([
+                'fecha_operacion as fecha',
+                'participacion_total as participacion',
+                'total_hallazgos'
+            ]);
     }
 }

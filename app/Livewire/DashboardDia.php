@@ -2,106 +2,54 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\IndicadorDiario;
-use App\Models\RegistroHallazgo;
-use App\Services\CalculadoraIndicadores;
 use Carbon\Carbon;
+use Livewire\Component;
 
 class DashboardDia extends Component
 {
     public $fecha;
     public $indicadores;
-    public $hallazgosPorPuesto = [];
-    public $hallazgosPorTipo = [];
-    public $ultimosHallazgos = [];
-    
-    protected $listeners = ['hallazgo-registrado' => 'actualizarDatos'];
-    
-    public function mount($fecha = null)
+
+    // Escucha el evento 'fechaCambiada' para actualizar la fecha
+    protected $listeners = ['fechaCambiada' => 'actualizarFecha'];
+
+    public function mount()
     {
-        $this->fecha = $fecha ?: Carbon::now()->format('Y-m-d');
-        $this->cargarDatos();
+        $this->fecha = Carbon::now()->format('Y-m-d');
+        $this->cargarIndicadores();
     }
-    
-    public function cargarDatos()
+
+    public function cargarIndicadores()
     {
-        $calculadora = new CalculadoraIndicadores();
-        
-        // Obtener indicadores del día
-        $this->indicadores = IndicadorDiario::where('fecha', $this->fecha)->first();
-        
-        // Si no existen, calcularlos
-        if (!$this->indicadores) {
-            $this->indicadores = $calculadora->calcularIndicadoresDia($this->fecha);
-        }
-        
-        // Hallazgos agrupados por puesto
-        $this->hallazgosPorPuesto = RegistroHallazgo::with('puestoTrabajo')
-            ->whereDate('created_at', $this->fecha)
-            ->get()
-            ->groupBy('puesto_trabajo_id')
-            ->map(function($hallazgos) {
-                return [
-                    'puesto' => $hallazgos->first()->puestoTrabajo->nombre,
-                    'total' => $hallazgos->count(),
-                    'criticos' => $hallazgos->filter(function($h) {
-                        return $h->tipoHallazgo && $h->tipoHallazgo->es_critico;
-                    })->count()
-                ];
-            })
-            ->sortByDesc('total')
-            ->take(5)
-            ->values()
-            ->all();
-        
-        // Hallazgos agrupados por tipo
-        $this->hallazgosPorTipo = RegistroHallazgo::with('tipoHallazgo')
-            ->whereDate('created_at', $this->fecha)
-            ->get()
-            ->groupBy('tipo_hallazgo_id')
-            ->map(function($hallazgos) {
-                return [
-                    'tipo' => $hallazgos->first()->tipoHallazgo->nombre,
-                    'total' => $hallazgos->count(),
-                    'es_critico' => $hallazgos->first()->tipoHallazgo->es_critico
-                ];
-            })
-            ->sortByDesc('total')
-            ->take(5)
-            ->values()
-            ->all();
-        
-        // Últimos 10 hallazgos
-        $this->ultimosHallazgos = RegistroHallazgo::with(['tipoHallazgo', 'puestoTrabajo', 'operario'])
-            ->whereDate('created_at', $this->fecha)
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+        $this->indicadores = IndicadorDiario::where('fecha_operacion', $this->fecha)->first();
     }
-    
-    public function actualizarDatos()
-    {
-        $this->cargarDatos();
-    }
-    
-    public function cambiarFecha($nuevaFecha)
+
+    public function actualizarFecha($nuevaFecha)
     {
         $this->fecha = $nuevaFecha;
-        $this->cargarDatos();
+        $this->cargarIndicadores();
     }
-    
-    public function recalcularIndicadores()
+
+    /**
+     * Recalcula los indicadores para la fecha actual.
+     * Este método es solo un disparador y no realiza cálculos directamente.
+     */
+    public function recalcular()
     {
-        $calculadora = new CalculadoraIndicadores();
-        $this->indicadores = $calculadora->calcularIndicadoresDia($this->fecha);
-        $this->cargarDatos();
-        
-        session()->flash('message', 'Indicadores recalculados correctamente');
+        $this->cargarIndicadores(); // Simplemente vuelve a cargar desde la DB
+        // Opcional: podrías emitir un evento para que el observer recalcule si fuera necesario
+        // $this->dispatch('recalcular-forzado', $this->fecha);
+        session()->flash('message', 'Datos del dashboard actualizados.');
     }
     
     public function render()
     {
+        // Asegurarse de que siempre haya un objeto, incluso si está vacío
+        if (!$this->indicadores) {
+            $this->indicadores = new IndicadorDiario();
+        }
+
         return view('livewire.dashboard-dia');
     }
 }
