@@ -76,6 +76,11 @@ class HistorialRegistros extends Component
         $this->mostrarModalEvidencia = false;
         $this->evidenciaMostradaUrl = '';
     }
+
+    public function buscar()
+    {
+        $this->aplicarFiltros();
+    }
     
     public function aplicarFiltros()
     {
@@ -95,8 +100,7 @@ class HistorialRegistros extends Component
         $this->fecha_inicio = Carbon::now()->format('Y-m-d');
         $this->fecha_fin = Carbon::now()->format('Y-m-d');
         
-        $this->resetPage();
-        $this->calcularEstadisticas();
+        $this->aplicarFiltros();
     }
     
     public function calcularEstadisticas()
@@ -121,10 +125,10 @@ class HistorialRegistros extends Component
         return RegistroHallazgo::query()
             ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario', 'usuario', 'ubicacion', 'lado'])
             ->when($this->fecha_inicio, function($query) {
-                $query->whereDate('registros_hallazgos.created_at', '>=', $this->fecha_inicio);
+                $query->whereDate('registros_hallazgos.fecha_operacion', '>=', $this->fecha_inicio);
             })
             ->when($this->fecha_fin, function($query) {
-                $query->whereDate('registros_hallazgos.created_at', '<=', $this->fecha_fin);
+                $query->whereDate('registros_hallazgos.fecha_operacion', '<=', $this->fecha_fin);
             })
             ->when($this->producto_id, function($query) {
                 $query->where('registros_hallazgos.producto_id', $this->producto_id);
@@ -141,7 +145,90 @@ class HistorialRegistros extends Component
                 });
             });
     }
-    
+
+    public function obtenerOperarioResponsable($registro)
+    {
+        $puestoTrabajoNombre = null;
+        $tipoHallazgo = $registro->tipoHallazgo->nombre ?? '';
+        $producto = $registro->producto->nombre ?? '';
+        $lado = $registro->lado->nombre ?? '';
+        $ubicacion = $registro->ubicacion->nombre ?? '';
+
+        $paridad = '';
+        if (!empty($lado) && in_array(strtolower($lado), ['par', 'impar'])) {
+            $paridad = ucfirst(strtolower($lado));
+        } elseif (is_numeric($registro->numero_canal)) {
+            $paridad = ($registro->numero_canal % 2 == 0) ? 'Par' : 'Impar';
+        }
+
+        $esCorteEnPierna = str_contains(strtoupper($tipoHallazgo), 'CORTE EN PIERNA');
+        $esCoberturaDeGrasa = strtoupper($tipoHallazgo) === 'COBERTURA DE GRASA';
+
+        switch (true) {
+            case ($esCorteEnPierna && $producto === 'Media Canal 1 Lengua'):
+                $puestoTrabajoNombre = ($paridad === 'Par') ? 'PRIMERA PAR' : 'PRIMERA IMPAR';
+                break;
+            case ($esCorteEnPierna && $producto === 'Media Canal 2 Cola'):
+                $puestoTrabajoNombre = ($paridad === 'Par') ? 'SEGUNDA PAR' : 'SEGUNDA IMPAR';
+                break;
+            case (strtoupper($tipoHallazgo) === 'SOBREBARRIGA ROTA' && $producto === 'Media Canal 1 Lengua'):
+                $puestoTrabajoNombre = 'ZAPATA IZQUIERDA';
+                break;
+            case (strtoupper($tipoHallazgo) === 'SOBREBARRIGA ROTA' && $producto === 'Media Canal 2 Cola'):
+                $puestoTrabajoNombre = 'ZAPATA DERECHA';
+                break;
+            case ($esCoberturaDeGrasa):
+                $esUbicacionCadera = strtolower($ubicacion) === 'cadera';
+                $esUbicacionPierna = strtolower($ubicacion) === 'pierna';
+
+                if ($producto === 'Media Canal 1 Lengua') {
+                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Par')) {
+                        $puestoTrabajoNombre = 'CADERA 1';
+                    }
+                } elseif ($producto === 'Media Canal 2 Cola') {
+                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Impar')) {
+                        $puestoTrabajoNombre = 'CADERA 2';
+                    }
+                }
+                break;
+            case (strtoupper($tipoHallazgo) === 'HEMATOMAS'):
+                $puestoTrabajoNombre = 'LIMPIEZA SUPERIOR';
+                break;
+        }
+
+        if ($puestoTrabajoNombre) {
+            try {
+                $puestoTrabajo = DB::table('puestos_trabajo')->whereRaw('UPPER(nombre) = ?', [strtoupper($puestoTrabajoNombre)])->first();
+
+                if ($puestoTrabajo) {
+                    $fechaOperacion = !empty($registro->fecha_operacion) ? Carbon::parse($registro->fecha_operacion) : Carbon::parse($registro->created_at);
+                    $asignacion = DB::table('operarios_por_dia')
+                        ->where('puesto_trabajo_id', $puestoTrabajo->id)
+                        ->whereDate('fecha_operacion', $fechaOperacion->toDateString())
+                        ->first();
+
+                    if ($asignacion) {
+                        $operario = DB::table('operarios')->where('id', $asignacion->operario_id)->first();
+                        if ($operario) {
+                            return $operario->nombre;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log the exception for debugging
+            }
+        }
+        
+        if ($registro->operario_id) {
+            $operarioDirecto = DB::table('operarios')->where('id', $registro->operario_id)->first();
+            if($operarioDirecto) {
+                return $operarioDirecto->nombre;
+            }
+        }
+
+        return 'Aun no se ha ingresado operario a la fecha de hoy';
+    }
+
     public function eliminarRegistro($id)
     {
         try {
@@ -167,16 +254,6 @@ class HistorialRegistros extends Component
             'numero_canal' => $this->numero_canal,
             'solo_criticos' => $this->solo_criticos,
         ]);
-    }
-    
-    public function updated($propertyName)
-    {
-        if (in_array($propertyName, [
-            'fecha_inicio', 'fecha_fin', 'producto_id', 'tipo_hallazgo_id',
-            'numero_canal', 'solo_criticos'
-        ])) {
-            $this->aplicarFiltros();
-        }
     }
     
     public function render()

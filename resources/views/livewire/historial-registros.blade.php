@@ -24,15 +24,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
-                <input type="date" wire:model="fecha_inicio" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <input type="date" wire:model.defer="fecha_inicio" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
-                <input type="date" wire:model="fecha_fin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <input type="date" wire:model.defer="fecha_fin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Producto</label>
-                <select wire:model="producto_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <select wire:model.defer="producto_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Todos</option>
                     @foreach($productos as $producto)
                         <option value="{{ $producto->id }}">{{ $producto->nombre }}</option>
@@ -41,7 +41,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Tipo Hallazgo</label>
-                <select wire:model="tipo_hallazgo_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <select wire:model.defer="tipo_hallazgo_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Todos</option>
                     @foreach($tiposHallazgo as $tipo)
                         <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
@@ -50,13 +50,18 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Código</label>
-                <input type="text" wire:model="numero_canal" placeholder="Buscar..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <input type="text" wire:model.defer="numero_canal" placeholder="Buscar..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
         <div class="mt-4 flex justify-between items-center">
-            <button wire:click="limpiarFiltros" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Limpiar Filtros
-            </button>
+            <div>
+                <button wire:click="buscar" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Buscar
+                </button>
+                <button wire:click="limpiarFiltros" class="ml-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Limpiar Filtros
+                </button>
+            </div>
             <button wire:click="exportarExcel" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                 📊 Exportar a Excel
             </button>
@@ -103,13 +108,15 @@
                                 @endif
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $registro->ubicacion->nombre ?? '' }} {{ $registro->lado->nombre ?? '' }}
+                                @if(!(strtolower($registro->tipoHallazgo->nombre ?? '') == 'cobertura de grasa' && strtolower($registro->ubicacion->nombre ?? '') == 'cadera'))
+                                    {{ $registro->lado->nombre ?? '' }}
+                                @endif
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $registro->usuario->name ?? 'N/A' }}
                             </td>
                              <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $registro->operario->nombre_completo ?? 'N/A' }}
+                                {{ $this->obtenerOperarioResponsable($registro) }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                 @if($registro->evidencia_path)
