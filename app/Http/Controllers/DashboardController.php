@@ -10,70 +10,100 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    /**
-     * Método __invoke() para usar DashboardController::class en rutas
-     */
     public function __invoke(Request $request)
     {
         return $this->index($request);
     }
     
-    /**
-     * Dashboard principal con indicadores del día
-     */
     public function index(Request $request)
     {
-        $fecha = $request->get('fecha', now()->toDateString());
-        
-        // Obtener indicador del día
-        $indicador = IndicadorDiario::where('fecha_operacion', $fecha)->first();
-        
-        // Datos base
-        $animales = AnimalProcesado::where('fecha_operacion', $fecha)->first();
-        $animalesProcesados = $animales ? $animales->cantidad_animales : 0;
-        
-        // Hallazgos del día
-        $hallazgosDia = RegistroHallazgo::where('fecha_operacion', $fecha)
-            ->with(['tipoHallazgo', 'producto', 'ubicacion'])
+        $fecha_inicio = $request->get('fecha_inicio', now()->toDateString());
+        $fecha_fin = $request->get('fecha_fin', now()->toDateString());
+
+        // Consultas
+        $indicadoresRango = IndicadorDiario::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])->get();
+        $hallazgosRango = RegistroHallazgo::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])
+            ->with(['tipoHallazgo', 'producto', 'ubicacion', 'operario'])
             ->latest('created_at')
             ->get();
         
-        // Top 5 tipos de hallazgos
-        $topHallazgos = RegistroHallazgo::where('fecha_operacion', $fecha)
-            ->select('tipo_hallazgo_id', \DB::raw('count(*) as total'))
-            ->groupBy('tipo_hallazgo_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->with('tipoHallazgo')
-            ->get();
-        
-        // Indicadores del mes
-        $indicadoresMes = IndicadorDiario::whereMonth('fecha_operacion', Carbon::parse($fecha)->month)
-            ->whereYear('fecha_operacion', Carbon::parse($fecha)->year)
-            ->orderBy('fecha_operacion', 'desc')
-            ->get();
-        
-        // Promedios del mes
-        $promediosMes = [
-            'participacion' => $indicadoresMes->avg('participacion_total'),
-            'hematomas' => $indicadoresMes->avg('hematomas'),
-            'cobertura' => $indicadoresMes->avg('cobertura_grasa'),
+        // Sumarizados para las tarjetas
+        $animalesProcesados = AnimalProcesado::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])->sum('cantidad_animales');
+        $indicador = (object)[
+            'total_hallazgos'      => $indicadoresRango->sum('total_hallazgos'),
+            'participacion_total'  => $indicadoresRango->avg('participacion_total'),
+            'medias_canales_total' => $indicadoresRango->sum('medias_canales_total'),
         ];
         
-        return view('dashboard.index', compact(
-            'fecha',
-            'indicador',
-            'animalesProcesados',
-            'hallazgosDia',
-            'topHallazgos',
-            'indicadoresMes',
-            'promediosMes'
-        ));
+        $topHallazgos = $hallazgosRango->groupBy('tipoHallazgo.nombre')
+            ->map(fn($item) => $item->count())
+            ->sortDesc()
+            ->take(5);
+
+        // --- Datos para Gráficos ---
+        $hallazgosChartData = $hallazgosRango->groupBy('tipoHallazgo.nombre')->map(fn($item) => $item->count());
+        $productosChartData = $hallazgosRango->groupBy('producto.nombre')->map(fn($item) => $item->count());
+        
+        // Lógica de negocio para determinar el Puesto de Trabajo, restaurada y corregida.
+        $puestosChartData = $hallazgosRango->map(function ($hallazgo) {
+            $puestoTrabajoNombre = 'No Asignado'; // Valor por defecto
+
+            $tipoHallazgo = $hallazgo->tipoHallazgo->nombre ?? '';
+            $producto = $hallazgo->producto->nombre ?? '';
+            $ubicacion = $hallazgo->ubicacion->nombre ?? '';
+            $codigo = $hallazgo->codigo ?? '';
+            
+            $numero = is_numeric(substr($codigo, -1)) ? (int) substr($codigo, -1) : 0;
+            $paridad = ($numero % 2 == 0) ? 'Par' : 'Impar';
+
+            $esUbicacionCadera = str_contains(strtoupper($ubicacion), 'CADERA');
+            $esUbicacionPierna = str_contains(strtoupper($ubicacion), 'PIERNA');
+
+            $tipoHallazgoUpper = strtoupper($tipoHallazgo);
+
+            if ($tipoHallazgoUpper === 'COBERTURA DE GRASA' || $tipoHallazgoUpper === 'CORTES EN LA PIERNA' || $tipoHallazgoUpper === 'SOBREBARRIGA ROTA') {
+                if ($producto === 'Media Canal 1 Lengua') {
+                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Par')) {
+                        $puestoTrabajoNombre = 'CADERA 1';
+                    }
+                } elseif ($producto === 'Media Canal 2 Cola') {
+                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Impar')) {
+                        $puestoTrabajoNombre = 'CADERA 2';
+                    }
+                }
+            } elseif ($tipoHallazgoUpper === 'HEMATOMAS') {
+                $puestoTrabajoNombre = 'LIMPIEZA SUPERIOR';
+            }
+            
+            $hallazgo->puesto_calculado = $puestoTrabajoNombre;
+            return $hallazgo;
+        })
+        ->groupBy('puesto_calculado')
+        ->map(fn($group) => $group->count());
+        
+        // Promedios del mes
+        $indicadoresMes = IndicadorDiario::whereMonth('fecha_operacion', Carbon::parse($fecha_fin)->month)
+            ->whereYear('fecha_operacion', Carbon::parse($fecha_fin)->year)
+            ->get();
+        
+        $promediosMes = [
+            'participacion' => $indicadoresMes->avg('participacion_total'),
+        ];
+        
+        return view('dashboard.index', [
+            'fecha_inicio' => $fecha_inicio,
+            'fecha_fin' => $fecha_fin,
+            'indicador' => $indicador,
+            'animalesProcesados' => $animalesProcesados,
+            'hallazgosDia' => $hallazgosRango,
+            'topHallazgos' => $topHallazgos,
+            'promediosMes' => $promediosMes,
+            'hallazgosChartData' => $hallazgosChartData,
+            'productosChartData' => $productosChartData,
+            'puestosChartData' => $puestosChartData,
+        ]);
     }
     
-    /**
-     * Dashboard mensual
-     */
     public function mensual(Request $request)
     {
         $mes = $request->get('mes', now()->month);
@@ -84,12 +114,9 @@ class DashboardController extends Controller
             ->orderBy('fecha_operacion')
             ->get();
         
-        // Totales del mes
         $totales = [
             'animales' => $indicadores->sum('animales_procesados'),
             'hallazgos' => $indicadores->sum('total_hallazgos'),
-            'hematomas' => $indicadores->sum('hematomas'),
-            'cobertura' => $indicadores->sum('cobertura_grasa'),
             'dias_operados' => $indicadores->count(),
         ];
         
