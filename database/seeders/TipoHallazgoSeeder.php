@@ -16,12 +16,17 @@ class TipoHallazgoSeeder extends Seeder
         $hallazgos = [
             ['nombre' => 'COBERTURA DE GRASA'],
             ['nombre' => 'HEMATOMAS'],
-            ['nombre' => 'CORTE EN PIERNAS'],
+            ['nombre' => 'CORTES EN LA PIERNA'],
             ['nombre' => 'SOBREBARRIGA ROTA'],
         ];
 
         foreach ($hallazgos as $hallazgo) {
-            TipoHallazgo::create($hallazgo);
+            TipoHallazgo::firstOrCreate(
+                ['nombre' => $hallazgo['nombre']],
+                ['nombre' => $hallazgo['nombre']]
+            );
         }
+
+        TipoHallazgo::where('nombre', 'CORTE EN PIERNAS')->update(['nombre' => 'CORTES EN LA PIERNA']);
     }
 }

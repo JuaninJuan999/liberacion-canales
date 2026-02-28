@@ -2,16 +2,23 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Producto;
 use Illuminate\Database\Seeder;
 
 class ProductoSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Productos según especificación: Media Canal 1 Lengua, Media Canal 2 Cola.
      */
     public function run(): void
     {
-        //
+        $productos = [
+            'Media Canal 1 Lengua',
+            'Media Canal 2 Cola',
+        ];
+
+        foreach ($productos as $nombre) {
+            Producto::firstOrCreate(['nombre' => $nombre]);
+        }
     }
 }

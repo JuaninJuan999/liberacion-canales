@@ -103,7 +103,7 @@ class RegistroHallazgo extends Component
 
             if ($this->nombreHallazgoSeleccionado === 'COBERTURA DE GRASA') {
                 $this->mostrarUbicacion = true;
-            } elseif ($this->nombreHallazgoSeleccionado === 'CORTE EN PIERNAS') {
+            } elseif ($this->nombreHallazgoSeleccionado === 'CORTES EN LA PIERNA') {
                 $this->mostrarLado = true;
             }
         } else {

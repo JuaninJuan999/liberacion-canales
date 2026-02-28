@@ -20,6 +20,7 @@ class IndicadorDiario extends Model
         'cortes_piernas',
         'sobrebarriga_rota',
         'participacion_total',
+        'desglose_hallazgos',
         'mes',
         'año',
     ];
@@ -43,5 +44,61 @@ class IndicadorDiario extends Model
     public function scopePorMesAño($query, $mes, $año)
     {
         return $query->where('mes', $mes)->where('año', $año);
+    }
+
+    /**
+     * Obtener hematomas desde desglose_hallazgos (cuando las columnas fueron migradas a JSON).
+     */
+    public function getHematomasAttribute($value): int
+    {
+        if ($value !== null && $value !== '') {
+            return (int) $value;
+        }
+        return (int) ($this->getDesgloseValue('HEMATOMAS') ?? 0);
+    }
+
+    /**
+     * Obtener cobertura_grasa desde desglose_hallazgos.
+     */
+    public function getCoberturaGrasaAttribute($value): int
+    {
+        if ($value !== null && $value !== '') {
+            return (int) $value;
+        }
+        return (int) ($this->getDesgloseValue('COBERTURA DE GRASA') ?? 0);
+    }
+
+    /**
+     * Obtener cortes_piernas desde desglose_hallazgos.
+     */
+    public function getCortesPiernasAttribute($value): int
+    {
+        if ($value !== null && $value !== '') {
+            return (int) $value;
+        }
+        return (int) ($this->getDesgloseValue('CORTES EN LA PIERNA') ?? 0);
+    }
+
+    /**
+     * Obtener sobrebarriga_rota desde desglose_hallazgos.
+     */
+    public function getSobrebarrigaRotaAttribute($value): int
+    {
+        if ($value !== null && $value !== '') {
+            return (int) $value;
+        }
+        return (int) ($this->getDesgloseValue('SOBREBARRIGA ROTA') ?? 0);
+    }
+
+    protected function getDesgloseValue(string $key)
+    {
+        $desglose = $this->attributes['desglose_hallazgos'] ?? null;
+        if ($desglose === null) {
+            return 0;
+        }
+        if (is_string($desglose)) {
+            $desglose = json_decode($desglose, true);
+        }
+        return is_array($desglose) ? ($desglose[$key] ?? 0) : 0;
     }
 }

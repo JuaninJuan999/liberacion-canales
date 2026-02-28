@@ -2,16 +2,23 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Ubicacion;
 use Illuminate\Database\Seeder;
 
 class UbicacionSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Ubicaciones según especificación: Cadera, Pierna.
      */
     public function run(): void
     {
-        //
+        $ubicaciones = [
+            ['nombre' => 'Cadera'],
+            ['nombre' => 'Pierna'],
+        ];
+
+        foreach ($ubicaciones as $u) {
+            Ubicacion::firstOrCreate(['nombre' => $u['nombre']]);
+        }
     }
 }

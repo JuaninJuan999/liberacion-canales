@@ -17,8 +17,10 @@ class DashboardController extends Controller
     
     public function index(Request $request)
     {
-        $fecha_inicio = $request->get('fecha_inicio', now()->toDateString());
-        $fecha_fin = $request->get('fecha_fin', now()->toDateString());
+        // Dashboard diario: por defecto fecha del día actual; días anteriores se consultan manualmente
+        $hoy = Carbon::now()->toDateString();
+        $fecha_inicio = $request->get('fecha_inicio', $hoy);
+        $fecha_fin = $request->get('fecha_fin', $hoy);
 
         // Consultas
         $indicadoresRango = IndicadorDiario::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])->get();
@@ -43,43 +45,13 @@ class DashboardController extends Controller
         // --- Datos para Gráficos ---
         $hallazgosChartData = $hallazgosRango->groupBy('tipoHallazgo.nombre')->map(fn($item) => $item->count());
         $productosChartData = $hallazgosRango->groupBy('producto.nombre')->map(fn($item) => $item->count());
-        
-        // Lógica de negocio para determinar el Puesto de Trabajo, restaurada y corregida.
+
+        // Gráfica por Puesto: Operario + Tipo de hallazgo (nombre del operario relacionado al hallazgo con el tipo)
         $puestosChartData = $hallazgosRango->map(function ($hallazgo) {
-            $puestoTrabajoNombre = 'No Asignado'; // Valor por defecto
-
-            $tipoHallazgo = $hallazgo->tipoHallazgo->nombre ?? '';
-            $producto = $hallazgo->producto->nombre ?? '';
-            $ubicacion = $hallazgo->ubicacion->nombre ?? '';
-            $codigo = $hallazgo->codigo ?? '';
-            
-            $numero = is_numeric(substr($codigo, -1)) ? (int) substr($codigo, -1) : 0;
-            $paridad = ($numero % 2 == 0) ? 'Par' : 'Impar';
-
-            $esUbicacionCadera = str_contains(strtoupper($ubicacion), 'CADERA');
-            $esUbicacionPierna = str_contains(strtoupper($ubicacion), 'PIERNA');
-
-            $tipoHallazgoUpper = strtoupper($tipoHallazgo);
-
-            if ($tipoHallazgoUpper === 'COBERTURA DE GRASA' || $tipoHallazgoUpper === 'CORTES EN LA PIERNA' || $tipoHallazgoUpper === 'SOBREBARRIGA ROTA') {
-                if ($producto === 'Media Canal 1 Lengua') {
-                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Par')) {
-                        $puestoTrabajoNombre = 'CADERA 1';
-                    }
-                } elseif ($producto === 'Media Canal 2 Cola') {
-                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Impar')) {
-                        $puestoTrabajoNombre = 'CADERA 2';
-                    }
-                }
-            } elseif ($tipoHallazgoUpper === 'HEMATOMAS') {
-                $puestoTrabajoNombre = 'LIMPIEZA SUPERIOR';
-            }
-            
-            $hallazgo->puesto_calculado = $puestoTrabajoNombre;
-            return $hallazgo;
-        })
-        ->groupBy('puesto_calculado')
-        ->map(fn($group) => $group->count());
+            $operarioNombre = $hallazgo->operario ? $hallazgo->operario->nombre : 'Sin asignar';
+            $tipoHallazgo = $hallazgo->tipoHallazgo->nombre ?? 'N/A';
+            return $operarioNombre . ' · ' . $tipoHallazgo;
+        })->countBy()->sortDesc();
         
         // Promedios del mes
         $indicadoresMes = IndicadorDiario::whereMonth('fecha_operacion', Carbon::parse($fecha_fin)->month)
@@ -106,10 +78,11 @@ class DashboardController extends Controller
     
     public function mensual(Request $request)
     {
-        $mes = $request->get('mes', now()->month);
-        $anio = $request->get('anio', now()->year);
-        
-        $indicadores = IndicadorDiario::where('mes', $mes)
+        $mes = (int) $request->get('mes', now()->month);
+        $anio = (int) $request->get('anio', now()->year);
+        $mesStr = str_pad((string) $mes, 2, '0', STR_PAD_LEFT); // BD guarda '01', '02'...
+
+        $indicadores = IndicadorDiario::where('mes', $mesStr)
             ->where('año', $anio)
             ->orderBy('fecha_operacion')
             ->get();
@@ -118,6 +91,9 @@ class DashboardController extends Controller
             'animales' => $indicadores->sum('animales_procesados'),
             'hallazgos' => $indicadores->sum('total_hallazgos'),
             'dias_operados' => $indicadores->count(),
+            'hematomas' => $indicadores->sum(fn ($i) => $i->hematomas),
+            'cobertura' => $indicadores->sum(fn ($i) => $i->cobertura_grasa),
+            'cortes_piernas' => $indicadores->sum(fn ($i) => $i->cortes_piernas),
         ];
         
         return view('dashboard.mensual', compact(

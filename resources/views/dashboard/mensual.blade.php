@@ -127,7 +127,7 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right">{{ number_format($totales['hematomas'], 0, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-sm text-right">{{ number_format($totales['cobertura'], 0, ',', '.') }}</td>
-                                        <td class="px-4 py-3 text-sm text-right">-</td>
+                                        <td class="px-4 py-3 text-sm text-right">{{ number_format($totales['cortes_piernas'], 0, ',', '.') }}</td>
                                     </tr>
                                 </tfoot>
                             </table>

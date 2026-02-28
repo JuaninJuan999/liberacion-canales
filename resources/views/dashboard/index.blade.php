@@ -12,12 +12,13 @@
             
             <!-- Filtro de Fechas -->
             <div class="bg-white shadow-sm sm:rounded-lg p-4">
-                <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-4">
+                <form id="formFiltroDashboard" method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-center gap-4">
                     <div class="flex items-center gap-2">
                         <label class="text-sm font-medium text-gray-700">Desde:</label>
                         <input type="date" 
                                name="fecha_inicio" 
                                value="{{ $fecha_inicio }}"
+                               onchange="this.form.submit()"
                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <div class="flex items-center gap-2">
@@ -25,12 +26,17 @@
                         <input type="date" 
                                name="fecha_fin" 
                                value="{{ $fecha_fin }}"
+                               onchange="this.form.submit()"
                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <button type="submit" 
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
                         Aplicar Filtro
                     </button>
+                    <a href="{{ route('dashboard') }}" 
+                       class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium">
+                        Limpiar filtro
+                    </a>
                 </form>
             </div>
 
@@ -49,7 +55,8 @@
                     </div>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos por Puesto de Trabajo</h3>
+                    <h3 class="font-bold mb-2 text-center">Hallazgos por Operario y Tipo</h3>
+                    <p class="text-xs text-gray-500 text-center mb-1">Operario · Tipo de hallazgo</p>
                     <div style="height: 300px;">
                         <canvas id="puestosChart"></canvas>
                     </div>
