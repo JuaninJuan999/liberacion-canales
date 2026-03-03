@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Models\RegistroHallazgo;
 use App\Observers\RegistroHallazgoObserver;
+use App\Models\AnimalProcesado;
+use App\Observers\AnimalProcesadoObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,7 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Registrar Observer para cálculo automático de indicadores
+        // Registrar Observers para cálculo automático de indicadores
         RegistroHallazgo::observe(RegistroHallazgoObserver::class);
+        AnimalProcesado::observe(AnimalProcesadoObserver::class);
     }
 }

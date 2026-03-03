@@ -54,7 +54,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
                     @forelse($historial as $row)
-                        <tr class="hover:bg-gray-50">
+                        <tr wire:click="cambiarFecha('{{ $row['fecha_operacion'] }}')" class="hover:bg-blue-100 cursor-pointer">
                             <td class="px-3 py-2 whitespace-nowrap text-gray-900 font-medium">
                                 {{ \Carbon\Carbon::parse($row['fecha_operacion'])->format('d/m/Y') }}
                             </td>
