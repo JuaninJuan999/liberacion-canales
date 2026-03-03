@@ -20,7 +20,7 @@ new #[Layout('layouts.guest')] class extends Component
 
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        $this->redirectIntended(default: route('home', absolute: false), navigate: true);
     }
 }; ?>
 
@@ -40,13 +40,38 @@ new #[Layout('layouts.guest')] class extends Component
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
 
-            <x-text-input wire:model="form.password" id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+            <div class="relative">
+                <x-text-input wire:model="form.password" id="password" class="block mt-1 w-full pr-10"
+                                type="password"
+                                name="password"
+                                required autocomplete="current-password" />
+                <button type="button" 
+                        onclick="togglePasswordVisibility()" 
+                        class="absolute right-3 top-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+                    <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                </button>
+            </div>
 
             <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
         </div>
+
+        <script>
+            function togglePasswordVisibility() {
+                const passwordInput = document.getElementById('password');
+                const eyeIcon = document.getElementById('eyeIcon');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    eyeIcon.setAttribute('fill', 'currentColor');
+                } else {
+                    passwordInput.type = 'password';
+                    eyeIcon.setAttribute('fill', 'none');
+                }
+            }
+        </script>
 
         <!-- Remember Me -->
         <div class="block mt-4">

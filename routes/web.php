@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardMensualController;
+use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\AnimalesController;
@@ -20,13 +21,8 @@ use App\Livewire\AsignacionOperarios;
 use App\Livewire\Pages\Auth\Login;
 
 // Rutas públicas (sin autenticación)
-// Redirigir la raíz al dashboard para usuarios autenticados
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-    return redirect()->route('login'); // O la vista de bienvenida que prefieras
-})->name('home');
+// Redirigir la raíz a la página de bienvenida
+Route::get('/', [WelcomeController::class, 'index'])->name('home');
 
 
 // Rutas autenticadas (requieren login)

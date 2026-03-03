@@ -23,8 +23,16 @@
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
+            <!-- Sidebar Toggle Button -->
+            <button id="sidebarToggleBtn" 
+                    class="fixed top-4 left-4 z-50 p-2 text-gray-700 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition">
+                <svg class="w-6 h-6" id="toggleIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+
             <!-- Sidebar -->
-            <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen sidebar-transition bg-gray-800">
+            <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen sidebar-transition bg-gray-800 translate-x-0">
                 <div class="h-full px-3 py-4 overflow-y-auto pb-24">
                     <!-- Logo/Título -->
                     <div class="mb-5 px-3">
@@ -158,12 +166,21 @@
                         </li>
                     </ul>
 
-                    <!-- Usuario en la parte inferior -->
-                    <div class="absolute bottom-4 left-0 right-0 px-3">
+                    <!-- Usuario y Logout en la parte inferior -->
+                    <div class="absolute bottom-4 left-0 right-0 px-3 space-y-3">
                         <div class="p-3 bg-gray-700 rounded-lg">
                             <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name }}</p>
                             <p class="text-xs text-gray-400 mt-1">{{ Auth::user()->email }}</p>
                         </div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full flex items-center justify-center p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-semibold">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                                Cerrar Sesión
+                            </button>
+                        </form>
                     </div>
                 </div>
             </aside>
@@ -177,7 +194,7 @@
             </button>
 
             <!-- Contenido principal -->
-            <div class="md:ml-64">
+            <div id="mainContent" class="md:ml-64 transition-all duration-300">
                 <!-- Page Heading -->
                 @if (isset($header))
                     <header class="bg-white shadow">
@@ -221,6 +238,29 @@
                         }
                     }
                 });
+            });
+        </script>
+        
+        <script>
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            sidebarToggleBtn.addEventListener('click', function() {
+                if (sidebar.classList.contains('translate-x-0')) {
+                    sidebar.classList.remove('translate-x-0');
+                    sidebar.classList.add('-translate-x-full');
+                    mainContent.classList.remove('md:ml-64');
+                    mainContent.classList.add('md:ml-0');
+                    toggleIcon.classList.add('rotate-180');
+                } else {
+                    sidebar.classList.add('translate-x-0');
+                    sidebar.classList.remove('-translate-x-full');
+                    mainContent.classList.add('md:ml-64');
+                    mainContent.classList.remove('md:ml-0');
+                    toggleIcon.classList.remove('rotate-180');
+                }
             });
         </script>
         @stack('scripts')
