@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardMensualController;
 use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\AnimalesController;
@@ -40,7 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     
     // Dashboard mensual
-    Route::get('/dashboard/mensual', [DashboardController::class, 'mensual'])->name('dashboard.mensual');
+    Route::get('/dashboard/mensual', DashboardMensualController::class)->name('dashboard.mensual');
     
     // Gestión de Operarios
     Route::get('/operarios/dia', GestionOperariosDia::class)->name('operarios-dia.index');

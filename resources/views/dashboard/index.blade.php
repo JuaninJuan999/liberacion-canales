@@ -41,11 +41,17 @@
             </div>
 
             <!-- Gráficos Principales -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="font-bold mb-2 text-center">Distribución de Hallazgos</h3>
+                    <h3 class="font-bold mb-2 text-center">Distribución de Hallazgos - Media Canal 1</h3>
                     <div style="height: 300px;">
-                        <canvas id="hallazgosChart"></canvas>
+                        <canvas id="hallazgosChartCanal1"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-bold mb-2 text-center">Distribución de Hallazgos - Media Canal 2</h3>
+                    <div style="height: 300px;">
+                        <canvas id="hallazgosChartCanal2"></canvas>
                     </div>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow-md">
@@ -153,13 +159,13 @@
 
             const colores = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51', '#A8DADC', '#457B9D', '#1D3557'];
 
-            // 1. Hallazgos - Doughnut Chart
-            new Chart(document.getElementById('hallazgosChart'), {
+            // 1. Hallazgos - Media Canal 1
+            new Chart(document.getElementById('hallazgosChartCanal1'), {
                 type: 'doughnut',
                 data: {
-                    labels: {!! json_encode($hallazgosChartData->keys()) !!},
+                    labels: {!! json_encode($hallazgosChartDataCanal1->keys()) !!},
                     datasets: [{
-                        data: {!! json_encode($hallazgosChartData->values()) !!},
+                        data: {!! json_encode($hallazgosChartDataCanal1->values()) !!},
                         backgroundColor: colores,
                     }]
                 },
@@ -183,7 +189,37 @@
                 }
             });
 
-            // 2. Productos - Pie Chart
+            // 2. Hallazgos - Media Canal 2
+            new Chart(document.getElementById('hallazgosChartCanal2'), {
+                type: 'doughnut',
+                data: {
+                    labels: {!! json_encode($hallazgosChartDataCanal2->keys()) !!},
+                    datasets: [{
+                        data: {!! json_encode($hallazgosChartDataCanal2->values()) !!},
+                        backgroundColor: colores,
+                    }]
+                },
+                options: {
+                    ...baseChartOptions,
+                    plugins: {
+                        ...baseChartOptions.plugins,
+                        legend: { display: true, position: 'right' },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.getDatasetMeta(0).total;
+                                const percentage = total > 0 ? (value / total) * 100 : 0;
+                                return percentage > 6 ? percentage.toFixed(1) + '%' : '';
+                            },
+                            color: '#fff',
+                            textStrokeColor: '#333',
+                            textStrokeWidth: 1.5,
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    }
+                }
+            });
+
+            // 3. Productos - Pie Chart
             new Chart(document.getElementById('productosChart'), {
                 type: 'pie',
                 data: {
@@ -213,7 +249,7 @@
                 }
             });
 
-            // 3. Puestos de Trabajo - Doughnut Chart
+            // 4. Puestos de Trabajo - Doughnut Chart
             new Chart(document.getElementById('puestosChart'), {
                 type: 'doughnut',
                 data: {
