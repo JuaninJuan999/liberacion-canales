@@ -18,6 +18,16 @@ class DashboardMensualController extends Controller
             ->where('año', $anio)
             ->orderBy('fecha_operacion')
             ->get();
+
+        // --- Calcular porcentajes para los gráficos ---
+        // El cálculo se hace sobre el total de MEDIAS CANALES (animales * 2)
+        $indicadores->each(function ($indicador) {
+            $mediasCanales = ($indicador->animales_procesados > 0 ? $indicador->animales_procesados : 1) * 2;
+            $indicador->porcentaje_sobrebarriga_rotas = ($indicador->sobrebarriga_rota / $mediasCanales) * 100;
+            $indicador->porcentaje_hematomas = ($indicador->hematomas / $mediasCanales) * 100;
+            $indicador->porcentaje_corte_en_piernas = ($indicador->cortes_piernas / $mediasCanales) * 100;
+            $indicador->porcentaje_cobertura_grasa = ($indicador->cobertura_grasa / $mediasCanales) * 100;
+        });
         
         $totales = [
             'animales' => $indicadores->sum('animales_procesados'),
@@ -26,6 +36,7 @@ class DashboardMensualController extends Controller
             'hematomas' => $indicadores->sum('hematomas'),
             'cobertura' => $indicadores->sum('cobertura_grasa'),
             'cortes_piernas' => $indicadores->sum('cortes_piernas'),
+            'sobrebarriga_rotas' => $indicadores->sum('sobrebarriga_rota'),
         ];
 
         // --- Datos para Gráficos ---
