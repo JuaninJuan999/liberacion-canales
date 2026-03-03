@@ -119,43 +119,13 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             @if(isset($chartData) && $indicadores->count() > 0)
             const chartData = @json($chartData);
-
-            const createChart = (elementId, datasets) => {
-                const ctx = document.getElementById(elementId);
-                if (!ctx) return;
-
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: chartData.labels,
-                        datasets: datasets
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            }
-                        }
-                    }
-                });
-            };
-
-            createChart('chartSobrebarriga', chartData.datasets.sobrebarriga);
-            createChart('chartHematomas', chartData.datasets.hematomas);
-            createChart('chartCortePiernas', chartData.datasets.cortes_piernas);
-            createChart('chartCoberturaGrasa', chartData.datasets.cobertura_grasa);
+            if (typeof window.initDashboardCharts === 'function') {
+                window.initDashboardCharts(chartData);
+            }
             @endif
         });
     </script>
