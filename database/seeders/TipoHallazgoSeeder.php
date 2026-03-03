@@ -16,7 +16,7 @@ class TipoHallazgoSeeder extends Seeder
         $hallazgos = [
             ['nombre' => 'COBERTURA DE GRASA'],
             ['nombre' => 'HEMATOMAS'],
-            ['nombre' => 'CORTES EN LA PIERNA'],
+            ['nombre' => 'CORTE EN PIERNAS'],
             ['nombre' => 'SOBREBARRIGA ROTA'],
         ];
 
@@ -27,6 +27,7 @@ class TipoHallazgoSeeder extends Seeder
             );
         }
 
-        TipoHallazgo::where('nombre', 'CORTE EN PIERNAS')->update(['nombre' => 'CORTES EN LA PIERNA']);
+        // Normalizar nombres antiguos si existen
+        TipoHallazgo::where('nombre', 'CORTES EN LA PIERNA')->update(['nombre' => 'CORTE EN PIERNAS']);
     }
 }

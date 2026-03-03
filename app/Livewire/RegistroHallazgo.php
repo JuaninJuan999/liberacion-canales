@@ -99,11 +99,11 @@ class RegistroHallazgo extends Component
 
         if ($value) {
             $hallazgo = TipoHallazgo::find($value);
-            $this->nombreHallazgoSeleccionado = $hallazgo ? strtoupper($hallazgo->nombre) : '';
+            $this->nombreHallazgoSeleccionado = $hallazgo ? trim(strtoupper($hallazgo->nombre)) : '';
 
             if ($this->nombreHallazgoSeleccionado === 'COBERTURA DE GRASA') {
                 $this->mostrarUbicacion = true;
-            } elseif ($this->nombreHallazgoSeleccionado === 'CORTES EN LA PIERNA') {
+            } elseif (str_contains($this->nombreHallazgoSeleccionado, 'CORTE') && str_contains($this->nombreHallazgoSeleccionado, 'PIERNA')) {
                 $this->mostrarLado = true;
             }
         } else {
