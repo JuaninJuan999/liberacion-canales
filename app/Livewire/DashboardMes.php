@@ -59,6 +59,30 @@ class DashboardMes extends Component
                     'data' => $this->indicadoresDiarios->pluck('hallazgos_criticos')->toArray(),
                     'borderColor' => 'rgb(239, 68, 68)',
                     'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
+                ],
+                [
+                    'label' => 'Indicador de sobrebarriga rotas',
+                    'data' => $this->indicadoresDiarios->pluck('porcentaje_sobrebarriga_rotas')->toArray(),
+                    'borderColor' => 'rgb(239, 68, 68)',
+                    'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
+                ],
+                [
+                    'label' => 'Indicador de hematomas',
+                    'data' => $this->indicadoresDiarios->pluck('porcentaje_hematomas')->toArray(),
+                    'borderColor' => 'rgb(34, 197, 94)',
+                    'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
+                ],
+                [
+                    'label' => 'Indicador de corte en piernas',
+                    'data' => $this->indicadoresDiarios->pluck('porcentaje_corte_en_piernas')->toArray(),
+                    'borderColor' => 'rgb(239, 68, 68)',
+                    'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
+                ],
+                [
+                    'label' => 'Indicador de cobertura grasa',
+                    'data' => $this->indicadoresDiarios->pluck('porcentaje_cobertura_grasa')->toArray(),
+                    'borderColor' => 'rgb(59, 130, 246)',
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                 ]
             ]
         ];
