@@ -153,12 +153,6 @@ class RegistroHallazgo extends Component
                 'lado_id' => $this->lado_id,
             ]);
 
-            $animalProcesado = AnimalProcesado::firstOrCreate(
-                ['fecha_operacion' => $this->fecha_actual],
-                ['cantidad_animales' => 0, 'usuario_id' => auth()->id()]
-            );
-            $animalProcesado->increment('cantidad_animales');
-
             $this->reset(['numero_canal', 'tipo_hallazgo_id', 'foto', 'observacion', 'ubicacion_id', 'lado_id']);
             $this->mostrarUbicacion = false;
             $this->mostrarLado = false;

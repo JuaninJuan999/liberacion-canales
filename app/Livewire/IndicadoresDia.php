@@ -127,6 +127,7 @@ class IndicadoresDia extends Component
 
     public function render()
     {
-        return view('livewire.indicadores-dia');
+        return view('livewire.indicadores-dia')
+        ->layout('layouts.app');
     }
 }

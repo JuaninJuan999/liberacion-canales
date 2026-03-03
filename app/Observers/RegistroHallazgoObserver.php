@@ -35,7 +35,6 @@ class RegistroHallazgoObserver
             $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fecha)->sum('cantidad_animales');
             $mediasCanalTotal = $animalesProcesados * 2;
 
-            // Cambiado para contar por producto_id en lugar de lado_id
             $statsQuery = RegistroHallazgo::where('fecha_operacion', $fecha)
                 ->selectRaw("
                     COUNT(*) as total_hallazgos,
@@ -45,6 +44,8 @@ class RegistroHallazgoObserver
 
             $tiposHallazgo = TipoHallazgo::all();
             $desgloseHallazgos = [];
+            $dataIndicadores = [];
+            $participacionTotal = 0;
 
             foreach ($tiposHallazgo as $tipo) {
                 $alias = strtolower(str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tipo->nombre)));
@@ -55,26 +56,54 @@ class RegistroHallazgoObserver
 
             foreach ($tiposHallazgo as $tipo) {
                 $alias = strtolower(str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tipo->nombre)));
-                $desgloseHallazgos[$tipo->nombre] = $stats->$alias ?? 0;
+                $count = $stats->$alias ?? 0;
+                $desgloseHallazgos[$tipo->nombre] = $count;
+
+                $columnName = null;
+                $isMajorFinding = false;
+
+                switch (strtoupper($tipo->nombre)) {
+                    case 'COBERTURA DE GRASA':
+                        $columnName = 'cobertura_grasa';
+                        $isMajorFinding = true;
+                        break;
+                    case 'HEMATOMAS':
+                        $columnName = 'hematomas';
+                        $isMajorFinding = true;
+                        break;
+                    case 'CORTES EN LA PIERNA':
+                        $columnName = 'cortes_piernas';
+                        $isMajorFinding = true;
+                        break;
+                    case 'SOBREBARRIGA ROTA':
+                        $columnName = 'sobrebarriga_rota';
+                        $isMajorFinding = true;
+                        break;
+                }
+
+                if ($columnName) {
+                    $dataIndicadores[$columnName] = $count;
+                    if ($isMajorFinding && $mediasCanalTotal > 0) {
+                        $participacionTotal += ($count / $mediasCanalTotal);
+                    }
+                }
             }
             
-            $participacionTotal = $mediasCanalTotal > 0
-                ? round((($stats->total_hallazgos ?? 0) / $mediasCanalTotal) * 100, 2)
-                : 0;
+            $dataIndicadores = array_merge($dataIndicadores, [
+                'animales_procesados' => $animalesProcesados,
+                'medias_canales_total' => $mediasCanalTotal,
+                'medias_canal_1' => $stats->medias_canal_1 ?? 0,
+                'medias_canal_2' => $stats->medias_canal_2 ?? 0,
+                'total_hallazgos' => $stats->total_hallazgos ?? 0,
+                'participacion_total' => round($participacionTotal * 100, 2),
+                'desglose_hallazgos' => json_encode($desgloseHallazgos),
+                'mes' => date('m', strtotime($fecha)),
+                'año' => date('Y', strtotime($fecha)),
+            ]);
 
             IndicadorDiario::updateOrCreate(
                 ['fecha_operacion' => $fecha],
-                [
-                    'animales_procesados' => $animalesProcesados,
-                    'medias_canales_total' => $mediasCanalTotal,
-                    'medias_canal_1' => $stats->medias_canal_1 ?? 0, // Ahora es hallazgos en Producto 1
-                    'medias_canal_2' => $stats->medias_canal_2 ?? 0, // Ahora es hallazgos en Producto 2
-                    'total_hallazgos' => $stats->total_hallazgos ?? 0,
-                    'participacion_total' => $participacionTotal,
-                    'desglose_hallazgos' => json_encode($desgloseHallazgos),
-                    'mes' => date('m', strtotime($fecha)),
-                    'año' => date('Y', strtotime($fecha)),
-                ]
+                $dataIndicadores
             );
 
         } catch (\Exception $e) {
