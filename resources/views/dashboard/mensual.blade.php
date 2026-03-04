@@ -108,6 +108,14 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Gráfico de Hallazgos Nuevos --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">Hallazgos por Tipo (Materia Fecal, Contenido Ruminal, Leche Visible)</h3>
+                <div class="h-64">
+                    <canvas id="chartHallazgosNuevos"></canvas>
+                </div>
+            </div>
             @else
                 <div class="text-center py-12 bg-white rounded-lg shadow-sm">
                     <div class="text-gray-400 mb-4 text-4xl">📅</div>
@@ -119,14 +127,55 @@
     </div>
 
     @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             @if(isset($chartData) && $indicadores->count() > 0)
             const chartData = @json($chartData);
+            const hallazgosNuevos = @json($hallazgosNuevos);
             
             if (typeof window.initDashboardCharts === 'function') {
                 window.initDashboardCharts(chartData);
             }
+
+            // Gráfico de Hallazgos Nuevos
+            Chart.register(ChartDataLabels);
+            new Chart(document.getElementById('chartHallazgosNuevos'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(hallazgosNuevos),
+                    datasets: [{
+                        label: 'Cantidad',
+                        data: Object.values(hallazgosNuevos),
+                        backgroundColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
+                        borderColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            color: '#000',
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                        }
+                    }
+                }
+            });
             @endif
         });
     </script>

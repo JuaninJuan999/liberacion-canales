@@ -67,6 +67,12 @@
                         <canvas id="puestosChart"></canvas>
                     </div>
                 </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-bold mb-2 text-center">Hallazgos por Tipo (Materia Fecal, Contenido Ruminal, Leche Visible)</h3>
+                    <div style="height: 300px;">
+                        <canvas id="hallazgosNuevosChart"></canvas>
+                    </div>
+                </div>
             </div>
 
             <!-- Tarjetas de Indicadores -->
@@ -275,6 +281,40 @@
                             textStrokeColor: '#333',
                             textStrokeWidth: 1.5,
                             font: { weight: 'bold', size: 12 }
+                        }
+                    }
+                }
+            });
+
+            // 5. Hallazgos Nuevos - Bar Chart
+            new Chart(document.getElementById('hallazgosNuevosChart'), {
+                type: 'bar',
+                data: {
+                    labels: {!! json_encode(array_keys($hallazgosNuevos)) !!},
+                    datasets: [{
+                        label: 'Cantidad',
+                        data: {!! json_encode(array_values($hallazgosNuevos)) !!},
+                        backgroundColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
+                        borderColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...baseChartOptions,
+                    indexAxis: 'y',
+                    plugins: {
+                        ...baseChartOptions.plugins,
+                        legend: { display: true, position: 'top' },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            color: '#000',
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
                         }
                     }
                 }

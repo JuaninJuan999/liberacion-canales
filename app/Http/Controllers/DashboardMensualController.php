@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\IndicadorDiario;
+use App\Models\RegistroHallazgo;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -73,6 +74,38 @@ class DashboardMensualController extends Controller
             ]
         ];
         
-        return view('dashboard.mensual', compact('mes', 'anio', 'indicadores', 'totales', 'chartData'));
+        // Datos de hallazgos nuevos
+        $hallazgosNuevos = $this->contarHallazgosNuevos($indicadores);
+        
+        return view('dashboard.mensual', compact('mes', 'anio', 'indicadores', 'totales', 'chartData', 'hallazgosNuevos'));
+    }
+
+    private function contarHallazgosNuevos($indicadores)
+    {
+        if ($indicadores->isEmpty()) {
+            return ['MATERIA FECAL' => 0, 'CONTENIDO RUMINAL' => 0, 'LECHE VISIBLE' => 0];
+        }
+
+        // Obtener fechas del rango de indicadores
+        $fechaInicio = $indicadores->first()->fecha_operacion;
+        $fechaFin = $indicadores->last()->fecha_operacion;
+
+        // Obtener todos los hallazgos del mes
+        $hallazgos = RegistroHallazgo::whereBetween('fecha_operacion', [$fechaInicio, $fechaFin])
+            ->with('tipoHallazgo')
+            ->get();
+
+        $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
+        
+        $resultado = [];
+        foreach ($tiposNuevos as $tipo) {
+            $resultado[$tipo] = $hallazgos
+                ->filter(function ($h) use ($tipo) {
+                    return stripos($h->tipoHallazgo->nombre ?? '', $tipo) !== false;
+                })
+                ->count();
+        }
+        
+        return $resultado;
     }
 }

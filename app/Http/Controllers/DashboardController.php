@@ -57,6 +57,9 @@ class DashboardController extends Controller
         // Hallazgos por operario y tipo (usando la lógica de obtenerOperarioResponsable)
         $hallazgosPorOperarioYTipo = $this->calcularHallazgosPorOperarioYTipo($hallazgosRango);
         
+        // Hallazgos nuevos (MATERIA FECAL, CONTENIDO RUMINAL, LECHE VISIBLE)
+        $hallazgosNuevos = $this->contarHallazgosNuevos($hallazgosRango);
+        
         // Promedios del mes
         $indicadoresMes = IndicadorDiario::whereMonth('fecha_operacion', Carbon::parse($fecha_fin)->month)
             ->whereYear('fecha_operacion', Carbon::parse($fecha_fin)->year)
@@ -78,6 +81,7 @@ class DashboardController extends Controller
             'hallazgosChartDataCanal2' => $hallazgosChartDataCanal2,
             'productosChartData' => $productosChartData,
             'hallazgosPorOperarioYTipo' => $hallazgosPorOperarioYTipo,
+            'hallazgosNuevos' => $hallazgosNuevos,
         ]);
     }
 
@@ -214,5 +218,24 @@ class DashboardController extends Controller
         }
 
         return 'Sin asignar';
+    }
+
+    /**
+     * Cuenta los hallazgos nuevos (MATERIA FECAL, CONTENIDO RUMINAL, LECHE VISIBLE)
+     */
+    private function contarHallazgosNuevos($hallazgosRango)
+    {
+        $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
+        
+        $resultado = [];
+        foreach ($tiposNuevos as $tipo) {
+            $resultado[$tipo] = $hallazgosRango
+                ->filter(function ($h) use ($tipo) {
+                    return stripos($h->tipoHallazgo->nombre ?? '', $tipo) !== false;
+                })
+                ->count();
+        }
+        
+        return $resultado;
     }
 }
