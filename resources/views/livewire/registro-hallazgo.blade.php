@@ -115,25 +115,163 @@
                 </div>
             @endif
 
-            {{-- Evidencia (Foto) --}}
-            <div>
-                <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">
-                    Evidencia
+            {{-- Evidencia (Foto) con Compresión --}}
+            <div x-data="fotoCompressor()">
+                <label class="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                    📷 Evidencia
                 </label>
-                <div wire:loading wire:target="foto" class="text-sm text-gray-500">Cargando...</div>
-                <div class="mt-1 flex items-center space-x-4">
-                    <input type="file" wire:model="foto" id="foto" class="hidden">
-                    <label for="foto" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center w-full">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    </label>
-                    @if ($foto)
-                        <div class="flex-shrink-0">
-                            <img class="h-16 w-16 object-cover rounded" src="{{ $foto->temporaryUrl() }}" alt="Previsualización de evidencia">
+                <div wire:loading wire:target="foto" class="mb-3 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm flex items-center gap-2">
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-blue-700 border-t-transparent"></div>
+                    ⏳ Comprimiendo y cargando imagen...
+                </div>
+                
+                <div class="space-y-4">
+                    {{-- Input oculto con capture --}}
+                    <input type="file" 
+                           @change="comprimirYCargar($event)"
+                           id="foto" 
+                           class="hidden"
+                           accept="image/*"
+                           capture="environment">
+                    
+                    {{-- Estado de compresión --}}
+                    <div x-show="comprimiendo" class="mb-3 p-3 bg-amber-50 text-amber-700 rounded-lg text-sm">
+                        <p x-text="`Comprimiendo: ${porcentajeCompresion}%`"></p>
+                    </div>
+
+                    {{-- Botón para abrir cámara --}}
+                    <label for="foto" class="block cursor-pointer">
+                        <div class="relative group">
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-600 hover:bg-blue-200 transition-all duration-300 transform hover:scale-105">
+                                <div class="flex flex-col items-center gap-3">
+                                    <svg class="w-12 h-12 text-blue-600 mx-auto group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/>
+                                        <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/>
+                                    </svg>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Tomar Foto</p>
+                                        <p class="text-xs text-gray-600 mt-1">Haz clic para abrir la cámara<br>Se comprimirá automáticamente</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </label>
+
+                    {{-- Vista previa de la foto --}}
+                    @if ($foto)
+                        <div class="relative">
+                            <div class="bg-white rounded-lg border-2 border-green-400 p-4 shadow-lg">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="text-sm font-semibold text-green-700">✅ Imagen lista</span>
+                                </div>
+                                <img class="w-full h-48 object-cover rounded-lg border border-gray-300" src="{{ $foto->temporaryUrl() }}" alt="Previsualización de evidencia">
+                                <button type="button" 
+                                        wire:click="$set('foto', null)"
+                                        class="mt-3 w-full px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-sm font-semibold transition">
+                                    🗑️ Cambiar Foto
+                                </button>
+                            </div>
+                        </div>
+                    @else
+                        <p class="text-xs text-gray-500 text-center py-2">💡 Toca el área de arriba para capturar una foto</p>
                     @endif
                 </div>
-                @error('foto') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                @error('foto') <span class="text-red-500 text-xs mt-2 block">{{ $message }}</span> @enderror
             </div>
+
+            {{-- Script de compresión --}}
+            <script>
+                function fotoCompressor() {
+                    return {
+                        comprimiendo: false,
+                        porcentajeCompresion: 0,
+                        
+                        async comprimirYCargar(event) {
+                            const archivo = event.target.files[0];
+                            if (!archivo) return;
+
+                            this.comprimiendo = true;
+                            this.porcentajeCompresion = 0;
+
+                            try {
+                                // Crear reader para leer la imagen
+                                const reader = new FileReader();
+                                reader.onload = async (e) => {
+                                    const img = new Image();
+                                    img.onload = async () => {
+                                        // Crear con compresión
+                                        const canvas = document.createElement('canvas');
+                                        let { width, height } = img;
+                                        
+                                        // Escalar si es muy grande (máximo 1280px)
+                                        const maxWidth = 1280;
+                                        const maxHeight = 1280;
+                                        
+                                        if (width > maxWidth || height > maxHeight) {
+                                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                                            width = Math.round(width * ratio);
+                                            height = Math.round(height * ratio);
+                                        }
+                                        
+                                        canvas.width = width;
+                                        canvas.height = height;
+                                        
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.drawImage(img, 0, 0, width, height);
+                                        
+                                        // Comprimir JPEG con calidad progresiva
+                                        let quality = 0.9;
+                                        let comprimido = null;
+                                        
+                                        for (let i = 0; i < 3; i++) {
+                                            comprimido = await this.canvasToBlob(canvas, 'image/jpeg', quality);
+                                            
+                                            // Si archivo es menor a 2MB, usar
+                                            if (comprimido.size < 2097152) break;
+                                            
+                                            quality -= 0.2;
+                                            this.porcentajeCompresion = Math.round((1 - (comprimido.size / archivo.size)) * 100);
+                                        }
+                                        
+                                        // Convertir a File
+                                        const archivoComprimido = new File(
+                                            [comprimido],
+                                            `foto_${Date.now()}.jpg`,
+                                            { type: 'image/jpeg' }
+                                        );
+                                        
+                                        // Simular que se cambió el input pero con el archivo comprimido
+                                        const dataTransfer = new DataTransfer();
+                                        dataTransfer.items.add(archivoComprimido);
+                                        document.getElementById('foto').files = dataTransfer.files;
+                                        
+                                        // Trigger Livewire update
+                                        @this.upload('foto', archivoComprimido, false, null, null, () => {
+                                            this.comprimiendo = false;
+                                        });
+                                    };
+                                    img.src = e.target.result;
+                                };
+                                reader.readAsDataURL(archivo);
+                            } catch (error) {
+                                console.error('Error al comprimir:', error);
+                                this.comprimiendo = false;
+                            }
+                        },
+
+                        canvasToBlob(canvas, type, quality) {
+                            return new Promise((resolve) => {
+                                canvas.toBlob(resolve, type, quality);
+                            });
+                        }
+                    }
+                }
+            </script>
 
         </div>
 

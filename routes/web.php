@@ -18,6 +18,7 @@ use App\Livewire\DashboardMes;
 use App\Livewire\IndicadoresDia;
 use App\Livewire\GestionOperariosDia;
 use App\Livewire\AsignacionOperarios;
+use App\Livewire\GestionUsuarios;
 use App\Livewire\Pages\Auth\Login;
 
 // Rutas públicas (sin autenticación)
@@ -63,8 +64,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/indicadores/{fecha}', [IndicadorController::class, 'indicadoresDia'])->name('indicadores.dia.fecha');
     
     // Gestión de Usuarios y Catálogos (Solo Admin)
-    Route::middleware('admin')->group(function () {
-        Route::resource('usuarios', UsuarioController::class);
+    // La validación se hace en el componente Livewire
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/usuarios/gestion', GestionUsuarios::class)->name('usuarios.gestion');
+        // Route::resource('usuarios', UsuarioController::class); // Usar GestionUsuarios component en su lugar
         // Nueva ruta para Puestos de Trabajo
         Route::resource('puestos_trabajo', PuestoTrabajoController::class)->except(['show']);
     });

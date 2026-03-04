@@ -1,119 +1,202 @@
-<div wire:poll.10s="cargarHistorial">
-    <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
-        <h2 class="text-xl font-bold text-gray-800">Indicador Diario - Historial de Liberación</h2>
-        <div class="flex flex-wrap items-center gap-4">
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Mes:</label>
-                <select wire:model.live="mes" wire:change="cargarHistorial" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                    @for($m = 1; $m <= 12; $m++)
-                        <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->locale('es')->isoFormat('MMMM') }}</option>
-                    @endfor
-                </select>
+<div wire:poll.3s="actualizarDespuesDeRegistro">
+    {{-- Header dinámico --}}
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">📊 Indicador Diario</h1>
+                <p class="text-gray-600 mt-1">Monitoreo en tiempo real de hallazgos</p>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Año:</label>
-                <select wire:model.live="anio" wire:change="cargarHistorial" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                    @for($a = now()->year - 2; $a <= now()->year + 1; $a++)
-                        <option value="{{ $a }}">{{ $a }}</option>
-                    @endfor
-                </select>
+            <div class="text-right">
+                <p class="text-sm text-gray-600">Mes seleccionado:</p>
+                <p class="text-2xl font-bold text-blue-600">{{ \Carbon\Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM Y') }}</p>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Ver un día:</label>
-                <input type="date" wire:model.live="fecha" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+        </div>
+
+        {{-- Filtros mejorados --}}
+        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm font-semibold text-gray-700">📅 Mes:</label>
+                    <select wire:model.live="mes" wire:change="cargarHistorial()" class="px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm cursor-pointer transition">
+                        @for($m = 1; $m <= 12; $m++)
+                            <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->locale('es')->isoFormat('MMMM') }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm font-semibold text-gray-700">📆 Año:</label>
+                    <select wire:model.live="anio" wire:change="cargarHistorial()" class="px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm cursor-pointer transition">
+                        @for($a = now()->year - 2; $a <= now()->year + 1; $a++)
+                            <option value="{{ $a }}">{{ $a }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm font-semibold text-gray-700">📍 Día específico:</label>
+                    <input type="date" wire:model.live="fecha" wire:change="cargarIndicadores()" class="px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm transition">
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm font-semibold text-gray-700">📌 Estado:</label>
+                    <div class="px-3 py-2 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                        <span class="text-sm font-bold text-blue-700">{{ count($historial) }} registros</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- Tabla Historial de Liberación --}}
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-        <div class="p-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800">Historial de Liberación</h3>
+    {{-- Resumen de Metas --}}
+    @if(count($historial) > 0)
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        {{-- META COBERTURA --}}
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-md p-5 border-l-4 border-orange-500 transform transition hover:scale-105">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">🧈 COBERTURA GRASA</h3>
+                <span class="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">META: {{ \App\Livewire\IndicadoresDia::META_COBERTURA }}%</span>
+            </div>
+            @php
+                $coberturaData = array_filter($historial, function($row) {
+                    return !\App\Livewire\IndicadoresDia::cumpleMeta($row['cobertura_pct'], \App\Livewire\IndicadoresDia::META_COBERTURA);
+                });
+            @endphp
+            <div class="text-3xl font-bold text-orange-600 mb-2">{{ count($coberturaData) }}/{{ count($historial) }}</div>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+                <div class="bg-orange-500 h-2 rounded-full" style="width: {{ (count($coberturaData) / count($historial)) * 100 }}%"></div>
+            </div>
+            <p class="text-xs text-gray-600 mt-2">{{ count($coberturaData) }} días fuera de meta</p>
+        </div>
+
+        {{-- META HEMATOMAS --}}
+        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg shadow-md p-5 border-l-4 border-red-500 transform transition hover:scale-105">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">🩸 HEMATOMAS</h3>
+                <span class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">META: {{ \App\Livewire\IndicadoresDia::META_HEMATOMA }}%</span>
+            </div>
+            @php
+                $hematomiasData = array_filter($historial, function($row) {
+                    return !\App\Livewire\IndicadoresDia::cumpleMeta($row['hematoma_pct'], \App\Livewire\IndicadoresDia::META_HEMATOMA);
+                });
+            @endphp
+            <div class="text-3xl font-bold text-red-600 mb-2">{{ count($hematomiasData) }}/{{ count($historial) }}</div>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+                <div class="bg-red-500 h-2 rounded-full" style="width: {{ (count($hematomiasData) / count($historial)) * 100 }}%"></div>
+            </div>
+            <p class="text-xs text-gray-600 mt-2">{{ count($hematomiasData) }} días fuera de meta</p>
+        </div>
+
+        {{-- META CORTES EN PIERNA --}}
+        <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow-md p-5 border-l-4 border-yellow-500 transform transition hover:scale-105">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">🦵 CORTES EN PIERNA</h3>
+                <span class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">META: {{ \App\Livewire\IndicadoresDia::META_CORTES_PIERNA }}%</span>
+            </div>
+            @php
+                $cortesData = array_filter($historial, function($row) {
+                    return !\App\Livewire\IndicadoresDia::cumpleMeta($row['cortes_pct'], \App\Livewire\IndicadoresDia::META_CORTES_PIERNA);
+                });
+            @endphp
+            <div class="text-3xl font-bold text-yellow-600 mb-2">{{ count($cortesData) }}/{{ count($historial) }}</div>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+                <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ (count($cortesData) / count($historial)) * 100 }}%"></div>
+            </div>
+            <p class="text-xs text-gray-600 mt-2">{{ count($cortesData) }} días fuera de meta</p>
+        </div>
+
+        {{-- META SOBREBARRIGA ROTA --}}
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow-md p-5 border-l-4 border-purple-500 transform transition hover:scale-105">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">🐄 SOBREBARRIGA ROTA</h3>
+                <span class="bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded">META: {{ \App\Livewire\IndicadoresDia::META_SOBREBARRIGA }}%</span>
+            </div>
+            @php
+                $sobrebarrigaData = array_filter($historial, function($row) {
+                    return !\App\Livewire\IndicadoresDia::cumpleMeta($row['sobrebarriga_pct'], \App\Livewire\IndicadoresDia::META_SOBREBARRIGA);
+                });
+            @endphp
+            <div class="text-3xl font-bold text-purple-600 mb-2">{{ count($sobrebarrigaData) }}/{{ count($historial) }}</div>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+                <div class="bg-purple-500 h-2 rounded-full" style="width: {{ (count($sobrebarrigaData) / count($historial)) * 100 }}%"></div>
+            </div>
+            <p class="text-xs text-gray-600 mt-2">{{ count($sobrebarrigaData) }} días fuera de meta</p>
+        </div>
+    </div>
+    @endif
+
+    {{-- Tabla Historial de Liberación mejorada --}}
+    <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg mb-6 border border-gray-200">
+        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h3 class="text-xl font-bold text-gray-900">📋 Historial Mensual de Liberación</h3>
+            <p class="text-sm text-gray-600 mt-1">Haz clic en cualquier fila para ver detalles del día</p>
         </div>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100 border-b-2 border-gray-300">
                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">F. Operación</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">1/2 Canal 1</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">1/2 Canal 2</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total Hallazgo</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cobertura G</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Hematoma</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cortes en P</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sobrebarriga R</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Promedio mes</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Part Total</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mes</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Año</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">META Cobertura</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">META Sobrebarr.</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">META Hematoma</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">META Cortes P</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Fecha</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">1/2 Canal 1</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">1/2 Canal 2</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Total Hallazgos</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-orange-700 uppercase tracking-wider">🧈 Cobertura</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-red-700 uppercase tracking-wider">🩸 Hematomas</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-yellow-700 uppercase tracking-wider">🦵 Cortes P</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-purple-700 uppercase tracking-wider">🐄 Sobrebarriga</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold text-blue-700 uppercase tracking-wider">% Participación</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
                     @forelse($historial as $row)
-                        <tr wire:click="cambiarFecha('{{ $row['fecha_operacion'] }}')" class="hover:bg-blue-100 cursor-pointer">
-                            <td class="px-3 py-2 whitespace-nowrap text-gray-900 font-medium">
-                                {{ \Carbon\Carbon::parse($row['fecha_operacion'])->format('d/m/Y') }}
-                            </td>
-                            <td class="px-3 py-2 text-right">{{ number_format($row['medias_canal_1']) }}</td>
-                            <td class="px-3 py-2 text-right">{{ number_format($row['medias_canal_2']) }}</td>
-                            <td class="px-3 py-2 text-right font-semibold text-blue-600">{{ number_format($row['total_hallazgos']) }}</td>
-                            <td class="px-3 py-2 text-right">
-                                <span class="inline-flex items-center gap-1">
-                                    @if(\App\Livewire\IndicadoresDia::cumpleMeta($row['cobertura_pct'], \App\Livewire\IndicadoresDia::META_COBERTURA))
-                                        <span class="text-green-600" title="Dentro de meta">✓</span>
-                                    @else
-                                        <span class="text-red-600" title="Supera meta">!</span>
-                                    @endif
-                                    {{ number_format($row['cobertura_pct'], 2) }}%
+                        <tr wire:click="actualizarFecha('{{ $row['fecha_operacion'] }}')" class="hover:bg-blue-50 cursor-pointer transition duration-200 {{ \Carbon\Carbon::parse($row['fecha_operacion'])->format('Y-m-d') == $fecha ? 'bg-blue-100 font-bold' : '' }}">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                <span class="inline-flex items-center gap-2">
+                                    📅 {{ \Carbon\Carbon::parse($row['fecha_operacion'])->locale('es')->isoFormat('dddd, DD MMM') }}
                                 </span>
                             </td>
-                            <td class="px-3 py-2 text-right">
-                                <span class="inline-flex items-center gap-1">
-                                    @if(\App\Livewire\IndicadoresDia::cumpleMeta($row['hematoma_pct'], \App\Livewire\IndicadoresDia::META_HEMATOMA))
-                                        <span class="text-green-600" title="Dentro de meta">✓</span>
-                                    @else
-                                        <span class="text-red-600" title="Supera meta">!</span>
-                                    @endif
-                                    {{ number_format($row['hematoma_pct'], 2) }}%
+                            <td class="px-4 py-3 text-center text-sm text-gray-700 font-medium">{{ $row['medias_canal_1'] }}</td>
+                            <td class="px-4 py-3 text-center text-sm text-gray-700 font-medium">{{ $row['medias_canal_2'] }}</td>
+                            <td class="px-4 py-3 text-center text-sm">
+                                <span class="inline-flex items-center justify-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">{{ $row['total_hallazgos'] }}</span>
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm">
+                                <span class="inline-flex flex-col items-center gap-1">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['cobertura_pct'], \App\Livewire\IndicadoresDia::META_COBERTURA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ number_format($row['cobertura_pct'], 2) }}%
+                                    </span>
                                 </span>
                             </td>
-                            <td class="px-3 py-2 text-right">
-                                <span class="inline-flex items-center gap-1">
-                                    @if(\App\Livewire\IndicadoresDia::cumpleMeta($row['cortes_pct'], \App\Livewire\IndicadoresDia::META_CORTES_PIERNA))
-                                        <span class="text-green-600" title="Dentro de meta">✓</span>
-                                    @else
-                                        <span class="text-red-600" title="Supera meta">!</span>
-                                    @endif
-                                    {{ number_format($row['cortes_pct'], 2) }}%
+                            <td class="px-4 py-3 text-center text-sm">
+                                <span class="inline-flex flex-col items-center gap-1">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['hematoma_pct'], \App\Livewire\IndicadoresDia::META_HEMATOMA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ number_format($row['hematoma_pct'], 2) }}%
+                                    </span>
                                 </span>
                             </td>
-                            <td class="px-3 py-2 text-right">
-                                <span class="inline-flex items-center gap-1">
-                                    @if(\App\Livewire\IndicadoresDia::cumpleMeta($row['sobrebarriga_pct'], \App\Livewire\IndicadoresDia::META_SOBREBARRIGA))
-                                        <span class="text-green-600" title="Dentro de meta">✓</span>
-                                    @else
-                                        <span class="text-red-600" title="Supera meta">!</span>
-                                    @endif
-                                    {{ number_format($row['sobrebarriga_pct'], 2) }}%
+                            <td class="px-4 py-3 text-center text-sm">
+                                <span class="inline-flex flex-col items-center gap-1">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['cortes_pct'], \App\Livewire\IndicadoresDia::META_CORTES_PIERNA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ number_format($row['cortes_pct'], 2) }}%
+                                    </span>
                                 </span>
                             </td>
-                            <td class="px-3 py-2 text-right text-gray-600">{{ number_format($promedioMes, 2) }}%</td>
-                            <td class="px-3 py-2 text-right font-semibold text-blue-600">{{ number_format($row['participacion_total'], 2) }}%</td>
-                            <td class="px-3 py-2 whitespace-nowrap text-gray-600">{{ strtoupper(\Carbon\Carbon::create($row['año'], (int)$row['mes'], 1)->locale('es')->isoFormat('MMM')) }}</td>
-                            <td class="px-3 py-2 text-right text-gray-600">{{ number_format($row['año']) }}</td>
-                            <td class="px-3 py-2 text-right text-gray-500">{{ number_format(\App\Livewire\IndicadoresDia::META_COBERTURA, 2) }}%</td>
-                            <td class="px-3 py-2 text-right text-gray-500">{{ number_format(\App\Livewire\IndicadoresDia::META_SOBREBARRIGA, 2) }}%</td>
-                            <td class="px-3 py-2 text-right text-gray-500">{{ number_format(\App\Livewire\IndicadoresDia::META_HEMATOMA, 2) }}%</td>
-                            <td class="px-3 py-2 text-right text-gray-500">{{ number_format(\App\Livewire\IndicadoresDia::META_CORTES_PIERNA, 2) }}%</td>
+                            <td class="px-4 py-3 text-center text-sm">
+                                <span class="inline-flex flex-col items-center gap-1">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['sobrebarriga_pct'], \App\Livewire\IndicadoresDia::META_SOBREBARRIGA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ number_format($row['sobrebarriga_pct'], 2) }}%
+                                    </span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm">
+                                <span class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full font-bold">
+                                    📊 {{ number_format($row['participacion_total'], 1) }}%
+                                </span>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="16" class="px-3 py-8 text-center text-gray-500">
-                                No hay indicadores registrados para este mes.
+                            <td colspan="9" class="px-4 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center gap-2">
+                                    <span class="text-4xl">📭</span>
+                                    <p class="text-lg font-medium">No hay indicadores registrados para este mes.</p>
+                                </div>
                             </td>
                         </tr>
                     @endforelse
@@ -122,48 +205,71 @@
         </div>
     </div>
 
-    {{-- Detalle del día seleccionado (opcional) --}}
+    {{-- Detalle del día seleccionado mejorado --}}
     @if($indicadores)
-        <div class="mb-4">
-            <h3 class="text-lg font-bold text-gray-700 mb-2">Indicadores del día {{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}</h3>
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 text-white mb-6">
+            <h3 class="text-2xl font-bold mb-2">📍 Indicadores del {{ \Carbon\Carbon::parse($fecha)->locale('es')->isoFormat('dddd, DD MMMM YYYY') }}</h3>
+            <p class="text-blue-100">Haz clic en una fila de la tabla para cambiar el día</p>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                <div class="font-bold text-sm text-gray-600">ANIMALES PROCESADOS</div>
-                <div class="text-2xl font-extrabold text-gray-900">{{ number_format($indicadores->animales_procesados ?? 0) }}</div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow-md border-l-4 border-blue-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">🐄 ANIMALES PROCESADOS</div>
+                <div class="text-4xl font-extrabold text-blue-600 mb-1">{{ number_format($indicadores->animales_procesados ?? 0) }}</div>
+                <div class="text-xs text-gray-600">{{ number_format($indicadores->medias_canales_total ?? 0) }} medias canales</div>
             </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-                <div class="font-bold text-sm text-gray-600">TOTAL HALLAZGOS</div>
-                <div class="text-2xl font-extrabold text-gray-900">{{ number_format($indicadores->total_hallazgos ?? 0) }}</div>
-                <div class="text-xs text-gray-500">En {{ number_format($indicadores->medias_canales_total ?? 0) }} medias canales</div>
+            
+            <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-lg shadow-md border-l-4 border-yellow-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">⚠️ TOTAL HALLAZGOS</div>
+                <div class="text-4xl font-extrabold text-yellow-600 mb-1">{{ number_format($indicadores->total_hallazgos ?? 0) }}</div>
+                <div class="w-full bg-gray-300 rounded-full h-2 mt-2">
+                    <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ ($indicadores->total_hallazgos ?? 0) > 0 ? min((($indicadores->total_hallazgos ?? 0) / (($indicadores->medias_canales_total ?? 1) / 10)) * 100, 100) : 0 }}%"></div>
+                </div>
             </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
-                <div class="font-bold text-sm text-gray-600">PARTICIPACIÓN</div>
-                <div class="text-2xl font-extrabold text-purple-600">{{ number_format($indicadores->participacion_total ?? 0, 2) }}%</div>
+
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg shadow-md border-l-4 border-purple-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">📈 PARTICIPACIÓN TOTAL</div>
+                <div class="text-4xl font-extrabold text-purple-600 mb-1">{{ number_format($indicadores->participacion_total ?? 0, 2) }}%</div>
+                <div class="w-full bg-gray-300 rounded-full h-2 mt-2">
+                    <div class="bg-purple-500 h-2 rounded-full" style="width: {{ min($indicadores->participacion_total ?? 0, 100) }}%"></div>
+                </div>
             </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
-                <div class="font-bold text-sm text-gray-600">HALLAZGOS POR PRODUCTO</div>
-                <div class="text-lg font-bold text-gray-900">
-                    Media Canal 1: {{ number_format($indicadores->medias_canal_1 ?? 0) }} | Media Canal 2: {{ number_format($indicadores->medias_canal_2 ?? 0) }}
+
+            <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-lg shadow-md border-l-4 border-indigo-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">🏭 POR PRODUCTO</div>
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-white rounded p-2">
+                        <div class="text-xs text-gray-600">Canal 1</div>
+                        <div class="text-2xl font-bold text-indigo-600">{{ number_format($indicadores->medias_canal_1 ?? 0) }}</div>
+                    </div>
+                    <div class="bg-white rounded p-2">
+                        <div class="text-xs text-gray-600">Canal 2</div>
+                        <div class="text-2xl font-bold text-indigo-600">{{ number_format($indicadores->medias_canal_2 ?? 0) }}</div>
+                    </div>
                 </div>
             </div>
         </div>
+
         @if(count($hallazgosPorTipo) > 0)
-            <div class="mt-4">
-                <h4 class="font-bold text-gray-700 mb-2">Desglose de Hallazgos del día</h4>
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                <h4 class="font-bold text-lg text-gray-900 mb-4">📊 Desglose Detallado de Hallazgos</h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     @foreach($hallazgosPorTipo as $hallazgo)
-                        <div class="bg-gray-50 p-3 rounded-lg text-center shadow-sm">
-                            <div class="font-semibold text-gray-600 text-sm">{{ $hallazgo['nombre'] }}</div>
-                            <div class="text-xl font-bold text-gray-800">{{ $hallazgo['total'] }}</div>
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg text-center shadow-sm border border-gray-200 transform transition hover:scale-105 hover:shadow-md">
+                            <div class="font-semibold text-gray-700 text-xs mb-2 leading-tight">{{ $hallazgo['nombre'] }}</div>
+                            <div class="text-3xl font-bold text-gray-800">{{ $hallazgo['total'] }}</div>
+                            <div class="mt-2 pt-2 border-t border-gray-300">
+                                <span class="text-xs text-gray-600 font-medium">{{ $indicadores->medias_canales_total > 0 ? number_format(($hallazgo['total'] / $indicadores->medias_canales_total) * 100, 2) : 0 }}%</span>
+                            </div>
                         </div>
                     @endforeach
                 </div>
             </div>
         @endif
     @else
-        <div class="text-center py-6 px-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p class="text-gray-600">Selecciona una fecha o registra hallazgos para ver el detalle del día.</p>
+        <div class="text-center py-12 px-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
+            <p class="text-2xl mb-2">👆</p>
+            <p class="text-gray-600 font-medium">Selecciona una fecha en la tabla para ver el detalle del día</p>
         </div>
     @endif
 </div>

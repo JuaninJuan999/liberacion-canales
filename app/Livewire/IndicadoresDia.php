@@ -22,13 +22,19 @@ class IndicadoresDia extends Component
     const META_CORTES_PIERNA = 1.00;
     const META_SOBREBARRIGA = 1.00;
 
-    protected $listeners = ['hallazgo-registrado' => 'cargarIndicadores', 'fechaCambiada' => 'actualizarFecha'];
+    protected $listeners = ['hallazgo-registrado' => 'actualizarDespuesDeRegistro', 'fechaCambiada' => 'actualizarFecha'];
 
     public function mount($fecha = null)
     {
         $this->fecha = $fecha ?: Carbon::now()->format('Y-m-d');
         $this->mes = (int) Carbon::now()->month;
         $this->anio = (int) Carbon::now()->year;
+        $this->cargarIndicadores();
+        $this->cargarHistorial();
+    }
+
+    public function actualizarDespuesDeRegistro()
+    {
         $this->cargarIndicadores();
         $this->cargarHistorial();
     }
@@ -69,13 +75,6 @@ class IndicadoresDia extends Component
         }
 
         $this->promedioMes = $registros->isEmpty() ? 0 : round($registros->avg('participacion_total'), 2);
-    }
-
-    public function cambiarFecha($nuevaFecha)
-    {
-        $this->fecha = $nuevaFecha;
-        $this->cargarIndicadores();
-        $this->dispatch('fechaCambiada', $this->fecha);
     }
 
     public function actualizarFecha($nuevaFecha)

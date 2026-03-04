@@ -61,7 +61,7 @@ class RegistroHallazgo extends Component
             'producto_id' => 'required|exists:productos,id',
             'tipo_hallazgo_id' => 'required|exists:tipos_hallazgo,id',
             'numero_canal' => 'required|string|max:50',
-            'foto' => 'nullable|image|max:2048',
+            'foto' => 'nullable|file|mimes:jpeg,jpg,png,gif,webp|max:10240',
             'observacion' => 'nullable|string',
         ];
 
@@ -137,7 +137,19 @@ class RegistroHallazgo extends Component
         try {
             $fotoPath = null;
             if ($this->foto) {
-                $fotoPath = $this->foto->store('evidencias', 'public');
+                try {
+                    // Usar timestamp para nombre único de foto
+                    $nombreFoto = 'foto_' . time() . '_' . uniqid() . '.' . $this->foto->getClientOriginalExtension();
+                    $fotoPath = $this->foto->storeAs('evidencias', $nombreFoto, 'public');
+                    
+                    if (!$fotoPath) {
+                        throw new \Exception('No se pudo guardar la foto en el servidor.');
+                    }
+                } catch (\Exception $fotoError) {
+                    $this->mensaje = 'Error al guardar la foto: ' . $fotoError->getMessage();
+                    $this->tipoMensaje = 'error';
+                    return;
+                }
             }
 
             ModeloRegistroHallazgo::create([
@@ -163,9 +175,12 @@ class RegistroHallazgo extends Component
             $this->tipoMensaje = 'success';
 
             $this->actualizarContadorDia();
-            $this->dispatch('hallazgo-registrado');
+            
+            // Evento global para actualizar todos los componentes
+            $this->dispatch('hallazgo-registrado')->self();
 
         } catch (\Exception $e) {
+            \Log::error('Error en registro de hallazgo: ' . $e->getMessage());
             $this->mensaje = 'Error al registrar hallazgo: ' . $e->getMessage();
             $this->tipoMensaje = 'error';
         }

@@ -36,10 +36,20 @@ class CalculadoraIndicadores
         $totalAnimales = $sumas['animales_procesados'] ?? 0;
         $totalHallazgos = $sumas['total_hallazgos'] ?? 0;
         $mediasCanalTotal = $sumas['medias_canales_total'] ?? 0;
+        $canalesLiberadas = ($sumas['medias_canal_1'] ?? 0) + ($sumas['medias_canal_2'] ?? 0);
+
+        $promedio_liberacion = $mediasCanalTotal > 0 
+            ? round(($canalesLiberadas / $mediasCanalTotal) * 100, 2)
+            : 0;
 
         $participacionMensual = $mediasCanalTotal > 0 
             ? round(($totalHallazgos / $mediasCanalTotal) * 100, 2)
             : 0;
+
+        // Hallazgos críticos y leves (hallazgos críticos son cobertura_grasa + hematomas + cortes_piernas + sobrebarriga_rota)
+        $hallazgos_criticos = ($sumas['cobertura_grasa'] ?? 0) + ($sumas['hematomas'] ?? 0) 
+                            + ($sumas['cortes_piernas'] ?? 0) + ($sumas['sobrebarriga_rota'] ?? 0);
+        $hallazgos_leves = $totalHallazgos - $hallazgos_criticos;
 
         // Construir el resultado mensual
         $resultado = array_merge(
@@ -47,6 +57,10 @@ class CalculadoraIndicadores
             [
                 'dias_procesados' => $diasProcesados,
                 'participacion_promedio_mensual' => $participacionMensual,
+                'promedio_liberacion' => $promedio_liberacion,
+                'canales_liberadas' => $canalesLiberadas,
+                'hallazgos_criticos' => $hallazgos_criticos,
+                'hallazgos_leves' => $hallazgos_leves,
                 'mes' => $mes,
                 'año' => $anio,
             ]

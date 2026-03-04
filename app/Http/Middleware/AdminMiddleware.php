@@ -10,7 +10,7 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->user()?->rol?->nombre === 'Admin' || auth()->user()?->is_admin) {
+        if (auth()->user()?->rol?->nombre === 'ADMINISTRADOR') {
             return $next($request);
         }
 

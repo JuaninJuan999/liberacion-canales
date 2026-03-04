@@ -32,82 +32,93 @@ class RegistroHallazgoObserver
     protected function recalcularIndicadores($fecha)
     {
         try {
-            $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fecha)->sum('cantidad_animales');
-            $mediasCanalTotal = $animalesProcesados * 2;
+            // Convertir fecha a formato Y-m-d si es necesario
+            $fechaFormato = is_string($fecha) 
+                ? $fecha 
+                : $fecha->format('Y-m-d');
 
-            $statsQuery = RegistroHallazgo::where('fecha_operacion', $fecha)
-                ->selectRaw("
-                    COUNT(*) as total_hallazgos,
-                    SUM(CASE WHEN producto_id = 1 THEN 1 ELSE 0 END) as medias_canal_1,
-                    SUM(CASE WHEN producto_id = 2 THEN 1 ELSE 0 END) as medias_canal_2
-                ");
+            // Obtener animales procesados para la fecha
+            $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fechaFormato)->sum('cantidad_animales');
+            $mediasCanalTotal = $animalesProcesados > 0 ? $animalesProcesados * 2 : 0;
 
-            $tiposHallazgo = TipoHallazgo::all();
+            // Obtener estadísticas de hallazgos
+            $query = RegistroHallazgo::where('fecha_operacion', $fechaFormato);
+            
+            $stats = $query->selectRaw("
+                COUNT(*) as total_hallazgos,
+                SUM(CASE WHEN producto_id = 1 THEN 1 ELSE 0 END) as medias_canal_1,
+                SUM(CASE WHEN producto_id = 2 THEN 1 ELSE 0 END) as medias_canal_2
+            ")->first();
+
             $desgloseHallazgos = [];
             $dataIndicadores = [];
             $participacionTotal = 0;
 
+            // Obtener conteos por tipo de hallazgo
+            $tiposHallazgo = TipoHallazgo::all();
             foreach ($tiposHallazgo as $tipo) {
-                $alias = strtolower(str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tipo->nombre)));
-                $statsQuery->selectRaw("SUM(CASE WHEN tipo_hallazgo_id = ? THEN 1 ELSE 0 END) as {$alias}", [$tipo->id]);
-            }
-
-            $stats = $statsQuery->first();
-
-            foreach ($tiposHallazgo as $tipo) {
-                $alias = strtolower(str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tipo->nombre)));
-                $count = $stats->$alias ?? 0;
+                $count = RegistroHallazgo::where('fecha_operacion', $fechaFormato)
+                    ->where('tipo_hallazgo_id', $tipo->id)
+                    ->count();
+                
                 $desgloseHallazgos[$tipo->nombre] = $count;
 
-                $columnName = null;
-                $isMajorFinding = false;
-
-                switch (strtoupper($tipo->nombre)) {
-                    case 'COBERTURA DE GRASA':
-                        $columnName = 'cobertura_grasa';
-                        $isMajorFinding = true;
-                        break;
-                    case 'HEMATOMAS':
-                        $columnName = 'hematomas';
-                        $isMajorFinding = true;
-                        break;
-                    case 'CORTES EN LA PIERNA':
-                        $columnName = 'cortes_piernas';
-                        $isMajorFinding = true;
-                        break;
-                    case 'SOBREBARRIGA ROTA':
-                        $columnName = 'sobrebarriga_rota';
-                        $isMajorFinding = true;
-                        break;
-                }
-
-                if ($columnName) {
-                    $dataIndicadores[$columnName] = $count;
-                    if ($isMajorFinding && $mediasCanalTotal > 0) {
+                // Mapear tipos de hallazgo a columnas de indicadores
+                $tipoNombre = strtoupper($tipo->nombre);
+                
+                if (strpos($tipoNombre, 'COBERTURA') !== false && strpos($tipoNombre, 'GRASA') !== false) {
+                    $dataIndicadores['cobertura_grasa'] = $count;
+                    if ($mediasCanalTotal > 0) {
+                        $participacionTotal += ($count / $mediasCanalTotal);
+                    }
+                } elseif (strpos($tipoNombre, 'HEMATOMA') !== false) {
+                    $dataIndicadores['hematomas'] = $count;
+                    if ($mediasCanalTotal > 0) {
+                        $participacionTotal += ($count / $mediasCanalTotal);
+                    }
+                } elseif (strpos($tipoNombre, 'CORTE') !== false && strpos($tipoNombre, 'PIERNA') !== false) {
+                    $dataIndicadores['cortes_piernas'] = $count;
+                    if ($mediasCanalTotal > 0) {
+                        $participacionTotal += ($count / $mediasCanalTotal);
+                    }
+                } elseif (strpos($tipoNombre, 'SOBREBARRIGA') !== false && strpos($tipoNombre, 'ROTA') !== false) {
+                    $dataIndicadores['sobrebarriga_rota'] = $count;
+                    if ($mediasCanalTotal > 0) {
                         $participacionTotal += ($count / $mediasCanalTotal);
                     }
                 }
             }
-            
+
+            // Asegurar que todos los campos estén presentes
+            $dataIndicadores = array_merge([
+                'cobertura_grasa' => 0,
+                'hematomas' => 0,
+                'cortes_piernas' => 0,
+                'sobrebarriga_rota' => 0,
+            ], $dataIndicadores);
+
+            // Preparar datos finales
             $dataIndicadores = array_merge($dataIndicadores, [
+                'fecha_operacion' => $fechaFormato,
                 'animales_procesados' => $animalesProcesados,
                 'medias_canales_total' => $mediasCanalTotal,
                 'medias_canal_1' => $stats->medias_canal_1 ?? 0,
                 'medias_canal_2' => $stats->medias_canal_2 ?? 0,
                 'total_hallazgos' => $stats->total_hallazgos ?? 0,
-                'participacion_total' => round($participacionTotal * 100, 2),
+                'participacion_total' => $mediasCanalTotal > 0 ? round($participacionTotal * 100, 2) : 0,
                 'desglose_hallazgos' => json_encode($desgloseHallazgos),
-                'mes' => date('m', strtotime($fecha)),
-                'año' => date('Y', strtotime($fecha)),
+                'mes' => date('m', strtotime($fechaFormato)),
+                'año' => date('Y', strtotime($fechaFormato)),
             ]);
 
+            // Guardar o actualizar indicador
             IndicadorDiario::updateOrCreate(
-                ['fecha_operacion' => $fecha],
+                ['fecha_operacion' => $fechaFormato],
                 $dataIndicadores
             );
 
         } catch (\Exception $e) {
-            Log::error("Error al recalcular indicadores para la fecha {$fecha}: " . $e->getMessage());
+            Log::error("Error al recalcular indicadores para la fecha {$fecha}: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
         }
     }
 }

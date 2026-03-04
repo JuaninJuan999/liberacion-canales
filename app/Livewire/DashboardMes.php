@@ -14,11 +14,18 @@ class DashboardMes extends Component
     public $indicadoresMes;
     public $indicadoresDiarios = [];
     public $graficoDatos = [];
+
+    protected $listeners = ['hallazgo-registrado' => 'actualizarDespuesDeRegistro'];
     
     public function mount($mes = null, $anio = null)
     {
         $this->mes = $mes ?: Carbon::now()->month;
         $this->anio = $anio ?: Carbon::now()->year;
+        $this->cargarDatos();
+    }
+
+    public function actualizarDespuesDeRegistro()
+    {
         $this->cargarDatos();
     }
     
