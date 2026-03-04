@@ -7,6 +7,7 @@ use App\Models\RegistroHallazgo;
 use App\Models\AnimalProcesado;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -25,7 +26,7 @@ class DashboardController extends Controller
         // Consultas
         $indicadoresRango = IndicadorDiario::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])->get();
         $hallazgosRango = RegistroHallazgo::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])
-            ->with(['tipoHallazgo', 'producto', 'ubicacion', 'operario'])
+            ->with(['tipoHallazgo', 'producto', 'ubicacion', 'lado', 'operario', 'usuario', 'puestoTrabajo'])
             ->latest('created_at')
             ->get();
         
@@ -53,11 +54,8 @@ class DashboardController extends Controller
 
         $productosChartData = $hallazgosRango->groupBy('producto.nombre')->map(fn($item) => $item->count());
 
-        $puestosChartData = $hallazgosRango->map(function ($hallazgo) {
-            $operarioNombre = $hallazgo->operario ? $hallazgo->operario->nombre_completo : 'Sin asignar';
-            $tipoHallazgo = $hallazgo->tipoHallazgo->nombre ?? 'N/A';
-            return $operarioNombre . ' · ' . $tipoHallazgo;
-        })->countBy()->sortDesc();
+        // Hallazgos por operario y tipo (usando la lógica de obtenerOperarioResponsable)
+        $hallazgosPorOperarioYTipo = $this->calcularHallazgosPorOperarioYTipo($hallazgosRango);
         
         // Promedios del mes
         $indicadoresMes = IndicadorDiario::whereMonth('fecha_operacion', Carbon::parse($fecha_fin)->month)
@@ -79,7 +77,142 @@ class DashboardController extends Controller
             'hallazgosChartDataCanal1' => $hallazgosChartDataCanal1,
             'hallazgosChartDataCanal2' => $hallazgosChartDataCanal2,
             'productosChartData' => $productosChartData,
-            'puestosChartData' => $puestosChartData,
+            'hallazgosPorOperarioYTipo' => $hallazgosPorOperarioYTipo,
         ]);
+    }
+
+    /**
+     * Calcula hallazgos agrupados por operario y tipo usando la lógica de obtenerOperarioResponsable
+     */
+    private function calcularHallazgosPorOperarioYTipo($hallazgosRango)
+    {
+        $resultado = [];
+
+        foreach ($hallazgosRango as $registro) {
+            $operarioResponsable = $this->obtenerOperarioResponsable($registro);
+            $tipoHallazgo = $registro->tipoHallazgo->nombre ?? 'Desconocido';
+            $cantidad = $registro->cantidad ?? 1;
+
+            $clave = $operarioResponsable . ' | ' . $tipoHallazgo;
+
+            if (!isset($resultado[$clave])) {
+                $resultado[$clave] = 0;
+            }
+
+            $resultado[$clave] += $cantidad;
+        }
+
+        return collect($resultado)->sortDesc();
+    }
+
+    /**
+     * Obtiene el operario responsable basado en el tipo de hallazgo, ubicación, producto, etc.
+     * Copia de la lógica del HistorialRegistros
+     */
+    private function obtenerOperarioResponsable($registro)
+    {
+        $puestoTrabajoNombre = null;
+        $tipoHallazgo = strtoupper($registro->tipoHallazgo->nombre ?? '');
+        $producto = $registro->producto->nombre ?? '';
+        $lado = strtoupper($registro->lado->nombre ?? '');
+        $ubicacion = strtoupper($registro->ubicacion->nombre ?? '');
+
+        // Determinar la paridad (PAR o IMPAR)
+        $paridad = '';
+        if (in_array($lado, ['PAR', 'IMPAR'])) {
+            $paridad = $lado;
+        } elseif (is_numeric($registro->numero_canal)) {
+            $paridad = ($registro->numero_canal % 2 == 0) ? 'PAR' : 'IMPAR';
+        }
+
+        $esMediaCanal1 = strtoupper($producto) === 'MEDIA CANAL 1 LENGUA';
+        $esMediaCanal2 = strtoupper($producto) === 'MEDIA CANAL 2 COLA';
+
+        switch (true) {
+            // COBERTURA DE GRASA
+            case (str_contains($tipoHallazgo, 'COBERTURA') && str_contains($tipoHallazgo, 'GRASA')):
+                if ($esMediaCanal1) {
+                    if ($ubicacion === 'CADERA') {
+                        $puestoTrabajoNombre = 'CADERA 1';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'IMPAR') {
+                        $puestoTrabajoNombre = 'PRIMERA IMPAR';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'PAR') {
+                        $puestoTrabajoNombre = 'PRIMERA PAR';
+                    }
+                } elseif ($esMediaCanal2) {
+                    if ($ubicacion === 'CADERA') {
+                        $puestoTrabajoNombre = 'CADERA 2';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'IMPAR') {
+                        $puestoTrabajoNombre = 'SEGUNDA IMPAR';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'PAR') {
+                        $puestoTrabajoNombre = 'SEGUNDA PAR';
+                    }
+                }
+                break;
+
+            // CORTE EN PIERNA
+            case str_contains($tipoHallazgo, 'CORTE') && str_contains($tipoHallazgo, 'PIERNA'):
+                if ($esMediaCanal1) {
+                    $puestoTrabajoNombre = ($paridad === 'PAR') ? 'PRIMERA PAR' : 'PRIMERA IMPAR';
+                } elseif ($esMediaCanal2) {
+                    $puestoTrabajoNombre = ($paridad === 'PAR') ? 'SEGUNDA PAR' : 'SEGUNDA IMPAR';
+                }
+                break;
+
+            // SOBREBARRIGA ROTA
+            case str_contains($tipoHallazgo, 'SOBREBARRIGA'):
+                if ($esMediaCanal1) {
+                    $puestoTrabajoNombre = 'ZAPATA IZQUIERDA';
+                } elseif ($esMediaCanal2) {
+                    $puestoTrabajoNombre = 'ZAPATA DERECHA';
+                }
+                break;
+
+            // HEMATOMAS (cualquier variante)
+            case str_contains($tipoHallazgo, 'HEMATOMA'):
+                $puestoTrabajoNombre = 'LIMPIEZA SUPERIOR';
+                break;
+        }
+
+        if ($puestoTrabajoNombre) {
+            try {
+                $puestoTrabajo = DB::table('puestos_trabajo')
+                    ->whereRaw('UPPER(nombre) = ?', [strtoupper($puestoTrabajoNombre)])
+                    ->first();
+
+                if ($puestoTrabajo) {
+                    $fechaOperacion = !empty($registro->fecha_operacion) 
+                        ? Carbon::parse($registro->fecha_operacion) 
+                        : Carbon::parse($registro->created_at);
+                    
+                    $asignacion = DB::table('operarios_por_dia')
+                        ->where('puesto_trabajo_id', $puestoTrabajo->id)
+                        ->whereDate('fecha_operacion', $fechaOperacion->toDateString())
+                        ->first();
+
+                    if ($asignacion) {
+                        $operario = DB::table('operarios')
+                            ->where('id', $asignacion->operario_id)
+                            ->first();
+                        if ($operario) {
+                            return $operario->nombre;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log the exception for debugging
+            }
+        }
+        
+        if ($registro->operario_id) {
+            $operarioDirecto = DB::table('operarios')
+                ->where('id', $registro->operario_id)
+                ->first();
+            if ($operarioDirecto) {
+                return $operarioDirecto->nombre;
+            }
+        }
+
+        return 'Sin asignar';
     }
 }

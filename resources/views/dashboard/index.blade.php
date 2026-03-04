@@ -253,10 +253,10 @@
             new Chart(document.getElementById('puestosChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: {!! json_encode($puestosChartData->keys()) !!},
+                    labels: {!! json_encode($hallazgosPorOperarioYTipo->keys()) !!},
                     datasets: [{
                         label: 'Hallazgos',
-                        data: {!! json_encode($puestosChartData->values()) !!},
+                        data: {!! json_encode($hallazgosPorOperarioYTipo->values()) !!},
                         backgroundColor: colores,
                     }]
                 },
