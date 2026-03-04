@@ -124,12 +124,7 @@ class HistorialRegistros extends Component
     {
         return RegistroHallazgo::query()
             ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario', 'usuario', 'ubicacion', 'lado'])
-            ->when($this->fecha_inicio, function($query) {
-                $query->whereDate('registros_hallazgos.fecha_operacion', '>=', $this->fecha_inicio);
-            })
-            ->when($this->fecha_fin, function($query) {
-                $query->whereDate('registros_hallazgos.fecha_operacion', '<=', $this->fecha_fin);
-            })
+            ->porRangoFechasConTurno($this->fecha_inicio, $this->fecha_fin)
             ->when($this->producto_id, function($query) {
                 $query->where('registros_hallazgos.producto_id', $this->producto_id);
             })

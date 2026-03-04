@@ -23,9 +23,9 @@ class DashboardController extends Controller
         $fecha_inicio = $request->get('fecha_inicio', $hoy);
         $fecha_fin = $request->get('fecha_fin', $hoy);
 
-        // Consultas
+        // Consultas - Usar el scope que considera el turno de 12 PM a 7 AM
         $indicadoresRango = IndicadorDiario::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])->get();
-        $hallazgosRango = RegistroHallazgo::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])
+        $hallazgosRango = RegistroHallazgo::porRangoFechasConTurno($fecha_inicio, $fecha_fin)
             ->with(['tipoHallazgo', 'producto', 'ubicacion', 'lado', 'operario', 'usuario', 'puestoTrabajo'])
             ->latest('created_at')
             ->get();

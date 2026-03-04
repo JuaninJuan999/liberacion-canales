@@ -123,6 +123,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             @if(isset($chartData) && $indicadores->count() > 0)
             const chartData = @json($chartData);
+            
             if (typeof window.initDashboardCharts === 'function') {
                 window.initDashboardCharts(chartData);
             }

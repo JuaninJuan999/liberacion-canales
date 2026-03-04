@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class RegistroHallazgo extends Model
 {
@@ -67,6 +68,26 @@ class RegistroHallazgo extends Model
         return $this->belongsTo(User::class, 'usuario_id');
     }
 
+    /**
+     * Calcula la fecha efectiva de operación considerando el turno de 12 PM a 7 AM
+     * Si se registra entre 00:00-06:59, cuenta como del día anterior
+     * 
+     * @return Carbon
+     */
+    public function getFechaOperacionEfectiva(): Carbon
+    {
+        $horaCreacion = Carbon::parse($this->created_at);
+        $horaEnMinutos = $horaCreacion->hour * 60 + $horaCreacion->minute;
+        
+        // 7 AM = 420 minutos, 12 PM = 720 minutos
+        // Si la hora está entre 00:00 (0 mins) y 06:59 (419 mins), resta un día
+        if ($horaEnMinutos < 420) { // Antes de las 7:00 AM
+            return Carbon::parse($this->fecha_operacion)->subDay();
+        }
+        
+        return Carbon::parse($this->fecha_operacion);
+    }
+
     // Scopes para filtros
     public function scopePorFecha($query, $fecha)
     {
@@ -76,5 +97,52 @@ class RegistroHallazgo extends Model
     public function scopePorRangoFechas($query, $fechaInicio, $fechaFin)
     {
         return $query->whereBetween('fecha_operacion', [$fechaInicio, $fechaFin]);
+    }
+
+    /**
+     * Scope para filtrar por fecha considerando el turno de 12 PM a 7 AM
+     * Los registros hechos entre 00:00-06:59 se consideran del día anterior
+     */
+    public function scopePorFechaConTurno($query, $fecha)
+    {
+        $fechaCarbon = Carbon::parse($fecha);
+        $fechaSiguiente = $fechaCarbon->clone()->addDay();
+        
+        // Registros hechos entre 12 PM y 23:59 un día
+        // O registros hechos entre 00:00 y 06:59 del siguiente día (que cuentan para el día anterior)
+        return $query->where(function($q) use ($fechaCarbon, $fechaSiguiente) {
+            $q->whereDate('fecha_operacion', $fechaCarbon)
+              ->where(function($subQ) {
+                  $subQ->whereRaw('HOUR(created_at) >= 12')
+                        ->orWhereRaw('HOUR(created_at) < 7');
+              })
+              ->orWhere(function($subQ) use ($fechaSiguiente) {
+                  $subQ->whereDate('fecha_operacion', $fechaSiguiente)
+                        ->whereRaw('HOUR(created_at) < 7');
+              });
+        });
+    }
+
+    /**
+     * Scope para filtrar por rango de fechas considerando el turno de 12 PM a 7 AM
+     */
+    public function scopePorRangoFechasConTurno($query, $fechaInicio, $fechaFin)
+    {
+        $inicio = Carbon::parse($fechaInicio);
+        $fin = Carbon::parse($fechaFin);
+        
+        return $query->where(function($q) use ($inicio, $fin) {
+            // Registros hechos entre 12 PM y 23:59 en el rango de fechas
+            $q->whereBetween('fecha_operacion', [$inicio, $fin])
+              ->where(function($subQ) {
+                  $subQ->whereRaw('HOUR(created_at) >= 12')
+                        ->orWhereRaw('HOUR(created_at) < 7');
+              })
+              // O registros hechos entre 00:00 y 06:59 del siguiente día
+              ->orWhere(function($subQ) use ($inicio, $fin) {
+                  $subQ->whereBetween('fecha_operacion', [$inicio->clone()->addDay(), $fin->clone()->addDay()])
+                        ->whereRaw('HOUR(created_at) < 7');
+              });
+        });
     }
 }

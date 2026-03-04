@@ -13,36 +13,48 @@ class RegistroHallazgoObserver
 {
     public function created(RegistroHallazgo $registroHallazgo): void
     {
-        $this->recalcularIndicadores($registroHallazgo->fecha_operacion);
+        // Recalcular para la fecha efectiva del turno
+        $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
+        $this->recalcularIndicadores($fechaEfectiva);
     }
 
     public function updated(RegistroHallazgo $registroHallazgo): void
     {
-        $this->recalcularIndicadores($registroHallazgo->fecha_operacion);
+        // Recalcular para la fecha efectiva del turno
+        $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
+        $this->recalcularIndicadores($fechaEfectiva);
+        
         if ($registroHallazgo->isDirty('fecha_operacion')) {
-            $this->recalcularIndicadores($registroHallazgo->getOriginal('fecha_operacion'));
+            $fechaAnterior = $registroHallazgo->getOriginal('fecha_operacion');
+            // Crear un objeto temporal para obtener la fecha efectiva anterior
+            $registroTemp = new RegistroHallazgo(['created_at' => $fechaAnterior]);
+            $fechaAnteriorEfectiva = $registroTemp->getFechaOperacionEfectiva();
+            $this->recalcularIndicadores($fechaAnteriorEfectiva);
         }
     }
 
     public function deleted(RegistroHallazgo $registroHallazgo): void
     {
-        $this->recalcularIndicadores($registroHallazgo->fecha_operacion);
+        // Recalcular para la fecha efectiva del turno
+        $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
+        $this->recalcularIndicadores($fechaEfectiva);
     }
 
-    protected function recalcularIndicadores($fecha)
+    protected function recalcularIndicadores($fechaOperacionEfectiva)
     {
         try {
             // Convertir fecha a formato Y-m-d si es necesario
-            $fechaFormato = is_string($fecha) 
-                ? $fecha 
-                : $fecha->format('Y-m-d');
+            $fechaFormato = is_string($fechaOperacionEfectiva) 
+                ? $fechaOperacionEfectiva 
+                : $fechaOperacionEfectiva->format('Y-m-d');
 
-            // Obtener animales procesados para la fecha
+            // Obtener animales procesados para la fecha efectiva
+            // AnimalProcesado usa fecha_operacion directamente
             $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fechaFormato)->sum('cantidad_animales');
             $mediasCanalTotal = $animalesProcesados > 0 ? $animalesProcesados * 2 : 0;
 
-            // Obtener estadísticas de hallazgos
-            $query = RegistroHallazgo::where('fecha_operacion', $fechaFormato);
+            // Obtener estadísticas de hallazgos usando el scope de turno
+            $query = RegistroHallazgo::porFechaConTurno($fechaFormato);
             
             $stats = $query->selectRaw("
                 COUNT(*) as total_hallazgos,
@@ -57,7 +69,7 @@ class RegistroHallazgoObserver
             // Obtener conteos por tipo de hallazgo
             $tiposHallazgo = TipoHallazgo::all();
             foreach ($tiposHallazgo as $tipo) {
-                $count = RegistroHallazgo::where('fecha_operacion', $fechaFormato)
+                $count = RegistroHallazgo::porFechaConTurno($fechaFormato)
                     ->where('tipo_hallazgo_id', $tipo->id)
                     ->count();
                 
