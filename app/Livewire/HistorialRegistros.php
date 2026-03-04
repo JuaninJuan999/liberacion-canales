@@ -149,66 +149,88 @@ class HistorialRegistros extends Component
     public function obtenerOperarioResponsable($registro)
     {
         $puestoTrabajoNombre = null;
-        $tipoHallazgo = $registro->tipoHallazgo->nombre ?? '';
+        $tipoHallazgo = strtoupper($registro->tipoHallazgo->nombre ?? '');
         $producto = $registro->producto->nombre ?? '';
-        $lado = $registro->lado->nombre ?? '';
-        $ubicacion = $registro->ubicacion->nombre ?? '';
+        $lado = strtoupper($registro->lado->nombre ?? '');
+        $ubicacion = strtoupper($registro->ubicacion->nombre ?? '');
 
+        // Determinar la paridad (PAR o IMPAR)
         $paridad = '';
-        if (!empty($lado) && in_array(strtolower($lado), ['par', 'impar'])) {
-            $paridad = ucfirst(strtolower($lado));
+        if (in_array($lado, ['PAR', 'IMPAR'])) {
+            $paridad = $lado;
         } elseif (is_numeric($registro->numero_canal)) {
-            $paridad = ($registro->numero_canal % 2 == 0) ? 'Par' : 'Impar';
+            $paridad = ($registro->numero_canal % 2 == 0) ? 'PAR' : 'IMPAR';
         }
 
-        $esCorteEnPierna = str_contains(strtoupper($tipoHallazgo), 'CORTE EN PIERNA');
-        $esCoberturaDeGrasa = strtoupper($tipoHallazgo) === 'COBERTURA DE GRASA';
+        $esMediaCanal1 = strtoupper($producto) === 'MEDIA CANAL 1 LENGUA';
+        $esMediaCanal2 = strtoupper($producto) === 'MEDIA CANAL 2 COLA';
 
         switch (true) {
-            case ($esCorteEnPierna && $producto === 'Media Canal 1 Lengua'):
-                $puestoTrabajoNombre = ($paridad === 'Par') ? 'PRIMERA PAR' : 'PRIMERA IMPAR';
-                break;
-            case ($esCorteEnPierna && $producto === 'Media Canal 2 Cola'):
-                $puestoTrabajoNombre = ($paridad === 'Par') ? 'SEGUNDA PAR' : 'SEGUNDA IMPAR';
-                break;
-            case (strtoupper($tipoHallazgo) === 'SOBREBARRIGA ROTA' && $producto === 'Media Canal 1 Lengua'):
-                $puestoTrabajoNombre = 'ZAPATA IZQUIERDA';
-                break;
-            case (strtoupper($tipoHallazgo) === 'SOBREBARRIGA ROTA' && $producto === 'Media Canal 2 Cola'):
-                $puestoTrabajoNombre = 'ZAPATA DERECHA';
-                break;
-            case ($esCoberturaDeGrasa):
-                $esUbicacionCadera = strtolower($ubicacion) === 'cadera';
-                $esUbicacionPierna = strtolower($ubicacion) === 'pierna';
-
-                if ($producto === 'Media Canal 1 Lengua') {
-                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Par')) {
+            // COBERTURA DE GRASA
+            case (str_contains($tipoHallazgo, 'COBERTURA') && str_contains($tipoHallazgo, 'GRASA')):
+                if ($esMediaCanal1) {
+                    if ($ubicacion === 'CADERA') {
                         $puestoTrabajoNombre = 'CADERA 1';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'IMPAR') {
+                        $puestoTrabajoNombre = 'PRIMERA IMPAR';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'PAR') {
+                        $puestoTrabajoNombre = 'PRIMERA PAR';
                     }
-                } elseif ($producto === 'Media Canal 2 Cola') {
-                    if ($esUbicacionCadera || ($esUbicacionPierna && $paridad === 'Impar')) {
+                } elseif ($esMediaCanal2) {
+                    if ($ubicacion === 'CADERA') {
                         $puestoTrabajoNombre = 'CADERA 2';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'IMPAR') {
+                        $puestoTrabajoNombre = 'SEGUNDA IMPAR';
+                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'PAR') {
+                        $puestoTrabajoNombre = 'SEGUNDA PAR';
                     }
                 }
                 break;
-            case (strtoupper($tipoHallazgo) === 'HEMATOMAS'):
+
+            // CORTE EN PIERNA
+            case str_contains($tipoHallazgo, 'CORTE') && str_contains($tipoHallazgo, 'PIERNA'):
+                if ($esMediaCanal1) {
+                    $puestoTrabajoNombre = ($paridad === 'PAR') ? 'PRIMERA PAR' : 'PRIMERA IMPAR';
+                } elseif ($esMediaCanal2) {
+                    $puestoTrabajoNombre = ($paridad === 'PAR') ? 'SEGUNDA PAR' : 'SEGUNDA IMPAR';
+                }
+                break;
+
+            // SOBREBARRIGA ROTA
+            case str_contains($tipoHallazgo, 'SOBREBARRIGA'):
+                if ($esMediaCanal1) {
+                    $puestoTrabajoNombre = 'ZAPATA IZQUIERDA';
+                } elseif ($esMediaCanal2) {
+                    $puestoTrabajoNombre = 'ZAPATA DERECHA';
+                }
+                break;
+
+            // HEMATOMAS (cualquier variante)
+            case str_contains($tipoHallazgo, 'HEMATOMA'):
                 $puestoTrabajoNombre = 'LIMPIEZA SUPERIOR';
                 break;
         }
 
         if ($puestoTrabajoNombre) {
             try {
-                $puestoTrabajo = DB::table('puestos_trabajo')->whereRaw('UPPER(nombre) = ?', [strtoupper($puestoTrabajoNombre)])->first();
+                $puestoTrabajo = DB::table('puestos_trabajo')
+                    ->whereRaw('UPPER(nombre) = ?', [strtoupper($puestoTrabajoNombre)])
+                    ->first();
 
                 if ($puestoTrabajo) {
-                    $fechaOperacion = !empty($registro->fecha_operacion) ? Carbon::parse($registro->fecha_operacion) : Carbon::parse($registro->created_at);
+                    $fechaOperacion = !empty($registro->fecha_operacion) 
+                        ? Carbon::parse($registro->fecha_operacion) 
+                        : Carbon::parse($registro->created_at);
+                    
                     $asignacion = DB::table('operarios_por_dia')
                         ->where('puesto_trabajo_id', $puestoTrabajo->id)
                         ->whereDate('fecha_operacion', $fechaOperacion->toDateString())
                         ->first();
 
                     if ($asignacion) {
-                        $operario = DB::table('operarios')->where('id', $asignacion->operario_id)->first();
+                        $operario = DB::table('operarios')
+                            ->where('id', $asignacion->operario_id)
+                            ->first();
                         if ($operario) {
                             return $operario->nombre;
                         }
@@ -220,8 +242,10 @@ class HistorialRegistros extends Component
         }
         
         if ($registro->operario_id) {
-            $operarioDirecto = DB::table('operarios')->where('id', $registro->operario_id)->first();
-            if($operarioDirecto) {
+            $operarioDirecto = DB::table('operarios')
+                ->where('id', $registro->operario_id)
+                ->first();
+            if ($operarioDirecto) {
                 return $operarioDirecto->nombre;
             }
         }
