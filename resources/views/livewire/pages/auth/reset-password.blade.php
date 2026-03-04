@@ -70,36 +70,81 @@ new #[Layout('layouts.guest')] class extends Component
 }; ?>
 
 <div>
-    <form wire:submit="resetPassword">
+    <form wire:submit="resetPassword" class="space-y-5">
         <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="form-group">
+            <label for="email" class="form-label">
+                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                </svg>
+                Correo Electrónico
+            </label>
+            <input wire:model="email" 
+                   id="email" 
+                   class="form-input" 
+                   type="email" 
+                   name="email" 
+                   placeholder="tu@ejemplo.com"
+                   required 
+                   autofocus 
+                   autocomplete="username" />
+            @error('email')
+                <div class="error-message">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input wire:model="password" id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div class="form-group">
+            <label for="password" class="form-label">
+                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                </svg>
+                Nueva Contraseña
+            </label>
+            <input wire:model="password" 
+                   id="password" 
+                   class="form-input" 
+                   type="password" 
+                   name="password" 
+                   placeholder="••••••••"
+                   required 
+                   autocomplete="new-password" />
+            @error('password')
+                <div class="error-message">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
-                          type="password"
-                          name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+        <div class="form-group">
+            <label for="password_confirmation" class="form-label">
+                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                </svg>
+                Confirmar Contraseña
+            </label>
+            <input wire:model="password_confirmation" 
+                   id="password_confirmation" 
+                   class="form-input"
+                   type="password"
+                   name="password_confirmation" 
+                   placeholder="••••••••"
+                   required 
+                   autocomplete="new-password" />
+            @error('password_confirmation')
+                <div class="error-message">{{ $message }}</div>
+            @enderror
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
+        <button type="submit" class="login-button">
+            Restablecer Contraseña
+        </button>
+
+        <!-- Link to Login -->
+        <div class="text-center pt-4 border-t border-gray-200">
+            <a href="{{ route('login') }}" wire:navigate class="text-gray-500 text-sm hover:text-gray-700">
+                Volver al inicio de sesión
+            </a>
         </div>
     </form>
 </div>

@@ -37,25 +37,50 @@ new #[Layout('layouts.guest')] class extends Component
 }; ?>
 
 <div>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+    <div class="mb-6 text-sm text-gray-600 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-300">
+        <strong>Recuperar Contraseña</strong><br>
+        Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
     </div>
 
     <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+        <div class="status-message">
+            {{ session('status') }}
+        </div>
+    @endif
 
-    <form wire:submit="sendPasswordResetLink">
+    <form wire:submit="sendPasswordResetLink" class="space-y-5">
         <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="form-group">
+            <label for="email" class="form-label">
+                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                </svg>
+                Correo Electrónico
+            </label>
+            <input wire:model="email" 
+                   id="email" 
+                   class="form-input" 
+                   type="email" 
+                   name="email" 
+                   placeholder="tu@ejemplo.com"
+                   required 
+                   autofocus />
+            @error('email')
+                <div class="error-message">{{ $message }}</div>
+            @enderror
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
+        <button type="submit" class="login-button">
+            Enviar Enlace de Recuperación
+        </button>
+
+        <!-- Link to Login -->
+        <div class="text-center pt-4 border-t border-gray-200">
+            <a href="{{ route('login') }}" wire:navigate class="text-gray-500 text-sm hover:text-gray-700">
+                Volver al inicio de sesión
+            </a>
         </div>
     </form>
 </div>

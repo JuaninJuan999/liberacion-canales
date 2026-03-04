@@ -26,28 +26,58 @@ new #[Layout('layouts.guest')] class extends Component
 
 <div>
     <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+        <div class="status-message">
+            {{ session('status') }}
+        </div>
+    @endif
 
-    <form wire:submit="login">
+    <form wire:submit="login" class="space-y-5">
         <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="form.email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('form.email')" class="mt-2" />
+        <div class="form-group">
+            <label for="email" class="form-label">
+                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                </svg>
+                Correo Electrónico
+            </label>
+            <input wire:model="form.email" 
+                   id="email" 
+                   class="form-input" 
+                   type="email" 
+                   name="email" 
+                   placeholder="tu@ejemplo.com"
+                   required 
+                   autofocus 
+                   autocomplete="username" />
+            @error('form.email')
+                <div class="error-message">{{ $message }}</div>
+            @enderror
         </div>
 
         <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <div class="form-group">
+            <label for="password" class="form-label">
+                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                </svg>
+                Contraseña
+            </label>
 
-            <div class="relative">
-                <x-text-input wire:model="form.password" id="password" class="block mt-1 w-full pr-10"
-                                type="password"
-                                name="password"
-                                required autocomplete="current-password" />
+            <div class="password-input-wrapper">
+                <input wire:model="form.password" 
+                       id="password" 
+                       class="form-input w-full" 
+                       type="password"
+                       name="password"
+                       placeholder="••••••••"
+                       required 
+                       autocomplete="current-password" />
                 <button type="button" 
                         onclick="togglePasswordVisibility()" 
-                        class="absolute right-3 top-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+                        class="eye-toggle-btn"
+                        title="Mostrar/Ocultar contraseña">
                     <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -55,7 +85,9 @@ new #[Layout('layouts.guest')] class extends Component
                 </button>
             </div>
 
-            <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
+            @error('form.password')
+                <div class="error-message">{{ $message }}</div>
+            @enderror
         </div>
 
         <script>
@@ -74,23 +106,39 @@ new #[Layout('layouts.guest')] class extends Component
         </script>
 
         <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember" class="inline-flex items-center">
-                <input wire:model="form.remember" id="remember" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
+        <div class="remember-me-container">
+            <input wire:model="form.remember" 
+                   id="remember" 
+                   type="checkbox" 
+                   name="remember">
+            <label for="remember">Recuérdame en este dispositivo</label>
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <!-- Login Button -->
+        <button type="submit" class="login-button">
+            Iniciar Sesión
+        </button>
+
+        <!-- Links -->
+        <div class="text-center pt-4 border-t border-gray-200">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}" wire:navigate>
-                    {{ __('Forgot your password?') }}
-                </a>
+                <div class="forgot-password-link">
+                    <a href="{{ route('password.request') }}" wire:navigate>
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
             @endif
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
+            @if (Route::has('register'))
+                <div class="forgot-password-link mt-3">
+                    <span class="text-gray-500 text-sm">
+                        ¿No tienes cuenta?
+                        <a href="{{ route('register') }}" wire:navigate class="font-semibold">
+                            Regístrate aquí
+                        </a>
+                    </span>
+                </div>
+            @endif
         </div>
     </form>
 </div>
