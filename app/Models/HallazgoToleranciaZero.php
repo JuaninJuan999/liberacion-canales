@@ -16,6 +16,7 @@ class HallazgoToleranciaZero extends Model
         'codigo',
         'producto_id',
         'tipo_hallazgo_id',
+        'ubicacion_id',
         'usuario_id',
         'observacion',
     ];
@@ -34,6 +35,11 @@ class HallazgoToleranciaZero extends Model
     public function tipoHallazgo(): BelongsTo
     {
         return $this->belongsTo(TipoHallazgo::class, 'tipo_hallazgo_id');
+    }
+
+    public function ubicacion(): BelongsTo
+    {
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_id');
     }
 
     public function usuario(): BelongsTo

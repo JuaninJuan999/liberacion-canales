@@ -15,82 +15,87 @@
         @endif
 
         <form wire:submit="registrar" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {{-- Campo: Código del Canal --}}
-                <div>
-                    <label for="codigo" class="block text-sm font-semibold text-gray-700 mb-2">
-                        📦 Código del Canal<span class="text-red-500">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="codigo"
-                        wire:model.blur="codigo"
-                        placeholder="Ej: CANA-001"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
-                        required
-                    >
-                    @error('codigo') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
-                </div>
-
-                {{-- Campo: Cuarto (Anterior/Posterior) --}}
-                <div>
-                    <label for="producto_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                        🥩 Cuarto<span class="text-red-500">*</span>
-                    </label>
-                    <select 
-                        id="producto_id"
-                        wire:model.live="producto_id"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition cursor-pointer"
-                        required
-                    >
-                        <option value="">-- Selecciona un cuarto --</option>
-                        @foreach($productos as $producto)
-                            <option value="{{ $producto['id'] }}">{{ $producto['nombre'] }}</option>
-                        @endforeach
-                    </select>
-                    @error('producto_id') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
-                    @if($nombreProductoSeleccionado)
-                        <p class="text-sm text-blue-600 mt-2">✓ {{ $nombreProductoSeleccionado }} seleccionado</p>
-                    @endif
-                </div>
-
-                {{-- Campo: Tipo de Hallazgo --}}
-                <div>
-                    <label for="tipo_hallazgo_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                        ⚠️ Tipo de Hallazgo<span class="text-red-500">*</span>
-                    </label>
-                    <select 
-                        id="tipo_hallazgo_id"
-                        wire:model.live="tipo_hallazgo_id"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition cursor-pointer"
-                        required
-                    >
-                        <option value="">-- Selecciona un tipo --</option>
-                        @foreach($tiposHallazgo as $tipo)
-                            <option value="{{ $tipo['id'] }}">{{ $tipo['nombre'] }}</option>
-                        @endforeach
-                    </select>
-                    @error('tipo_hallazgo_id') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
-                    @if($nombreTipoSeleccionado)
-                        <p class="text-sm text-blue-600 mt-2">✓ {{ $nombreTipoSeleccionado }} seleccionado</p>
-                    @endif
-                </div>
-
-                {{-- Campo: Observación (Opcional) --}}
-                <div>
-                    <label for="observacion" class="block text-sm font-semibold text-gray-700 mb-2">
-                        📝 Observación (Opcional)
-                    </label>
-                    <textarea 
-                        id="observacion"
-                        wire:model="observacion"
-                        placeholder="Detalles adicionales..."
-                        rows="2"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition resize-none"
-                    ></textarea>
-                    @error('observacion') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
-                </div>
+            {{-- Código del Canal --}}
+            <div>
+                <label for="codigo" class="block text-sm font-semibold text-gray-700 mb-2">
+                    📦 Código del Canal<span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="codigo"
+                    wire:model.blur="codigo"
+                    placeholder="Ej: CANA-001"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+                    required
+                >
+                @error('codigo') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
             </div>
+
+            {{-- Cuarto (Anterior/Posterior) --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    🥩 Cuarto<span class="text-red-500">*</span>
+                </label>
+                <div class="flex space-x-2">
+                    @foreach($productos as $producto)
+                        <button type="button"
+                                wire:click="$set('producto_id', {{ $producto->id }})"
+                                class="flex-1 px-4 py-3 border rounded-md text-center font-semibold transition-colors duration-200 ease-in-out
+                                       {{ $producto_id == $producto->id 
+                                            ? 'bg-red-600 text-white border-red-600' 
+                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                            {{ $producto->nombre }}
+                        </button>
+                    @endforeach
+                </div>
+                @error('producto_id') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                @if($nombreProductoSeleccionado)
+                    <p class="text-sm text-blue-600 mt-2">✓ {{ $nombreProductoSeleccionado }} seleccionado</p>
+                @endif
+            </div>
+
+            <div>
+                {{-- Campo: Tipo de Hallazgo --}}
+                <label for="tipo_hallazgo_id" class="block text-sm font-semibold text-gray-700 mb-2">
+                    ⚠️ Tipo de Hallazgo<span class="text-red-500">*</span>
+                </label>
+                <select 
+                    id="tipo_hallazgo_id"
+                    wire:model.live="tipo_hallazgo_id"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition cursor-pointer"
+                    required
+                >
+                    <option value="">-- Selecciona un tipo --</option>
+                    @foreach($tiposHallazgo as $tipo)
+                        <option value="{{ $tipo['id'] }}">{{ $tipo['nombre'] }}</option>
+                    @endforeach
+                </select>
+                @error('tipo_hallazgo_id') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                @if($nombreTipoSeleccionado)
+                    <p class="text-sm text-blue-600 mt-2">✓ {{ $nombreTipoSeleccionado }} seleccionado</p>
+                @endif
+            </div>
+
+            {{-- Campo Condicional: Ubicación --}}
+            @if($mostrarUbicacion)
+                <div class="transition-all duration-300 ease-in-out">
+                    <label for="ubicacion_id" class="block text-sm font-semibold text-gray-700 mb-2">
+                        📍 Ubicación Específica <span class="text-red-500">*</span>
+                    </label>
+                    <select 
+                        id="ubicacion_id"
+                        wire:model.live="ubicacion_id"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition cursor-pointer"
+                        required
+                    >
+                        <option value="">-- Selecciona una ubicación --</option>
+                        @foreach($ubicacionesDisponibles as $ubicacion)
+                            <option value="{{ $ubicacion->id }}">{{ $ubicacion->nombre }}</option>
+                        @endforeach
+                    </select>
+                    @error('ubicacion_id') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                </div>
+            @endif
 
             {{-- Botones --}}
             <div class="flex gap-3 justify-end pt-4 border-t border-gray-200">

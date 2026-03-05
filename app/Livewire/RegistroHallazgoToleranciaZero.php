@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\HallazgoToleranciaZero;
 use App\Models\TipoHallazgo;
 use App\Models\Producto;
+use App\Models\Ubicacion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,7 @@ class RegistroHallazgoToleranciaZero extends Component
     public $codigo;
     public $producto_id;
     public $tipo_hallazgo_id;
-    public $observacion;
+    public $ubicacion_id;
 
     // Complementary Data
     public $fecha_actual;
@@ -26,9 +27,11 @@ class RegistroHallazgoToleranciaZero extends Component
     // Collections for Selects
     public $productos = [];
     public $tiposHallazgo = [];
+    public $ubicaciones = [];
+    public $ubicacionesDisponibles = [];
 
     // Control Flags
-    public $mostrarObservacion = false;
+    public $mostrarUbicacion = false;
 
     // Messages
     public $mensaje = '';
@@ -39,17 +42,23 @@ class RegistroHallazgoToleranciaZero extends Component
         'codigo.required' => 'Debe ingresar el código del canal.',
         'producto_id.required' => 'Debe seleccionar el cuarto (Anterior o Posterior).',
         'tipo_hallazgo_id.required' => 'Debe seleccionar el tipo de hallazgo.',
+        'ubicacion_id.required' => 'Debe seleccionar la ubicación específica.',
     ];
 
     // Validation Rules
     protected function rules()
     {
-        return [
+        $rules = [
             'codigo' => 'required|string|max:50',
             'producto_id' => 'required|exists:productos,id',
             'tipo_hallazgo_id' => 'required|exists:tipos_hallazgo,id',
-            'observacion' => 'nullable|string|max:500',
         ];
+
+        if ($this->mostrarUbicacion) {
+            $rules['ubicacion_id'] = 'required|exists:ubicaciones,id';
+        }
+
+        return $rules;
     }
 
     public function mount()
@@ -65,8 +74,7 @@ class RegistroHallazgoToleranciaZero extends Component
         $this->productos = Producto::whereIn('nombre', ['CUARTO ANTERIOR', 'CUARTO POSTERIOR'])
             ->where('activo', true)
             ->orderBy('nombre')
-            ->get()
-            ->toArray();
+            ->get();
 
         // Cargar solo los tipos de hallazgo para tolerancia cero
         $this->tiposHallazgo = TipoHallazgo::whereIn('nombre', [
@@ -77,27 +85,109 @@ class RegistroHallazgoToleranciaZero extends Component
             ->orderBy('nombre')
             ->get()
             ->toArray();
+
+        // Cargar todas las ubicaciones
+        $this->ubicaciones = Ubicacion::orderBy('nombre')->get();
     }
 
     public function updatedProductoId()
     {
+        $this->reset(['ubicacion_id']);
+        $this->mostrarUbicacion = false;
+        
         if ($this->producto_id) {
             $producto = Producto::find($this->producto_id);
             $this->nombreProductoSeleccionado = $producto?->nombre ?? '';
+            $this->actualizarUbicacionesDisponibles();
         }
     }
 
     public function updatedTipoHallazgoId()
     {
+        $this->reset(['ubicacion_id']);
+        $this->mostrarUbicacion = false;
+        
         if ($this->tipo_hallazgo_id) {
             $tipoHallazgo = TipoHallazgo::find($this->tipo_hallazgo_id);
             $this->nombreTipoSeleccionado = $tipoHallazgo?->nombre ?? '';
+            $this->actualizarUbicacionesDisponibles();
+        }
+    }
+
+    private function actualizarUbicacionesDisponibles()
+    {
+        if (!$this->producto_id || !$this->tipo_hallazgo_id) {
+            $this->mostrarUbicacion = false;
+            $this->ubicacionesDisponibles = [];
+            return;
+        }
+
+        // Obtener nombres de producto y tipo de hallazgo
+        $producto = Producto::find($this->producto_id);
+        $tipoHallazgo = TipoHallazgo::find($this->tipo_hallazgo_id);
+
+        if (!$producto || !$tipoHallazgo) {
+            $this->mostrarUbicacion = false;
+            $this->ubicacionesDisponibles = [];
+            return;
+        }
+
+        $nombreProducto = trim($producto->nombre);
+        $nombreTipo = trim($tipoHallazgo->nombre);
+
+        // Definir ubicaciones permitidas según combinación de producto y tipo
+        $nombresUbicacionesPermitidas = [];
+
+        // CUARTO ANTERIOR + CONTENIDO RUMINAL → CLIPADO DE ESOFAGO - EVISERADO DE BLANCAS - CORTE DE ESTERNON
+        if ($nombreProducto === 'CUARTO ANTERIOR' && $nombreTipo === 'CONTENIDO RUMINAL') {
+            $nombresUbicacionesPermitidas = [
+                'CLIPADO DE ESOFAGO',
+                'EVISERADO DE BLANCAS',
+                'CORTE DE ESTERNON'
+            ];
+        }
+        // CUARTO POSTERIOR + MATERIA FECAL → CORTE DE PATAS - MANIPULACION - CHOQUE DE CANAL - DESPEJE DE RECTO
+        elseif ($nombreProducto === 'CUARTO POSTERIOR' && $nombreTipo === 'MATERIA FECAL') {
+            $nombresUbicacionesPermitidas = [
+                'CORTE DE PATAS',
+                'MANIPULACION',
+                'CHOQUE DE CANAL',
+                'DESPEJE DE RECTO'
+            ];
+        }
+        // CUARTO ANTERIOR + MATERIA FECAL → RAYADO DE PECHO - DESUELLO DE MANOS - DESOLLADORA
+        elseif ($nombreProducto === 'CUARTO ANTERIOR' && $nombreTipo === 'MATERIA FECAL') {
+            $nombresUbicacionesPermitidas = [
+                'RAYADO DE PECHO',
+                'DESUELLO DE MANOS',
+                'DESOLLADORA'
+            ];
+        }
+        // CUARTO ANTERIOR/POSTERIOR + LECHE VISIBLE → Sin ubicaciones específicas
+        elseif ($nombreTipo === 'LECHE VISIBLE') {
+            $this->mostrarUbicacion = false;
+            $this->ubicacionesDisponibles = [];
+            return;
+        }
+
+        // Si hay ubicaciones permitidas, buscarlas y mostrar el campo
+        if (!empty($nombresUbicacionesPermitidas)) {
+            $this->ubicacionesDisponibles = $this->ubicaciones
+                ->whereIn('nombre', $nombresUbicacionesPermitidas)
+                ->values()
+                ->all();
+
+            $this->mostrarUbicacion = true;
+        } else {
+            $this->mostrarUbicacion = false;
+            $this->ubicacionesDisponibles = [];
         }
     }
 
     public function registrar()
     {
         $this->validate();
+
 
         try {
             $fechaOperacion = Carbon::now();
@@ -113,8 +203,8 @@ class RegistroHallazgoToleranciaZero extends Component
                 'codigo' => strtoupper($this->codigo),
                 'producto_id' => $this->producto_id,
                 'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
+                'ubicacion_id' => $this->ubicacion_id ?? null,
                 'usuario_id' => Auth::id(),
-                'observacion' => $this->observacion,
             ]);
 
             // Actualizar indicadores del día
@@ -182,9 +272,11 @@ class RegistroHallazgoToleranciaZero extends Component
         $this->codigo = '';
         $this->producto_id = '';
         $this->tipo_hallazgo_id = '';
-        $this->observacion = '';
+        $this->ubicacion_id = '';
         $this->nombreProductoSeleccionado = '';
         $this->nombreTipoSeleccionado = '';
+        $this->mostrarUbicacion = false;
+        $this->ubicacionesDisponibles = [];
     }
 
     private function mostrarMensaje($mensaje, $tipo)
