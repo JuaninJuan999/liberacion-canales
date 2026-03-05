@@ -12,7 +12,11 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\PuestoTrabajoController; // Importar el nuevo controlador
 use App\Livewire\RegistroHallazgo;
+use App\Livewire\RegistroHallazgoToleranciaZero;
+use App\Livewire\GraficoToleranciaZeroDia;
+use App\Livewire\GraficoToleranciaZeroMes;
 use App\Livewire\HistorialRegistros;
+use App\Livewire\HistorialRegistrosToleranciaZero;
 use App\Livewire\DashboardDia;
 use App\Livewire\DashboardMes;
 use App\Livewire\IndicadoresDia;
@@ -52,6 +56,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/hallazgos/registrar', RegistroHallazgo::class)->name('hallazgos.registrar');
     Route::get('/hallazgos/historial', HistorialRegistros::class)->name('hallazgos.historial');
     Route::resource('hallazgos', HallazgoController::class);
+    
+    // Módulo Hallazgos Tolerancia Cero
+    Route::get('/tolerancia-cero/registrar', RegistroHallazgoToleranciaZero::class)->name('tolerancia-cero.registrar');
+    Route::get('/tolerancia-cero/historial', HistorialRegistrosToleranciaZero::class)->name('tolerancia-cero.historial');
+    Route::get('/tolerancia-cero/dashboard-dia', GraficoToleranciaZeroDia::class)->name('tolerancia-cero.dashboard-dia');
+    Route::get('/tolerancia-cero/dashboard-mes', GraficoToleranciaZeroMes::class)->name('tolerancia-cero.dashboard-mes');
     
     // Animales Procesados
     Route::resource('animales', AnimalesController::class);

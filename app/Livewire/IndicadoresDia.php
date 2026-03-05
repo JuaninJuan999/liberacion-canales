@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\IndicadorDiario;
+use App\Models\HallazgoToleranciaZero;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -15,6 +16,13 @@ class IndicadoresDia extends Component
     public $historial = []; // lista de días para la tabla Historial de Liberación
     public $hallazgosPorTipo = [];
     public $promedioMes = 0;
+    
+    // Tolerancia Cero
+    public $hallazgosToleranciaZero = [];
+    public $materiaFecalTC = 0;
+    public $contenidoRuminalTC = 0;
+    public $lecheVisibleTC = 0;
+    public $totalHallazgosTC = 0;
 
     /** Metas de porcentaje según especificación */
     const META_COBERTURA = 1.50;
@@ -22,7 +30,7 @@ class IndicadoresDia extends Component
     const META_CORTES_PIERNA = 1.00;
     const META_SOBREBARRIGA = 1.00;
 
-    protected $listeners = ['hallazgo-registrado' => 'actualizarDespuesDeRegistro', 'fechaCambiada' => 'actualizarFecha'];
+    protected $listeners = ['hallazgo-registrado' => 'actualizarDespuesDeRegistro', 'fechaCambiada' => 'actualizarFecha', 'hallazgo-tolerancia-cero-registrado' => 'actualizarDespuesDeRegistro'];
 
     public function mount($fecha = null)
     {
@@ -31,6 +39,7 @@ class IndicadoresDia extends Component
         $this->anio = (int) Carbon::now()->year;
         $this->cargarIndicadores();
         $this->cargarHistorial();
+        $this->cargarHallazgosToleranciaZero();
     }
 
     public function actualizarDespuesDeRegistro()
@@ -122,6 +131,54 @@ class IndicadoresDia extends Component
                 }
             }
         }
+    }
+
+    /**
+     * Cargar hallazgos de tolerancia cero para el mes actual
+     */
+    public function cargarHallazgosToleranciaZero()
+    {
+        $mesStr = str_pad((string) $this->mes, 2, '0', STR_PAD_LEFT);
+        $inicio = Carbon::create($this->anio, $this->mes, 1)->startOfMonth();
+        $fin = Carbon::create($this->anio, $this->mes, 1)->endOfMonth();
+
+        // Obtener hallazgos del mes
+        $hallazgos = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
+            ->orderBy('fecha_operacion', 'desc')
+            ->get(['id', 'fecha_operacion', 'codigo', 'producto_id', 'tipo_hallazgo_id'])
+            ->map(function ($h) {
+                return [
+                    'id' => $h->id,
+                    'fecha_operacion' => $h->fecha_operacion->format('d/m/Y'),
+                    'codigo' => $h->codigo,
+                    'producto' => $h->producto->nombre ?? 'N/A',
+                    'tipo_hallazgo' => $h->tipoHallazgo->nombre ?? 'N/A',
+                ];
+            })
+            ->toArray();
+
+        $this->hallazgosToleranciaZero = $hallazgos;
+
+        // Contar por tipo
+        $this->materiaFecalTC = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
+            ->whereHas('tipoHallazgo', function ($query) {
+                $query->where('nombre', 'MATERIA FECAL');
+            })
+            ->count();
+
+        $this->contenidoRuminalTC = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
+            ->whereHas('tipoHallazgo', function ($query) {
+                $query->where('nombre', 'CONTENIDO RUMINAL');
+            })
+            ->count();
+
+        $this->lecheVisibleTC = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
+            ->whereHas('tipoHallazgo', function ($query) {
+                $query->where('nombre', 'LECHE VISIBLE');
+            })
+            ->count();
+
+        $this->totalHallazgosTC = $this->materiaFecalTC + $this->contenidoRuminalTC + $this->lecheVisibleTC;
     }
 
     public function render()

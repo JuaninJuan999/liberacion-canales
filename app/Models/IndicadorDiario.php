@@ -23,6 +23,10 @@ class IndicadorDiario extends Model
         'desglose_hallazgos',
         'mes',
         'año',
+        'total_hallazgos_tolerancia_cero',
+        'materia_fecal_tc',
+        'contenido_ruminal_tc',
+        'leche_visible_tc',
     ];
 
     protected $casts = [
@@ -38,6 +42,10 @@ class IndicadorDiario extends Model
         'sobrebarriga_rota' => 'integer',
         'participacion_total' => 'decimal:2',
         'año' => 'integer',
+        'total_hallazgos_tolerancia_cero' => 'integer',
+        'materia_fecal_tc' => 'integer',
+        'contenido_ruminal_tc' => 'integer',
+        'leche_visible_tc' => 'integer',
     ];
 
     // Scope para filtrar por mes y año

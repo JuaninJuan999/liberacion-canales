@@ -102,6 +102,28 @@
                             </a>
                         </li>
 
+                        <!-- Registro Tolerancia Cero -->
+                        <li>
+                            <a href="{{ route('tolerancia-cero.registrar') }}" 
+                               class="flex items-center p-2 text-white rounded-lg hover:bg-red-700 {{ request()->routeIs('tolerancia-cero.registrar') ? 'bg-red-700' : '' }}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <span class="ml-3">Hallazgos Tolerancia Cero</span>
+                            </a>
+                        </li>
+
+                        <!-- Historial Tolerancia Cero -->
+                        <li>
+                            <a href="{{ route('tolerancia-cero.historial') }}" 
+                               class="flex items-center p-2 text-white rounded-lg hover:bg-red-700 {{ request()->routeIs('tolerancia-cero.historial') ? 'bg-red-700' : '' }}">
+                                <svg class="w-6 h-6 text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                </svg>
+                                <span class="ml-3">Historial Registros TC</span>
+                            </a>
+                        </li>
+
                         <!-- Animales Procesados -->
                         <li>
                             <a href="{{ route('animales.index') }}" 

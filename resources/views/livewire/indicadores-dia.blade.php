@@ -272,4 +272,89 @@
             <p class="text-gray-600 font-medium">Selecciona una fecha en la tabla para ver el detalle del día</p>
         </div>
     @endif
+
+    {{-- TABLA HALLAZGOS TOLERANCIA CERO --}}
+    <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg border border-red-300 mt-8">
+        <div class="p-6 border-b border-red-300 bg-gradient-to-r from-red-50 to-orange-50">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-xl font-bold text-red-700 flex items-center gap-2">
+                        <span>🚨</span>
+                        Hallazgos Tolerancia Cero del Mes
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">{{ \Carbon\Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM Y') }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-3xl font-bold text-red-600">{{ $totalHallazgosTC }}</p>
+                    <p class="text-xs text-gray-600">Total registros</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Estadísticas Rápidas --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50 border-b border-gray-200">
+            <div class="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200">
+                <p class="text-2xl font-bold text-yellow-600">{{ $materiaFecalTC }}</p>
+                <p class="text-xs text-gray-600 mt-1">Materia Fecal</p>
+            </div>
+            <div class="bg-orange-50 rounded-lg p-4 text-center border border-orange-200">
+                <p class="text-2xl font-bold text-orange-600">{{ $contenidoRuminalTC }}</p>
+                <p class="text-xs text-gray-600 mt-1">Contenido Ruminal</p>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
+                <p class="text-2xl font-bold text-blue-600">{{ $lecheVisibleTC }}</p>
+                <p class="text-xs text-gray-600 mt-1">Leche Visible</p>
+            </div>
+        </div>
+
+        {{-- Tabla de Registros --}}
+        @if(count($hallazgosToleranciaZero) > 0)
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-red-100 border-b-2 border-red-300">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Fecha</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Código</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Cuarto</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Tipo Hallazgo</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        @foreach($hallazgosToleranciaZero as $hallazgo)
+                            <tr class="hover:bg-red-50 transition duration-150">
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    📅 {{ $hallazgo['fecha_operacion'] }}
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 font-mono">
+                                    {{ $hallazgo['codigo'] }}
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                                        🥩 {{ $hallazgo['producto'] }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                    @php
+                                        $tipoColor = match($hallazgo['tipo_hallazgo']) {
+                                            'MATERIA FECAL' => 'bg-yellow-100 text-yellow-700',
+                                            'CONTENIDO RUMINAL' => 'bg-orange-100 text-orange-700',
+                                            'LECHE VISIBLE' => 'bg-blue-100 text-blue-700',
+                                            default => 'bg-gray-100 text-gray-700'
+                                        };
+                                    @endphp
+                                    <span class="px-2 py-1 {{ $tipoColor }} rounded-full text-xs font-semibold">
+                                        {{ $hallazgo['tipo_hallazgo'] }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="p-8 text-center">
+                <p class="text-gray-500 text-lg">ℹ️ Sin registros de tolerancia cero en este período</p>
+            </div>
+        @endif
+    </div>
 </div>
