@@ -91,6 +91,17 @@
                                 @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
 
+                            {{-- Nombre de Usuario --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de Usuario (Login)</label>
+                                <input type="text" 
+                                       wire:model="username"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="Ej: juan.perez">
+                                <p class="text-gray-500 text-xs mt-1">Formato: nombre.apellido (en minúsculas)</p>
+                                @error('username') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+
                             {{-- Contraseña (obligatoria al crear, opcional al editar) --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">

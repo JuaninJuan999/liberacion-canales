@@ -18,6 +18,7 @@ class GestionUsuarios extends Component
     public $usuario_id_editar;
     public $nombre = '';
     public $email = '';
+    public $username = '';
     public $password = '';
     public $rol_id;
     public $activo = true;
@@ -34,7 +35,9 @@ class GestionUsuarios extends Component
         'nombre.required' => 'El nombre es obligatorio.',
         'email.required' => 'El email es obligatorio.',
         'email.email' => 'El email debe ser válido.',
-        'email.unique' => 'Este email ya está registrado.',
+        'username.required' => 'El nombre de usuario es obligatorio.',
+        'username.unique' => 'Este nombre de usuario ya está registrado.',
+        'username.min' => 'El nombre de usuario debe tener mínimo 3 caracteres.',
         'rol_id.required' => 'Debe seleccionar un rol.',
     ];
 
@@ -43,18 +46,19 @@ class GestionUsuarios extends Component
         $rules = [
             'nombre' => 'required|string|min:3|max:255',
             'email' => 'required|email',
+            'username' => 'required|string|min:3|max:255|regex:/^[a-z0-9._-]+$/',
             'rol_id' => 'required|exists:roles,id',
             'activo' => 'boolean',
         ];
 
-        // Si estamos creando un usuario, la contraseña es obligatoria
+        // Si estamos creando un usuario, la contraseña es obligatoria y username debe ser único
         if ($this->modo === 'crear') {
-            $rules['email'] .= '|unique:users,email';
+            $rules['username'] .= '|unique:users,username';
             $rules['password'] = 'required|string|min:8';
         }
-        // Si estamos editando, validar email único pero no el del usuario actual
+        // Si estamos editando, validar username único pero no el del usuario actual
         elseif ($this->modo === 'editar') {
-            $rules['email'] .= '|unique:users,email,' . $this->usuario_id_editar;
+            $rules['username'] .= '|unique:users,username,' . $this->usuario_id_editar;
         }
 
         return $rules;
@@ -103,9 +107,28 @@ class GestionUsuarios extends Component
         $this->cargarDatos();
     }
 
+    public function updatedNombre()
+    {
+        // Generar sugerencia de username cuando el modo es crear
+        if ($this->modo === 'crear' && !empty($this->nombre)) {
+            $parts = explode(' ', trim($this->nombre));
+            
+            if (count($parts) >= 2) {
+                $suggested = strtolower($parts[0] . '.' . $parts[1]);
+            } else {
+                $suggested = strtolower($parts[0]);
+            }
+
+            // Solo actualizar si el usuario aún no ha escrito manualmente
+            if (empty($this->username)) {
+                $this->username = $suggested;
+            }
+        }
+    }
+
     public function mostrarFormularioCrear()
     {
-        $this->reset(['nombre', 'email', 'password', 'rol_id', 'activo', 'usuario_id_editar']);
+        $this->reset(['nombre', 'email', 'username', 'password', 'rol_id', 'activo', 'usuario_id_editar']);
         $this->activo = true;
         $this->modo = 'crear';
     }
@@ -121,6 +144,7 @@ class GestionUsuarios extends Component
         $this->usuario_id_editar = $usuario->id;
         $this->nombre = $usuario->name;
         $this->email = $usuario->email;
+        $this->username = $usuario->username;
         $this->rol_id = $usuario->rol_id;
         $this->activo = (bool) $usuario->activo;
         $this->password = '';
@@ -136,6 +160,7 @@ class GestionUsuarios extends Component
                 User::create([
                     'name' => $this->nombre,
                     'email' => $this->email,
+                    'username' => $this->username,
                     'password' => Hash::make($this->password),
                     'rol_id' => $this->rol_id,
                     'activo' => $this->activo,
@@ -145,6 +170,7 @@ class GestionUsuarios extends Component
                 $usuario = User::find($this->usuario_id_editar);
                 $usuario->name = $this->nombre;
                 $usuario->email = $this->email;
+                $usuario->username = $this->username;
                 $usuario->rol_id = $this->rol_id;
                 $usuario->activo = $this->activo;
 
@@ -230,7 +256,7 @@ class GestionUsuarios extends Component
     public function cancelar()
     {
         $this->modo = 'vista';
-        $this->reset(['nombre', 'email', 'password', 'rol_id', 'activo', 'usuario_id_editar']);
+        $this->reset(['nombre', 'email', 'username', 'password', 'rol_id', 'activo', 'usuario_id_editar']);
     }
 
     public function mostrarMensaje($msg, $tipo)
