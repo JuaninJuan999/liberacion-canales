@@ -111,14 +111,14 @@ class RegistroHallazgo extends Model
         // Registros hechos entre 12 PM y 23:59 un día
         // O registros hechos entre 00:00 y 06:59 del siguiente día (que cuentan para el día anterior)
         return $query->where(function($q) use ($fechaCarbon, $fechaSiguiente) {
-            $q->whereDate('fecha_operacion', $fechaCarbon)
+            $q->whereDate('registros_hallazgos.fecha_operacion', $fechaCarbon)
               ->where(function($subQ) {
-                  $subQ->whereRaw('HOUR(created_at) >= 12')
-                        ->orWhereRaw('HOUR(created_at) < 7');
+                  $subQ->whereRaw('HOUR(registros_hallazgos.created_at) >= 12')
+                        ->orWhereRaw('HOUR(registros_hallazgos.created_at) < 7');
               })
               ->orWhere(function($subQ) use ($fechaSiguiente) {
-                  $subQ->whereDate('fecha_operacion', $fechaSiguiente)
-                        ->whereRaw('HOUR(created_at) < 7');
+                  $subQ->whereDate('registros_hallazgos.fecha_operacion', $fechaSiguiente)
+                        ->whereRaw('HOUR(registros_hallazgos.created_at) < 7');
               });
         });
     }
@@ -133,15 +133,15 @@ class RegistroHallazgo extends Model
         
         return $query->where(function($q) use ($inicio, $fin) {
             // Registros hechos entre 12 PM y 23:59 en el rango de fechas
-            $q->whereBetween('fecha_operacion', [$inicio, $fin])
+            $q->whereBetween('registros_hallazgos.fecha_operacion', [$inicio, $fin])
               ->where(function($subQ) {
-                  $subQ->whereRaw('HOUR(created_at) >= 12')
-                        ->orWhereRaw('HOUR(created_at) < 7');
+                  $subQ->whereRaw('HOUR(registros_hallazgos.created_at) >= 12')
+                        ->orWhereRaw('HOUR(registros_hallazgos.created_at) < 7');
               })
               // O registros hechos entre 00:00 y 06:59 del siguiente día
               ->orWhere(function($subQ) use ($inicio, $fin) {
-                  $subQ->whereBetween('fecha_operacion', [$inicio->clone()->addDay(), $fin->clone()->addDay()])
-                        ->whereRaw('HOUR(created_at) < 7');
+                  $subQ->whereBetween('registros_hallazgos.fecha_operacion', [$inicio->clone()->addDay(), $fin->clone()->addDay()])
+                        ->whereRaw('HOUR(registros_hallazgos.created_at) < 7');
               });
         });
     }
