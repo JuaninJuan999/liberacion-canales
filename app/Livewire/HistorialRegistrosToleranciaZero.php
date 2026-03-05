@@ -122,7 +122,7 @@ class HistorialRegistrosToleranciaZero extends Component
     protected function construirQuery()
     {
         return HallazgoToleranciaZero::query()
-            ->with(['producto', 'tipoHallazgo', 'usuario'])
+            ->with(['producto', 'tipoHallazgo', 'usuario', 'ubicacion.puestoTrabajo'])
             ->whereBetween('fecha_operacion', [
                 Carbon::parse($this->fecha_inicio)->startOfDay(),
                 Carbon::parse($this->fecha_fin)->endOfDay()
@@ -146,5 +146,33 @@ class HistorialRegistrosToleranciaZero extends Component
         return view('livewire.historial-registros-tolerancia-cero', [
             'registros' => $registros
         ]);
+    }
+
+    /**
+     * Obtiene el operario responsable basado en la ubicación del registro
+     */
+    public function obtenerOperarioResponsable($registro)
+    {
+        // Si no hay ubicación, no podemos determinar el operario
+        if (!$registro->ubicacion) {
+            return '-';
+        }
+
+        // Si la ubicación no tiene puesto_trabajo asignado, retornar guion
+        if (!$registro->ubicacion->puesto_trabajo_id) {
+            return '-';
+        }
+
+        // Buscar el operario asignado a ese puesto en esa fecha
+        $operarioPorDia = \App\Models\OperarioPorDia::where('fecha_operacion', $registro->fecha_operacion)
+            ->where('puesto_trabajo_id', $registro->ubicacion->puesto_trabajo_id)
+            ->with('operario')
+            ->first();
+
+        if ($operarioPorDia && $operarioPorDia->operario) {
+            return $operarioPorDia->operario->nombre;
+        }
+
+        return '-';
     }
 }

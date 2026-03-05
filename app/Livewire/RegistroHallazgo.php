@@ -78,7 +78,13 @@ class RegistroHallazgo extends Component
 
     public function mount()
     {
-        $this->fecha_actual = Carbon::now()->format('Y-m-d');
+        // Ajustar fecha según turno de trabajo (si es madrugada 00:00-06:59, usar fecha anterior)
+        $ahora = Carbon::now();
+        if ($ahora->hour < 7) {
+            $this->fecha_actual = $ahora->subDay()->format('Y-m-d');
+        } else {
+            $this->fecha_actual = $ahora->format('Y-m-d');
+        }
         $this->cargarDatos();
         $this->actualizarContadorDia();
     }
@@ -202,7 +208,7 @@ class RegistroHallazgo extends Component
 
     public function actualizarContadorDia()
     {
-        $this->total_registros_dia = ModeloRegistroHallazgo::whereDate('created_at', $this->fecha_actual)->count();
+        $this->total_registros_dia = ModeloRegistroHallazgo::where('fecha_operacion', $this->fecha_actual)->count();
     }
 
     public function limpiarMensaje()

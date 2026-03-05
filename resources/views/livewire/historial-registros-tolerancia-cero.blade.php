@@ -85,8 +85,9 @@
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Código</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Cuarto</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Tipo Hallazgo</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Observación</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Ubicación Hallazgo</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Usuario</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Operario</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -117,17 +118,20 @@
                                 </span>
                             </td>
                             <td class="px-4 py-4 text-sm text-gray-700">
-                                <span class="inline-block max-w-xs truncate" title="{{ $registro->observacion ?? 'N/A' }}">
-                                    {{ $registro->observacion ?? 'N/A' }}
+                                <span class="inline-block max-w-xs truncate" title="{{ $registro->ubicacion->nombre ?? 'N/A' }}">
+                                    {{ $registro->ubicacion->nombre ?? 'N/A' }}
                                 </span>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                 👤 {{ $registro->usuario->name ?? 'N/A' }}
                             </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $this->obtenerOperarioResponsable($registro) }}
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="7" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <p class="text-3xl mb-2">📭</p>
                                     <p class="text-sm text-gray-500 font-medium">

@@ -38,6 +38,7 @@ class HistorialRegistros extends Component
     public $totalRegistros = 0;
     public $totalCriticos = 0;
     public $totalLeves = 0;
+    public $estadisticasPorTipo = [];
     
     protected $queryString = [
         'fecha_inicio' => ['except' => ''],
@@ -118,6 +119,21 @@ class HistorialRegistros extends Component
         $this->totalRegistros = $stats->total ?? 0;
         $this->totalCriticos = $stats->criticos ?? 0;
         $this->totalLeves = $this->totalRegistros - $this->totalCriticos;
+
+        // Calcular estadísticas por tipo de hallazgo
+        $estadisticas = (clone $query)
+            ->select(
+                'tipos_hallazgo.nombre',
+                DB::raw('COUNT(registros_hallazgos.id) as cantidad')
+            )
+            ->join('tipos_hallazgo', 'registros_hallazgos.tipo_hallazgo_id', '=', 'tipos_hallazgo.id')
+            ->groupBy('tipos_hallazgo.nombre')
+            ->orderByDesc('cantidad')
+            ->get();
+
+        $this->estadisticasPorTipo = $estadisticas->keyBy('nombre')->map(function($item) {
+            return $item->cantidad;
+        })->toArray();
     }
     
     protected function construirQuery()

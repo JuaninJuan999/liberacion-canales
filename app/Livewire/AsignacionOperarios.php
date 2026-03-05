@@ -23,11 +23,11 @@ class AsignacionOperarios extends Component
 
     public function cargarDatos()
     {
-        // Obtener puestos ordenados - forzar orden explícitamente
-        $this->puestos = PuestoTrabajo::orderBy('orden', 'asc')->orderBy('id', 'asc')->get();
+        // Obtener puestos ordenados por el campo 'orden'
+        $this->puestos = PuestoTrabajo::orderBy('orden', 'asc')->get();
         
         // Obtener operarios activos
-        $this->operarios = Operario::where('estado', 'Activo')
+        $this->operarios = Operario::where('activo', true)
             ->orderBy('nombre')
             ->get();
 

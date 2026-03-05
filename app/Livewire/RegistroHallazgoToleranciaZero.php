@@ -63,7 +63,13 @@ class RegistroHallazgoToleranciaZero extends Component
 
     public function mount()
     {
-        $this->fecha_actual = Carbon::now()->format('Y-m-d');
+        // Ajustar fecha según turno de trabajo (si es madrugada 00:00-06:59, usar fecha anterior)
+        $ahora = Carbon::now();
+        if ($ahora->hour < 7) {
+            $this->fecha_actual = $ahora->subDay()->format('Y-m-d');
+        } else {
+            $this->fecha_actual = $ahora->format('Y-m-d');
+        }
         $this->cargarDatos();
         $this->actualizarTotalRegistros();
     }
@@ -188,18 +194,10 @@ class RegistroHallazgoToleranciaZero extends Component
     {
         $this->validate();
 
-
         try {
-            $fechaOperacion = Carbon::now();
-            
-            // Ajustar fecha si se registra en horario madrugada (00:00 a 06:59)
-            if ($fechaOperacion->hour < 7) {
-                $fechaOperacion = $fechaOperacion->subDay();
-            }
-
             HallazgoToleranciaZero::create([
                 'fecha_registro' => Carbon::now(),
-                'fecha_operacion' => $fechaOperacion->toDateString(),
+                'fecha_operacion' => $this->fecha_actual,
                 'codigo' => strtoupper($this->codigo),
                 'producto_id' => $this->producto_id,
                 'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
@@ -208,7 +206,7 @@ class RegistroHallazgoToleranciaZero extends Component
             ]);
 
             // Actualizar indicadores del día
-            $this->actualizarIndicadorDiario($fechaOperacion->toDateString());
+            $this->actualizarIndicadorDiario($this->fecha_actual);
 
             $this->resetearFormulario();
             $this->actualizarTotalRegistros();
