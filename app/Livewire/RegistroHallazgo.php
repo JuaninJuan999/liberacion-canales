@@ -85,8 +85,13 @@ class RegistroHallazgo extends Component
 
     public function cargarDatos()
     {
-        $this->productos = Producto::where('activo', true)->orderBy('nombre')->get();
-        $this->tiposHallazgo = TipoHallazgo::orderBy('nombre')->get();
+        $this->productos = Producto::whereIn('nombre', ['Media Canal 1 Lengua', 'Media Canal 2 Cola'])
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+        $this->tiposHallazgo = TipoHallazgo::whereNotIn('nombre', ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])
+            ->orderBy('nombre')
+            ->get();
         $this->ubicaciones = Ubicacion::orderBy('nombre')->get();
         $this->lados = Lado::orderBy('nombre')->get();
     }
