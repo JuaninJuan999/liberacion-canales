@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\IndicadorDiario;
-use App\Models\RegistroHallazgo;
+use App\Models\HallazgoToleranciaZero;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -77,33 +77,50 @@ class DashboardMensualController extends Controller
         // Datos de hallazgos nuevos
         $hallazgosNuevos = $this->contarHallazgosNuevos($indicadores);
         
+        // Agregar meta al array
+        $hallazgosNuevos['meta'] = 1.0;
+        
         return view('dashboard.mensual', compact('mes', 'anio', 'indicadores', 'totales', 'chartData', 'hallazgosNuevos'));
     }
 
     private function contarHallazgosNuevos($indicadores)
     {
         if ($indicadores->isEmpty()) {
-            return ['MATERIA FECAL' => 0, 'CONTENIDO RUMINAL' => 0, 'LECHE VISIBLE' => 0];
+            return [
+                'fechas' => [],
+                'MATERIA FECAL' => [],
+                'CONTENIDO RUMINAL' => [],
+                'LECHE VISIBLE' => []
+            ];
         }
-
-        // Obtener fechas del rango de indicadores
-        $fechaInicio = $indicadores->first()->fecha_operacion;
-        $fechaFin = $indicadores->last()->fecha_operacion;
-
-        // Obtener todos los hallazgos del mes
-        $hallazgos = RegistroHallazgo::whereBetween('fecha_operacion', [$fechaInicio, $fechaFin])
-            ->with('tipoHallazgo')
-            ->get();
 
         $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
         
-        $resultado = [];
-        foreach ($tiposNuevos as $tipo) {
-            $resultado[$tipo] = $hallazgos
-                ->filter(function ($h) use ($tipo) {
-                    return stripos($h->tipoHallazgo->nombre ?? '', $tipo) !== false;
-                })
-                ->count();
+        // Inicializar estructuras para cada día
+        $fechas = [];
+        $resultado = [
+            'fechas' => [],
+            'MATERIA FECAL' => [],
+            'CONTENIDO RUMINAL' => [],
+            'LECHE VISIBLE' => []
+        ];
+        
+        // Recorrer cada indicador (día del mes)
+        foreach ($indicadores as $indicador) {
+            $fecha = Carbon::parse($indicador->fecha_operacion);
+            $fechaTexto = $fecha->format('Y-m-d');
+            $resultado['fechas'][] = $fecha->format('d/m');
+            
+            // Contar hallazgos por tipo para este día
+            foreach ($tiposNuevos as $tipo) {
+                $cantidad = HallazgoToleranciaZero::porFechaConTurno($fechaTexto)
+                    ->whereHas('tipoHallazgo', function ($query) use ($tipo) {
+                        $query->where('nombre', $tipo);
+                    })
+                    ->count();
+                
+                $resultado[$tipo][] = $cantidad;
+            }
         }
         
         return $resultado;

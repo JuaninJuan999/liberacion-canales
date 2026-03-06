@@ -68,9 +68,22 @@
                     </div>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos por Tipo (Materia Fecal, Contenido Ruminal, Leche Visible)</h3>
+                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - CUARTO ANTERIOR</h3>
                     <div style="height: 300px;">
-                        <canvas id="hallazgosNuevosChart"></canvas>
+                        <canvas id="hallazgosTZAnteriorChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - CUARTO POSTERIOR</h3>
+                    <div style="height: 300px;">
+                        <canvas id="hallazgosTZPosteriorChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero por Operario</h3>
+                    <p class="text-xs text-gray-500 text-center mb-1">Operario · Tipo de hallazgo</p>
+                    <div style="height: 300px;">
+                        <canvas id="hallazgosTZOperarioChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -286,35 +299,102 @@
                 }
             });
 
-            // 5. Hallazgos Nuevos - Bar Chart
-            new Chart(document.getElementById('hallazgosNuevosChart'), {
-                type: 'bar',
+            // 5. Hallazgos de Tolerancia Cero - Doughnut Charts por Producto
+            @php
+                $tzAnterior = $hallazgosTZPorDia['CUARTO ANTERIOR'] ?? ['MATERIA FECAL' => 0, 'CONTENIDO RUMINAL' => 0, 'LECHE VISIBLE' => 0];
+                $tzPosterior = $hallazgosTZPorDia['CUARTO POSTERIOR'] ?? ['MATERIA FECAL' => 0, 'CONTENIDO RUMINAL' => 0, 'LECHE VISIBLE' => 0];
+            @endphp
+
+            // Cuarto Anterior
+            new Chart(document.getElementById('hallazgosTZAnteriorChart'), {
+                type: 'doughnut',
                 data: {
-                    labels: {!! json_encode(array_keys($hallazgosNuevos)) !!},
+                    labels: ['Materia Fecal', 'Contenido Ruminal', 'Leche Visible'],
                     datasets: [{
-                        label: 'Cantidad',
-                        data: {!! json_encode(array_values($hallazgosNuevos)) !!},
-                        backgroundColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
-                        borderColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
-                        borderWidth: 1
+                        data: [{{ $tzAnterior['MATERIA FECAL'] }}, {{ $tzAnterior['CONTENIDO RUMINAL'] }}, {{ $tzAnterior['LECHE VISIBLE'] }}],
+                        backgroundColor: ['#FCD34D', '#F97316', '#3B82F6'],
+                        borderColor: ['#F59E0B', '#EA580C', '#1D4ED8'],
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     ...baseChartOptions,
-                    indexAxis: 'y',
                     plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'top' },
+                        legend: { display: true, position: 'right' },
                         datalabels: {
-                            anchor: 'end',
-                            align: 'end',
-                            color: '#000',
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.getDatasetMeta(0).total;
+                                const percentage = total > 0 ? (value / total) * 100 : 0;
+                                return percentage > 6 ? percentage.toFixed(1) + '%' : '';
+                            },
+                            color: '#fff',
+                            textStrokeColor: '#333',
+                            textStrokeWidth: 1.5,
                             font: { weight: 'bold', size: 12 }
                         }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
+                    }
+                }
+            });
+
+            // Cuarto Posterior
+            new Chart(document.getElementById('hallazgosTZPosteriorChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Materia Fecal', 'Contenido Ruminal', 'Leche Visible'],
+                    datasets: [{
+                        data: [{{ $tzPosterior['MATERIA FECAL'] }}, {{ $tzPosterior['CONTENIDO RUMINAL'] }}, {{ $tzPosterior['LECHE VISIBLE'] }}],
+                        backgroundColor: ['#FCD34D', '#F97316', '#3B82F6'],
+                        borderColor: ['#F59E0B', '#EA580C', '#1D4ED8'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    ...baseChartOptions,
+                    plugins: {
+                        ...baseChartOptions.plugins,
+                        legend: { display: true, position: 'right' },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.getDatasetMeta(0).total;
+                                const percentage = total > 0 ? (value / total) * 100 : 0;
+                                return percentage > 6 ? percentage.toFixed(1) + '%' : '';
+                            },
+                            color: '#fff',
+                            textStrokeColor: '#333',
+                            textStrokeWidth: 1.5,
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    }
+                }
+            });
+
+            // Hallazgos de Tolerancia Cero por Operario
+            new Chart(document.getElementById('hallazgosTZOperarioChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: {!! json_encode(array_keys($hallazgosTZPorOperario)) !!},
+                    datasets: [{
+                        label: 'Hallazgos',
+                        data: {!! json_encode(array_values($hallazgosTZPorOperario)) !!},
+                        backgroundColor: colores,
+                    }]
+                },
+                options: {
+                    ...baseChartOptions,
+                     plugins: {
+                        ...baseChartOptions.plugins,
+                        legend: { display: true, position: 'right' },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.getDatasetMeta(0).total;
+                                const percentage = total > 0 ? (value / total) * 100 : 0;
+                                return percentage > 6 ? percentage.toFixed(1) + '%' : '';
+                            },
+                            color: '#fff',
+                            textStrokeColor: '#333',
+                            textStrokeWidth: 1.5,
+                            font: { weight: 'bold', size: 12 }
                         }
                     }
                 }

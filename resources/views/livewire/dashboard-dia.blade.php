@@ -118,6 +118,14 @@
             </div>
         </div>
 
+        {{-- Gráfica de Hallazgos de Tolerancia Cero por Hora --}}
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Hallazgos de Tolerancia Cero por Hora</h3>
+            <div class="relative" style="height: 300px;">
+                <canvas id="chartToleranciaZero"></canvas>
+            </div>
+        </div>
+
         {{-- Últimos Hallazgos Registrados --}}
         <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Últimos Hallazgos Registrados</h3>
@@ -161,3 +169,107 @@
         </div>
     @endif
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        @if(@isset($hallazgosTZPorHora) && count($hallazgosTZPorHora) > 0)
+            const horas = [];
+            const materiaFecalData = [];
+            const contenidoRuminalData = [];
+            const lecheVisibleData = [];
+
+            @foreach($hallazgosTZPorHora as $hora => $tipos)
+                horas.push('{{ str_pad($hora, 2, '0', STR_PAD_LEFT) }}:00');
+                materiaFecalData.push({{ $tipos['MATERIA FECAL'] ?? 0 }});
+                contenidoRuminalData.push({{ $tipos['CONTENIDO RUMINAL'] ?? 0 }});
+                lecheVisibleData.push({{ $tipos['LECHE VISIBLE'] ?? 0 }});
+            @endforeach
+
+            const ctx = document.getElementById('chartToleranciaZero').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: horas,
+                    datasets: [
+                        {
+                            label: 'Materia Fecal',
+                            data: materiaFecalData,
+                            borderColor: '#FCD34D',
+                            backgroundColor: 'rgba(252, 211, 77, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#FCD34D',
+                            pointBorderColor: '#FCD34D',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Contenido Ruminal',
+                            data: contenidoRuminalData,
+                            borderColor: '#F97316',
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#F97316',
+                            pointBorderColor: '#F97316',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Leche Visible',
+                            data: lecheVisibleData,
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#3B82F6',
+                            pointBorderColor: '#3B82F6',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            },
+                            title: {
+                                display: true,
+                                text: 'Cantidad de Hallazgos'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Hora del Día'
+                            }
+                        }
+                    }
+                }
+            });
+        @endif
+    });
+</script>

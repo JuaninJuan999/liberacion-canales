@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\IndicadorDiario;
 use App\Models\RegistroHallazgo;
+use App\Models\HallazgoToleranciaZero;
 use App\Models\AnimalProcesado;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -57,8 +58,11 @@ class DashboardController extends Controller
         // Hallazgos por operario y tipo (usando la lógica de obtenerOperarioResponsable)
         $hallazgosPorOperarioYTipo = $this->calcularHallazgosPorOperarioYTipo($hallazgosRango);
         
-        // Hallazgos nuevos (MATERIA FECAL, CONTENIDO RUMINAL, LECHE VISIBLE)
-        $hallazgosNuevos = $this->contarHallazgosNuevos($hallazgosRango);
+        // Hallazgos de tolerancia cero por día/hora
+        $hallazgosTZPorDia = $this->contarHallazgosTZPorDia($fecha_inicio, $fecha_fin);
+        
+        // Hallazgos de tolerancia cero por operario y tipo
+        $hallazgosTZPorOperario = $this->contarHallazgosTZPorOperario($fecha_inicio, $fecha_fin);
         
         // Promedios del mes
         $indicadoresMes = IndicadorDiario::whereMonth('fecha_operacion', Carbon::parse($fecha_fin)->month)
@@ -81,8 +85,88 @@ class DashboardController extends Controller
             'hallazgosChartDataCanal2' => $hallazgosChartDataCanal2,
             'productosChartData' => $productosChartData,
             'hallazgosPorOperarioYTipo' => $hallazgosPorOperarioYTipo,
-            'hallazgosNuevos' => $hallazgosNuevos,
+            'hallazgosTZPorDia' => $hallazgosTZPorDia,
+            'hallazgosTZPorOperario' => $hallazgosTZPorOperario,
         ]);
+    }
+
+    /**
+     * Cuenta hallazgos de tolerancia cero agrupados por producto
+     */
+    private function contarHallazgosTZPorDia($fecha_inicio, $fecha_fin)
+    {
+        $hallazgos = HallazgoToleranciaZero::porRangoFechasConTurno($fecha_inicio, $fecha_fin)
+            ->with(['tipoHallazgo', 'producto'])
+            ->get();
+
+        // Inicializar estructura por producto
+        $resultado = [
+            'CUARTO ANTERIOR' => [
+                'MATERIA FECAL' => 0,
+                'CONTENIDO RUMINAL' => 0,
+                'LECHE VISIBLE' => 0
+            ],
+            'CUARTO POSTERIOR' => [
+                'MATERIA FECAL' => 0,
+                'CONTENIDO RUMINAL' => 0,
+                'LECHE VISIBLE' => 0
+            ]
+        ];
+
+        // Agrupar por producto y tipo
+        foreach ($hallazgos as $hallazgo) {
+            $producto = $hallazgo->producto->nombre ?? 'Desconocido';
+            $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
+
+            if (isset($resultado[$producto]) && in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
+                $resultado[$producto][$tipo]++;
+            }
+        }
+
+        return $resultado;
+    }
+
+    /**
+     * Cuenta hallazgos de tolerancia cero por operario y tipo de hallazgo
+     */
+    private function contarHallazgosTZPorOperario($fecha_inicio, $fecha_fin)
+    {
+        $hallazgos = HallazgoToleranciaZero::porRangoFechasConTurno($fecha_inicio, $fecha_fin)
+            ->with(['tipoHallazgo', 'ubicacion.puestoTrabajo'])
+            ->get();
+
+        $resultado = [];
+
+        foreach ($hallazgos as $hallazgo) {
+            $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
+            $operario = 'Sin asignación';
+
+            // Obtener operario a través de: ubicacion → puesto_trabajo → operarios_por_dia
+            if ($hallazgo->ubicacion && $hallazgo->ubicacion->puestoTrabajo) {
+                $fechaEfectiva = $hallazgo->getFechaOperacionEfectiva()->toDateString();
+
+                $operarioPorDia = DB::table('operarios_por_dia')
+                    ->where('puesto_trabajo_id', $hallazgo->ubicacion->puestoTrabajo->id)
+                    ->whereDate('fecha_operacion', $fechaEfectiva)
+                    ->first();
+
+                if ($operarioPorDia) {
+                    $operarioObj = DB::table('operarios')
+                        ->where('id', $operarioPorDia->operario_id)
+                        ->first();
+                    if ($operarioObj) {
+                        $operario = $operarioObj->nombre;
+                    }
+                }
+            }
+
+            if (in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
+                $clave = $operario . ' | ' . $tipo;
+                $resultado[$clave] = ($resultado[$clave] ?? 0) + 1;
+            }
+        }
+
+        return $resultado;
     }
 
     /**

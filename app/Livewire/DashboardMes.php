@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\IndicadorDiario;
+use App\Models\HallazgoToleranciaZero;
 use App\Services\CalculadoraIndicadores;
 use Carbon\Carbon;
 
@@ -14,6 +15,7 @@ class DashboardMes extends Component
     public $indicadoresMes;
     public $indicadoresDiarios = [];
     public $graficoDatos = [];
+    public $toleranciaZeroDatos = [];
 
     protected $listeners = ['hallazgo-registrado' => 'actualizarDespuesDeRegistro'];
     
@@ -44,8 +46,56 @@ class DashboardMes extends Component
             ->orderBy('fecha', 'asc')
             ->get();
         
+        // Obtener datos de Tolerancia Cero del mes
+        $this->cargarToleranciaZero($fechaInicio, $fechaFin);
+        
         // Preparar datos para gráficos
         $this->prepararDatosGrafico();
+    }
+
+    private function cargarToleranciaZero($fechaInicio, $fechaFin)
+    {
+        // Contar hallazgos por tipo para Tolerancia Cero
+        $hallazgos = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$fechaInicio, $fechaFin])
+            ->with(['tipoHallazgo', 'producto'])
+            ->get();
+
+        // Agrupar por tipo
+        $materiaFecal = $hallazgos->filter(function($h) { return $h->tipoHallazgo?->nombre === 'MATERIA FECAL'; })->count();
+        $contenidoRuminal = $hallazgos->filter(function($h) { return $h->tipoHallazgo?->nombre === 'CONTENIDO RUMINAL'; })->count();
+        $lecheVisible = $hallazgos->filter(function($h) { return $h->tipoHallazgo?->nombre === 'LECHE VISIBLE'; })->count();
+
+        // Agrupar por producto dentro de cada tipo
+        $tzPorProducto = [];
+        foreach (['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'] as $tipo) {
+            $tzPorProducto[$tipo] = [
+                'CUARTO ANTERIOR' => 0,
+                'CUARTO POSTERIOR' => 0
+            ];
+        }
+
+        foreach ($hallazgos as $h) {
+            $tipo = $h->tipoHallazgo?->nombre;
+            $producto = $h->producto?->nombre;
+            if ($tipo && $producto && isset($tzPorProducto[$tipo])) {
+                if ($producto === 'CUARTO ANTERIOR') {
+                    $tzPorProducto[$tipo]['CUARTO ANTERIOR']++;
+                } elseif ($producto === 'CUARTO POSTERIOR') {
+                    $tzPorProducto[$tipo]['CUARTO POSTERIOR']++;
+                }
+            }
+        }
+
+        $this->toleranciaZeroDatos = [
+            'materiaFecal' => $materiaFecal,
+            'contenidoRuminal' => $contenidoRuminal,
+            'lecheVisible' => $lecheVisible,
+            'total' => $materiaFecal + $contenidoRuminal + $lecheVisible,
+            'porProducto' => $tzPorProducto,
+            'labels' => ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'],
+            'values' => [$materiaFecal, $contenidoRuminal, $lecheVisible],
+            'colors' => ['#FCD34D', '#F97316', '#3B82F6'],
+        ];
     }
     
     protected function prepararDatosGrafico()

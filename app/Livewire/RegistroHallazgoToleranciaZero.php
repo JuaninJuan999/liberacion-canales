@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Auth;
 class RegistroHallazgoToleranciaZero extends Component
 {
     // Form Data
-    public $codigo;
     public $producto_id;
     public $tipo_hallazgo_id;
     public $ubicacion_id;
@@ -39,7 +38,6 @@ class RegistroHallazgoToleranciaZero extends Component
 
     // Validation Messages
     protected $messages = [
-        'codigo.required' => 'Debe ingresar el código del canal.',
         'producto_id.required' => 'Debe seleccionar el cuarto (Anterior o Posterior).',
         'tipo_hallazgo_id.required' => 'Debe seleccionar el tipo de hallazgo.',
         'ubicacion_id.required' => 'Debe seleccionar la ubicación específica.',
@@ -49,7 +47,6 @@ class RegistroHallazgoToleranciaZero extends Component
     protected function rules()
     {
         $rules = [
-            'codigo' => 'required|string|max:50',
             'producto_id' => 'required|exists:productos,id',
             'tipo_hallazgo_id' => 'required|exists:tipos_hallazgo,id',
         ];
@@ -169,8 +166,13 @@ class RegistroHallazgoToleranciaZero extends Component
                 'DESOLLADORA'
             ];
         }
-        // CUARTO ANTERIOR/POSTERIOR + LECHE VISIBLE → Sin ubicaciones específicas
+        // CUARTO ANTERIOR/POSTERIOR + LECHE VISIBLE → TRANSFERENCIA (sin mostrar selector)
         elseif ($nombreTipo === 'LECHE VISIBLE') {
+            // Asignar automáticamente TRANSFERENCIA para LECHE VISIBLE
+            $transferencia = Ubicacion::where('nombre', 'TRANSFERENCIA')->first();
+            if ($transferencia) {
+                $this->ubicacion_id = $transferencia->id;
+            }
             $this->mostrarUbicacion = false;
             $this->ubicacionesDisponibles = [];
             return;
@@ -198,7 +200,6 @@ class RegistroHallazgoToleranciaZero extends Component
             HallazgoToleranciaZero::create([
                 'fecha_registro' => Carbon::now(),
                 'fecha_operacion' => $this->fecha_actual,
-                'codigo' => strtoupper($this->codigo),
                 'producto_id' => $this->producto_id,
                 'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
                 'ubicacion_id' => $this->ubicacion_id ?? null,
@@ -267,7 +268,6 @@ class RegistroHallazgoToleranciaZero extends Component
 
     private function resetearFormulario()
     {
-        $this->codigo = '';
         $this->producto_id = '';
         $this->tipo_hallazgo_id = '';
         $this->ubicacion_id = '';

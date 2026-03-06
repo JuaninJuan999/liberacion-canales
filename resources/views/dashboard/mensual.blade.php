@@ -141,37 +141,103 @@
 
             // Gráfico de Hallazgos Nuevos
             Chart.register(ChartDataLabels);
+            
+            // Crear array de meta con el mismo largo que las fechas
+            const metaArray = Array(hallazgosNuevos.fechas.length).fill(hallazgosNuevos.meta);
+            
             new Chart(document.getElementById('chartHallazgosNuevos'), {
-                type: 'bar',
+                type: 'line',
                 data: {
-                    labels: Object.keys(hallazgosNuevos),
-                    datasets: [{
-                        label: 'Cantidad',
-                        data: Object.values(hallazgosNuevos),
-                        backgroundColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
-                        borderColor: ['#8B5CF6', '#06B6D4', '#EC4899'],
-                        borderWidth: 1
-                    }]
+                    labels: hallazgosNuevos.fechas,
+                    datasets: [
+                        {
+                            label: 'Materia Fecal',
+                            data: hallazgosNuevos['MATERIA FECAL'],
+                            borderColor: '#FCD34D',
+                            backgroundColor: 'rgba(252, 211, 77, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#FCD34D',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'Contenido Ruminal',
+                            data: hallazgosNuevos['CONTENIDO RUMINAL'],
+                            borderColor: '#F97316',
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#F97316',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'Leche Visible',
+                            data: hallazgosNuevos['LECHE VISIBLE'],
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#3B82F6',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'META',
+                            data: metaArray,
+                            borderColor: '#EF4444',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 0
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    indexAxis: 'y',
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
                     plugins: {
                         legend: {
                             display: true,
                             position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 15,
+                                usePointStyle: true
+                            }
                         },
                         datalabels: {
                             anchor: 'end',
-                            align: 'end',
+                            align: 'top',
                             color: '#000',
-                            font: { weight: 'bold', size: 12 }
+                            font: { weight: 'bold', size: 11 }
                         }
                     },
                     scales: {
-                        x: {
+                        y: {
                             beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
                         }
                     }
                 }

@@ -164,7 +164,7 @@ class HistorialRegistrosToleranciaZero extends Component
         }
 
         // Buscar el operario asignado a ese puesto en esa fecha
-        $operarioPorDia = \App\Models\OperarioPorDia::where('fecha_operacion', $registro->fecha_operacion)
+        $operarioPorDia = \App\Models\OperarioPorDia::whereDate('fecha_operacion', $registro->fecha_operacion)
             ->where('puesto_trabajo_id', $registro->ubicacion->puesto_trabajo_id)
             ->with('operario')
             ->first();

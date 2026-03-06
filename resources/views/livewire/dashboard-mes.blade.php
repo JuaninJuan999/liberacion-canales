@@ -131,6 +131,91 @@
             </div>
         </div>
 
+        {{-- Hallazgos Tolerancia Cero Mensual --}}
+        @if($toleranciaZeroDatos['total'] > 0)
+        <div class="mb-8">
+            <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg shadow-md p-6 border-l-4 border-red-500 mb-6">
+                <h3 class="text-2xl font-bold text-red-700 flex items-center gap-2">
+                    <span>🚨</span> Hallazgos Tolerancia Cero del Mes
+                </h3>
+                <p class="text-sm text-gray-600 mt-1">Distribución de hallazgos críticos: {{ $toleranciaZeroDatos['total'] }} total</p>
+            </div>
+
+            {{-- Tarjetas de Tolerancia Cero --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                {{-- Materia Fecal --}}
+                <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow-lg p-6 border-l-4 border-yellow-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">💛 MATERIA FECAL</h4>
+                        <span class="text-2xl">🚯</span>
+                    </div>
+                    <div class="text-4xl font-extrabold text-yellow-600 mb-2">{{ $toleranciaZeroDatos['materiaFecal'] }}</div>
+                    <div class="w-full bg-gray-300 rounded-full h-2">
+                        <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ $toleranciaZeroDatos['total'] > 0 ? ($toleranciaZeroDatos['materiaFecal'] / $toleranciaZeroDatos['total']) * 100 : 0 }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-2">
+                        {{ $toleranciaZeroDatos['total'] > 0 ? number_format(($toleranciaZeroDatos['materiaFecal'] / $toleranciaZeroDatos['total']) * 100, 1) : 0 }}% del total
+                    </p>
+                    <div class="mt-3 text-xs text-gray-700">
+                        <p>🥩 Anterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['MATERIA FECAL']['CUARTO ANTERIOR'] }}</span></p>
+                        <p>🥩 Posterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['MATERIA FECAL']['CUARTO POSTERIOR'] }}</span></p>
+                    </div>
+                </div>
+
+                {{-- Contenido Ruminal --}}
+                <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-lg p-6 border-l-4 border-orange-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">🧡 CONTENIDO RUMINAL</h4>
+                        <span class="text-2xl">🔶</span>
+                    </div>
+                    <div class="text-4xl font-extrabold text-orange-600 mb-2">{{ $toleranciaZeroDatos['contenidoRuminal'] }}</div>
+                    <div class="w-full bg-gray-300 rounded-full h-2">
+                        <div class="bg-orange-500 h-2 rounded-full" style="width: {{ $toleranciaZeroDatos['total'] > 0 ? ($toleranciaZeroDatos['contenidoRuminal'] / $toleranciaZeroDatos['total']) * 100 : 0 }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-2">
+                        {{ $toleranciaZeroDatos['total'] > 0 ? number_format(($toleranciaZeroDatos['contenidoRuminal'] / $toleranciaZeroDatos['total']) * 100, 1) : 0 }}% del total
+                    </p>
+                    <div class="mt-3 text-xs text-gray-700">
+                        <p>🥩 Anterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['CONTENIDO RUMINAL']['CUARTO ANTERIOR'] }}</span></p>
+                        <p>🥩 Posterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['CONTENIDO RUMINAL']['CUARTO POSTERIOR'] }}</span></p>
+                    </div>
+                </div>
+
+                {{-- Leche Visible --}}
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <h4 class="font-bold text-gray-800 text-sm">💙 LECHE VISIBLE</h4>
+                        <span class="text-2xl">🔵</span>
+                    </div>
+                    <div class="text-4xl font-extrabold text-blue-600 mb-2">{{ $toleranciaZeroDatos['lecheVisible'] }}</div>
+                    <div class="w-full bg-gray-300 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: {{ $toleranciaZeroDatos['total'] > 0 ? ($toleranciaZeroDatos['lecheVisible'] / $toleranciaZeroDatos['total']) * 100 : 0 }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-2">
+                        {{ $toleranciaZeroDatos['total'] > 0 ? number_format(($toleranciaZeroDatos['lecheVisible'] / $toleranciaZeroDatos['total']) * 100, 1) : 0 }}% del total
+                    </p>
+                    <div class="mt-3 text-xs text-gray-700">
+                        <p>🥩 Anterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['LECHE VISIBLE']['CUARTO ANTERIOR'] }}</span></p>
+                        <p>🥩 Posterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['LECHE VISIBLE']['CUARTO POSTERIOR'] }}</span></p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Gráfico de Pastel Tolerancia Cero --}}
+            <div class="bg-white rounded-lg shadow-lg p-8 mb-8 border border-gray-200">
+                <div class="mb-6">
+                    <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        <span>📊</span> Distribución por Tipo
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">Proporción de hallazgos de tolerancia cero</p>
+                </div>
+                <div class="h-80 bg-gradient-to-b from-red-50 to-white rounded-lg p-4 flex items-center justify-center">
+                    <canvas id="chartToleranciaZeroMes" wire:ignore></canvas>
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- Gráfico de Tendencia Mejorado --}}
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8 border border-gray-200">
             <div class="mb-6">
@@ -204,6 +289,7 @@
 
         @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
         <script>
             document.addEventListener('livewire:navigated', function() {
                 const ctx = document.getElementById('chartMensual');
@@ -235,6 +321,57 @@
                                 }
                             }
                         }
+                    });
+                }
+
+                // Gráfico de Tolerancia Cero
+                const ctxTZ = document.getElementById('chartToleranciaZeroMes');
+                if (ctxTZ) {
+                    @php
+                        $labels = json_encode($toleranciaZeroDatos['labels'] ?? []);
+                        $values = json_encode($toleranciaZeroDatos['values'] ?? []);
+                        $colors = json_encode($toleranciaZeroDatos['colors'] ?? []);
+                    @endphp
+                    
+                    new Chart(ctxTZ, {
+                        type: 'doughnut',
+                        data: {
+                            labels: {!! $labels !!},
+                            datasets: [{
+                                data: {!! $values !!},
+                                backgroundColor: {!! $colors !!},
+                                borderColor: ['#F5D547', '#E56D22', '#2563EB'],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'right',
+                                    labels: {
+                                        font: {
+                                            size: 13,
+                                            weight: 'bold'
+                                        },
+                                        padding: 20,
+                                        usePointStyle: true
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels || {}]
                     });
                 }
             });

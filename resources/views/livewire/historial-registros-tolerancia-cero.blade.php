@@ -82,7 +82,6 @@
                 <thead class="bg-red-50 border-b-2 border-red-300">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Fecha de Registro</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Código</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Cuarto</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Tipo Hallazgo</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Ubicación Hallazgo</th>
@@ -95,9 +94,6 @@
                         <tr class="hover:bg-red-50 transition duration-150">
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                                 📅 {{ $registro->fecha_registro->format('d/m/Y H:i') }}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm font-mono font-bold text-gray-900">
-                                {{ $registro->codigo }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
