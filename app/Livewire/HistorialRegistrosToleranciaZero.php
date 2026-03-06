@@ -13,6 +13,12 @@ use Illuminate\Support\Facades\DB;
 class HistorialRegistrosToleranciaZero extends Component
 {
     use WithPagination;
+
+    private function normalizarRol(?string $rol): string
+    {
+        $rolNormalizado = strtoupper(trim((string) $rol));
+        return $rolNormalizado === 'ADMIN' ? 'ADMINISTRADOR' : $rolNormalizado;
+    }
     
     // Filtros
     public $fecha_inicio;
@@ -50,8 +56,9 @@ class HistorialRegistrosToleranciaZero extends Component
 
         $usuario = auth()->user();
         $rolesPermitidos = ['ADMINISTRADOR', 'OPERACIONES', 'CALIDAD', 'GERENCIA'];
-        
-        if (!$usuario->rol || !in_array($usuario->rol->nombre, $rolesPermitidos)) {
+
+        $rolUsuario = $this->normalizarRol($usuario->rol?->nombre);
+        if (!$usuario->rol || !in_array($rolUsuario, $rolesPermitidos, true)) {
             abort(403, 'No tienes permiso para acceder a este módulo. Se requiere rol ADMINISTRADOR, OPERACIONES, CALIDAD o GERENCIA.');
         }
 

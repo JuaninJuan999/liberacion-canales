@@ -41,8 +41,20 @@
                     </div>
 
                     <!-- Menú de Navegación -->
+                    @php
+                        $normalizarRol = function ($rol) {
+                            $rolNormalizado = strtoupper(trim((string) $rol));
+                            return $rolNormalizado === 'ADMIN' ? 'ADMINISTRADOR' : $rolNormalizado;
+                        };
+                        $rolActual = $normalizarRol(Auth::user()?->rol?->nombre);
+                        $puedeVer = function (array $rolesPermitidos) use ($rolActual, $normalizarRol) {
+                            $rolesNormalizados = array_map($normalizarRol, $rolesPermitidos);
+                            return in_array($rolActual, $rolesNormalizados, true);
+                        };
+                    @endphp
                     <ul class="space-y-2 font-medium">
                         <!-- Dashboard -->
+                        @if($puedeVer(['Admin', 'Operaciones', 'Calidad', 'Gerencia']))
                         <li>
                             <a href="{{ route('dashboard') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('dashboard') && !request()->routeIs('dashboard.mensual') ? 'bg-gray-700' : '' }}">
@@ -52,8 +64,10 @@
                                 <span class="ml-3">Dashboard Diario</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Dashboard Mensual -->
+                        @if($puedeVer(['Admin', 'Operaciones', 'Calidad', 'Gerencia']))
                         <li>
                             <a href="{{ route('dashboard.mensual') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('dashboard.mensual') ? 'bg-gray-700' : '' }}">
@@ -63,8 +77,10 @@
                                 <span class="ml-3">Dashboard Mensual</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Indicador Diario -->
+                        @if($puedeVer(['Admin', 'Operaciones', 'Calidad', 'Gerencia']))
                         <li>
                             <a href="{{ route('indicadores.detalle-dia') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('indicadores.detalle-dia') ? 'bg-gray-700' : '' }}">
@@ -74,6 +90,7 @@
                                 <span class="ml-3">Indicador Diario</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Separador -->
                         <li class="pt-4 mt-4 border-t border-gray-700">
@@ -81,6 +98,7 @@
                         </li>
 
                         <!-- Registro de Hallazgos -->
+                        @if($puedeVer(['Admin', 'Calidad']))
                         <li>
                             <a href="{{ route('hallazgos.registrar') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('hallazgos.registrar') ? 'bg-gray-700' : '' }}">
@@ -90,8 +108,10 @@
                                 <span class="ml-3">Registro de Hallazgos</span>
                             </a>
                         </li>
+                        @endif
                         
                         <!-- Historial de Registros -->
+                        @if($puedeVer(['Admin', 'Operaciones', 'Calidad', 'Gerencia']))
                         <li>
                             <a href="{{ route('hallazgos.historial') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('hallazgos.historial') ? 'bg-gray-700' : '' }}">
@@ -101,8 +121,10 @@
                                 <span class="ml-3">Historial de Registros</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Registro Tolerancia Cero -->
+                        @if($puedeVer(['Admin', 'Operaciones']))
                         <li>
                             <a href="{{ route('tolerancia-cero.registrar') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-red-700 {{ request()->routeIs('tolerancia-cero.registrar') ? 'bg-red-700' : '' }}">
@@ -112,8 +134,10 @@
                                 <span class="ml-3">Hallazgos Tolerancia Cero</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Historial Tolerancia Cero -->
+                        @if($puedeVer(['Admin', 'Operaciones', 'Calidad', 'Gerencia']))
                         <li>
                             <a href="{{ route('tolerancia-cero.historial') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-red-700 {{ request()->routeIs('tolerancia-cero.historial') ? 'bg-red-700' : '' }}">
@@ -123,8 +147,10 @@
                                 <span class="ml-3">Historial Registros TC</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Animales Procesados -->
+                        @if($puedeVer(['Admin', 'Operaciones', 'Calidad', 'Gerencia']))
                         <li>
                             <a href="{{ route('animales.index') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('animales.*') ? 'bg-gray-700' : '' }}">
@@ -134,6 +160,7 @@
                                 <span class="ml-3">Animales Procesados</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Separador -->
                         <li class="pt-4 mt-4 border-t border-gray-700">
@@ -141,6 +168,7 @@
                         </li>
 
                         <!-- Operarios -->
+                        @if($puedeVer(['Admin', 'Operaciones']))
                         <li>
                             <a href="{{ route('operarios.index') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('operarios.*') ? 'bg-gray-700' : '' }}">
@@ -150,8 +178,10 @@
                                 <span class="ml-3">Operarios</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Asignación de Operarios -->
+                        @if($puedeVer(['Admin', 'Operaciones']))
                         <li>
                             <a href="{{ route('operarios-dia.index') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('operarios-dia.*') ? 'bg-gray-700' : '' }}">
@@ -161,8 +191,10 @@
                                 <span class="ml-3">Asignación por Día</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Puestos de Trabajo -->
+                        @if($puedeVer(['Admin']))
                         <li>
                             <a href="{{ route('puestos_trabajo.index') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('puestos_trabajo.*') ? 'bg-gray-700' : '' }}">
@@ -170,8 +202,10 @@
                                 <span class="ml-3">Puestos de Trabajo</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Gestión de Usuarios -->
+                        @if($puedeVer(['Admin']))
                         <li>
                             <a href="{{ route('usuarios.gestion') }}" 
                                class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('usuarios.*') ? 'bg-gray-700' : '' }}">
@@ -181,6 +215,7 @@
                                 <span class="ml-3">Gestión de Usuarios</span>
                             </a>
                         </li>
+                        @endif
 
                         <!-- Separador -->
                         <li class="pt-4 mt-4 border-t border-gray-700">

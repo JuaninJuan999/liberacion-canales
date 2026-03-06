@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Auth;
 
 class RegistroHallazgoToleranciaZero extends Component
 {
+    private function normalizarRol(?string $rol): string
+    {
+        $rolNormalizado = strtoupper(trim((string) $rol));
+        return $rolNormalizado === 'ADMIN' ? 'ADMINISTRADOR' : $rolNormalizado;
+    }
+
     // Form Data
     public $producto_id;
     public $tipo_hallazgo_id;
@@ -67,8 +73,9 @@ class RegistroHallazgoToleranciaZero extends Component
 
         $usuario = auth()->user();
         $rolesPermitidos = ['ADMINISTRADOR', 'OPERACIONES'];
-        
-        if (!$usuario->rol || !in_array($usuario->rol->nombre, $rolesPermitidos)) {
+
+        $rolUsuario = $this->normalizarRol($usuario->rol?->nombre);
+        if (!$usuario->rol || !in_array($rolUsuario, $rolesPermitidos, true)) {
             abort(403, 'No tienes permiso para acceder a este módulo. Se requiere rol ADMINISTRADOR u OPERACIONES.');
         }
 

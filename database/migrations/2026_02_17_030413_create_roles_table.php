@@ -16,10 +16,10 @@ return new class extends Migration
 
         // Insertar roles por defecto
         DB::table('roles')->insert([
-            ['nombre' => 'Admin', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Calidad', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Operaciones', 'created_at' => now(), 'updated_at' => now()],
-            ['nombre' => 'Gerencia', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'ADMINISTRADOR', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'CALIDAD', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'OPERACIONES', 'created_at' => now(), 'updated_at' => now()],
+            ['nombre' => 'GERENCIA', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
