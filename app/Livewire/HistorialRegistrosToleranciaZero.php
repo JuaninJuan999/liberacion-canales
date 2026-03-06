@@ -43,6 +43,18 @@ class HistorialRegistrosToleranciaZero extends Component
     
     public function mount()
     {
+        // Verificar que solo Admin, Operaciones, Calidad y Gerencia pueden acceder
+        if (!auth()->check()) {
+            abort(401, 'Debes estar autenticado.');
+        }
+
+        $usuario = auth()->user();
+        $rolesPermitidos = ['ADMINISTRADOR', 'OPERACIONES', 'CALIDAD', 'GERENCIA'];
+        
+        if (!$usuario->rol || !in_array($usuario->rol->nombre, $rolesPermitidos)) {
+            abort(403, 'No tienes permiso para acceder a este módulo. Se requiere rol ADMINISTRADOR, OPERACIONES, CALIDAD o GERENCIA.');
+        }
+
         // Establecer fechas por defecto (hoy)
         $this->fecha_inicio = $this->fecha_inicio ?: Carbon::now()->format('Y-m-d');
         $this->fecha_fin = $this->fecha_fin ?: Carbon::now()->format('Y-m-d');

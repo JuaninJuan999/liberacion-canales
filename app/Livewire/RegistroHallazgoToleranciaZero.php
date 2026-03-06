@@ -60,6 +60,18 @@ class RegistroHallazgoToleranciaZero extends Component
 
     public function mount()
     {
+        // Verificar que solo Admin y Operaciones pueden acceder
+        if (!auth()->check()) {
+            abort(401, 'Debes estar autenticado.');
+        }
+
+        $usuario = auth()->user();
+        $rolesPermitidos = ['ADMINISTRADOR', 'OPERACIONES'];
+        
+        if (!$usuario->rol || !in_array($usuario->rol->nombre, $rolesPermitidos)) {
+            abort(403, 'No tienes permiso para acceder a este módulo. Se requiere rol ADMINISTRADOR u OPERACIONES.');
+        }
+
         // Ajustar fecha según turno de trabajo (si es madrugada 00:00-06:59, usar fecha anterior)
         $ahora = Carbon::now();
         if ($ahora->hour < 7) {

@@ -66,6 +66,20 @@ class MenuModuloSeeder extends Seeder
                 'orden' => 8,
                 'roles' => ['Admin'],
             ],
+            [
+                'nombre' => 'Hallazgos Tolerancia Cero',
+                'vista' => 'tolerancia-cero.registrar',
+                'icono' => 'exclamation-triangle',
+                'orden' => 9,
+                'roles' => ['Admin', 'Operaciones'],
+            ],
+            [
+                'nombre' => 'Historial Registros TC',
+                'vista' => 'tolerancia-cero.historial',
+                'icono' => 'clock',
+                'orden' => 10,
+                'roles' => ['Admin', 'Operaciones', 'Calidad', 'Gerencia'],
+            ],
         ];
 
         foreach ($modulos as $modulo) {
