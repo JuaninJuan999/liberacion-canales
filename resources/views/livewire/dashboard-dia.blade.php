@@ -126,6 +126,59 @@
             </div>
         </div>
 
+        {{-- Hallazgos TC por Cuarto (Anterior vs Posterior) --}}
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">🔍 Hallazgos Tolerancia Cero - Cuarto Anterior vs Posterior</h3>
+            @if(count($hallazgosToleranciaZeroPorCuarto) > 0)
+                <div class="space-y-4">
+                    @foreach($hallazgosToleranciaZeroPorCuarto as $item)
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-semibold text-gray-900">{{ $item['tipo'] }}</span>
+                                <span class="text-xs text-gray-500">Total: {{ $item['CUARTO ANTERIOR'] + $item['CUARTO POSTERIOR'] }}</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full h-6 overflow-hidden flex">
+                                @php
+                                    $totalCuartos = $item['CUARTO ANTERIOR'] + $item['CUARTO POSTERIOR'];
+                                    $porcentajeAnterior = $totalCuartos > 0 ? ($item['CUARTO ANTERIOR'] / $totalCuartos) * 100 : 0;
+                                    $porcentajePosterior = $totalCuartos > 0 ? ($item['CUARTO POSTERIOR'] / $totalCuartos) * 100 : 0;
+                                @endphp
+                                @if($item['CUARTO ANTERIOR'] > 0)
+                                    <div class="bg-blue-500 h-full flex items-center justify-center text-white text-xs font-bold" 
+                                         style="width: {{ $porcentajeAnterior }}%">
+                                        {{ $item['CUARTO ANTERIOR'] }}
+                                    </div>
+                                @endif
+                                @if($item['CUARTO POSTERIOR'] > 0)
+                                    <div class="bg-orange-500 h-full flex items-center justify-center text-white text-xs font-bold" 
+                                         style="width: {{ $porcentajePosterior }}%">
+                                        {{ $item['CUARTO POSTERIOR'] }}
+                                    </div>
+                                @endif
+                                @if($totalCuartos == 0)
+                                    <div class="bg-gray-300 h-full w-full flex items-center justify-center text-gray-600 text-xs font-bold">
+                                        Sin datos
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="flex justify-between items-center mt-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="inline-block w-3 h-3 bg-blue-500 rounded"></span>
+                                    <span class="text-xs text-gray-600">Cuarto Anterior: {{ $item['CUARTO ANTERIOR'] }}</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="inline-block w-3 h-3 bg-orange-500 rounded"></span>
+                                    <span class="text-xs text-gray-600">Cuarto Posterior: {{ $item['CUARTO POSTERIOR'] }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-gray-500 text-center py-8">No hay hallazgos de Tolerancia Cero registrados en Cuarto Anterior o Posterior</p>
+            @endif
+        </div>
+
         {{-- Últimos Hallazgos Registrados --}}
         <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Últimos Hallazgos Registrados</h3>

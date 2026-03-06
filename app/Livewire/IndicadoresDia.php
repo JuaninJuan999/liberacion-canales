@@ -19,6 +19,7 @@ class IndicadoresDia extends Component
     
     // Tolerancia Cero
     public $hallazgosToleranciaZero = [];
+    public $resumenToleranciaZero = [];
     public $materiaFecalTC = 0;
     public $contenidoRuminalTC = 0;
     public $lecheVisibleTC = 0;
@@ -46,6 +47,7 @@ class IndicadoresDia extends Component
     {
         $this->cargarIndicadores();
         $this->cargarHistorial();
+        $this->cargarHallazgosToleranciaZero();
     }
 
     public function cargarIndicadores()
@@ -95,6 +97,7 @@ class IndicadoresDia extends Component
     public function cambiarMesAnio()
     {
         $this->cargarHistorial();
+        $this->cargarHallazgosToleranciaZero();
     }
 
     /**
@@ -138,47 +141,73 @@ class IndicadoresDia extends Component
      */
     public function cargarHallazgosToleranciaZero()
     {
-        $mesStr = str_pad((string) $this->mes, 2, '0', STR_PAD_LEFT);
         $inicio = Carbon::create($this->anio, $this->mes, 1)->startOfMonth();
         $fin = Carbon::create($this->anio, $this->mes, 1)->endOfMonth();
 
-        // Obtener hallazgos del mes
-        $hallazgos = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
-            ->orderBy('fecha_operacion', 'desc')
-            ->get(['id', 'fecha_operacion', 'codigo', 'producto_id', 'tipo_hallazgo_id'])
-            ->map(function ($h) {
-                return [
-                    'id' => $h->id,
-                    'fecha_operacion' => $h->fecha_operacion->format('d/m/Y'),
-                    'codigo' => $h->codigo,
-                    'producto' => $h->producto->nombre ?? 'N/A',
-                    'tipo_hallazgo' => $h->tipoHallazgo->nombre ?? 'N/A',
+        $hallazgos = HallazgoToleranciaZero::porRangoFechasConTurno($inicio->toDateString(), $fin->toDateString())
+            ->with(['producto:id,nombre', 'tipoHallazgo:id,nombre'])
+            ->get();
+
+        $resumenPorDia = [];
+
+        foreach ($hallazgos as $hallazgo) {
+            $fechaDia = $hallazgo->getFechaOperacionEfectiva()->toDateString();
+
+            if (!isset($resumenPorDia[$fechaDia])) {
+                $resumenPorDia[$fechaDia] = [
+                    'fecha_operacion' => $fechaDia,
+                    'cuarto_anterior' => 0,
+                    'cuarto_posterior' => 0,
+                    'total_hallazgos' => 0,
+                    'contenido_ruminal' => 0,
+                    'materia_fecal' => 0,
+                    'leche_visible' => 0,
+                    'participacion' => 0,
                 ];
-            })
-            ->toArray();
+            }
 
-        $this->hallazgosToleranciaZero = $hallazgos;
+            $nombreProducto = strtoupper(trim((string) ($hallazgo->producto->nombre ?? '')));
+            $nombreTipo = strtoupper(trim((string) ($hallazgo->tipoHallazgo->nombre ?? '')));
 
-        // Contar por tipo
-        $this->materiaFecalTC = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
-            ->whereHas('tipoHallazgo', function ($query) {
-                $query->where('nombre', 'MATERIA FECAL');
-            })
-            ->count();
+            if ($nombreProducto === 'CUARTO ANTERIOR') {
+                $resumenPorDia[$fechaDia]['cuarto_anterior']++;
+            }
 
-        $this->contenidoRuminalTC = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
-            ->whereHas('tipoHallazgo', function ($query) {
-                $query->where('nombre', 'CONTENIDO RUMINAL');
-            })
-            ->count();
+            if ($nombreProducto === 'CUARTO POSTERIOR') {
+                $resumenPorDia[$fechaDia]['cuarto_posterior']++;
+            }
 
-        $this->lecheVisibleTC = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$inicio, $fin])
-            ->whereHas('tipoHallazgo', function ($query) {
-                $query->where('nombre', 'LECHE VISIBLE');
-            })
-            ->count();
+            if ($nombreTipo === 'CONTENIDO RUMINAL') {
+                $resumenPorDia[$fechaDia]['contenido_ruminal']++;
+            }
 
-        $this->totalHallazgosTC = $this->materiaFecalTC + $this->contenidoRuminalTC + $this->lecheVisibleTC;
+            if ($nombreTipo === 'MATERIA FECAL') {
+                $resumenPorDia[$fechaDia]['materia_fecal']++;
+            }
+
+            if ($nombreTipo === 'LECHE VISIBLE') {
+                $resumenPorDia[$fechaDia]['leche_visible']++;
+            }
+
+            $resumenPorDia[$fechaDia]['total_hallazgos']++;
+        }
+
+        foreach ($resumenPorDia as $fechaDia => &$fila) {
+            $indicadorDia = IndicadorDiario::whereDate('fecha_operacion', $fechaDia)->first();
+            $mediasCanales = (int) ($indicadorDia->medias_canales_total ?? 0);
+            $fila['participacion'] = $mediasCanales > 0
+                ? round(($fila['total_hallazgos'] / $mediasCanales) * 100, 2)
+                : 0;
+        }
+        unset($fila);
+
+        krsort($resumenPorDia);
+        $this->resumenToleranciaZero = array_values($resumenPorDia);
+
+        $this->materiaFecalTC = array_sum(array_column($this->resumenToleranciaZero, 'materia_fecal'));
+        $this->contenidoRuminalTC = array_sum(array_column($this->resumenToleranciaZero, 'contenido_ruminal'));
+        $this->lecheVisibleTC = array_sum(array_column($this->resumenToleranciaZero, 'leche_visible'));
+        $this->totalHallazgosTC = array_sum(array_column($this->resumenToleranciaZero, 'total_hallazgos'));
     }
 
     public function render()

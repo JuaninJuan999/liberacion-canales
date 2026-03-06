@@ -91,36 +91,40 @@ class DashboardController extends Controller
     }
 
     /**
-     * Cuenta hallazgos de tolerancia cero agrupados por producto
+     * Cuenta hallazgos de tolerancia cero agrupados por producto, tipo y ubicación
      */
     private function contarHallazgosTZPorDia($fecha_inicio, $fecha_fin)
     {
         $hallazgos = HallazgoToleranciaZero::porRangoFechasConTurno($fecha_inicio, $fecha_fin)
-            ->with(['tipoHallazgo', 'producto'])
+            ->with(['tipoHallazgo', 'producto', 'ubicacion'])
             ->get();
 
         // Inicializar estructura por producto
         $resultado = [
-            'CUARTO ANTERIOR' => [
-                'MATERIA FECAL' => 0,
-                'CONTENIDO RUMINAL' => 0,
-                'LECHE VISIBLE' => 0
-            ],
-            'CUARTO POSTERIOR' => [
-                'MATERIA FECAL' => 0,
-                'CONTENIDO RUMINAL' => 0,
-                'LECHE VISIBLE' => 0
-            ]
+            'CUARTO ANTERIOR' => [],
+            'CUARTO POSTERIOR' => []
         ];
 
-        // Agrupar por producto y tipo
+        // Agrupar por producto, tipo y ubicación
         foreach ($hallazgos as $hallazgo) {
             $producto = $hallazgo->producto->nombre ?? 'Desconocido';
             $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
+            $ubicacion = $hallazgo->ubicacion->nombre ?? 'Sin ubicación';
 
-            if (isset($resultado[$producto]) && in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
-                $resultado[$producto][$tipo]++;
+            if (!in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
+                continue;
             }
+
+            if (!isset($resultado[$producto])) {
+                continue;
+            }
+
+            // Crear clave combinada de tipo y ubicación
+            $clave = $tipo . ' - ' . $ubicacion;
+            if (!isset($resultado[$producto][$clave])) {
+                $resultado[$producto][$clave] = 0;
+            }
+            $resultado[$producto][$clave]++;
         }
 
         return $resultado;

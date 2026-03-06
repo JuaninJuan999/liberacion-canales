@@ -17,7 +17,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="flex flex-col gap-2">
                     <label class="text-sm font-semibold text-gray-700">📅 Mes:</label>
-                    <select wire:model.live="mes" wire:change="cargarHistorial()" class="px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm cursor-pointer transition">
+                    <select wire:model.live="mes" wire:change="cambiarMesAnio" class="px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm cursor-pointer transition">
                         @for($m = 1; $m <= 12; $m++)
                             <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->locale('es')->isoFormat('MMMM') }}</option>
                         @endfor
@@ -25,7 +25,7 @@
                 </div>
                 <div class="flex flex-col gap-2">
                     <label class="text-sm font-semibold text-gray-700">📆 Año:</label>
-                    <select wire:model.live="anio" wire:change="cargarHistorial()" class="px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm cursor-pointer transition">
+                    <select wire:model.live="anio" wire:change="cambiarMesAnio" class="px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm cursor-pointer transition">
                         @for($a = now()->year - 2; $a <= now()->year + 1; $a++)
                             <option value="{{ $a }}">{{ $a }}</option>
                         @endfor
@@ -308,42 +308,48 @@
         </div>
 
         {{-- Tabla de Registros --}}
-        @if(count($hallazgosToleranciaZero) > 0)
+        @if(count($resumenToleranciaZero) > 0)
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-red-100 border-b-2 border-red-300">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Fecha</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Código</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Cuarto</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Tipo Hallazgo</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-red-900 uppercase tracking-wider">Cuarto Anterior</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-red-900 uppercase tracking-wider">Cuarto Posterior</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-red-900 uppercase tracking-wider">Total Hallazgos</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-red-900 uppercase tracking-wider">Contenido Ruminal</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-red-900 uppercase tracking-wider">Materia Fecal</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-red-900 uppercase tracking-wider">Leche Visible</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-red-900 uppercase tracking-wider">Participación</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
-                        @foreach($hallazgosToleranciaZero as $hallazgo)
+                        @foreach($resumenToleranciaZero as $fila)
                             <tr class="hover:bg-red-50 transition duration-150">
                                 <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    📅 {{ $hallazgo['fecha_operacion'] }}
+                                    📅 {{ \Carbon\Carbon::parse($fila['fecha_operacion'])->format('d/m/Y') }}
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 font-mono">
-                                    {{ $hallazgo['codigo'] }}
+                                <td class="px-4 py-3 text-center text-sm text-gray-700 font-semibold">
+                                    {{ $fila['cuarto_anterior'] }}
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                                        🥩 {{ $hallazgo['producto'] }}
-                                    </span>
+                                <td class="px-4 py-3 text-center text-sm text-gray-700 font-semibold">
+                                    {{ $fila['cuarto_posterior'] }}
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                    @php
-                                        $tipoColor = match($hallazgo['tipo_hallazgo']) {
-                                            'MATERIA FECAL' => 'bg-yellow-100 text-yellow-700',
-                                            'CONTENIDO RUMINAL' => 'bg-orange-100 text-orange-700',
-                                            'LECHE VISIBLE' => 'bg-blue-100 text-blue-700',
-                                            default => 'bg-gray-100 text-gray-700'
-                                        };
-                                    @endphp
-                                    <span class="px-2 py-1 {{ $tipoColor }} rounded-full text-xs font-semibold">
-                                        {{ $hallazgo['tipo_hallazgo'] }}
+                                <td class="px-4 py-3 text-center text-sm font-bold text-red-700">
+                                    {{ $fila['total_hallazgos'] }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm text-orange-700 font-semibold">
+                                    {{ $fila['contenido_ruminal'] }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm text-yellow-700 font-semibold">
+                                    {{ $fila['materia_fecal'] }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm text-blue-700 font-semibold">
+                                    {{ $fila['leche_visible'] }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm">
+                                    <span class="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">
+                                        {{ number_format($fila['participacion'], 2) }}%
                                     </span>
                                 </td>
                             </tr>

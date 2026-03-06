@@ -12,6 +12,7 @@ class DashboardDia extends Component
     public $fecha;
     public $indicadores;
     public $hallazgosTZPorHora = [];
+    public $hallazgosToleranciaZeroPorCuarto = [];
 
     // Escucha el evento 'fechaCambiada' para actualizar la fecha
     protected $listeners = ['fechaCambiada' => 'actualizarFecha'];
@@ -26,6 +27,7 @@ class DashboardDia extends Component
     {
         $this->indicadores = IndicadorDiario::where('fecha_operacion', $this->fecha)->first();
         $this->cargarHallazgosTZ();
+        $this->cargarHallazgosToleranciaZeroPorCuarto();
     }
 
     public function cargarHallazgosTZ()
@@ -60,6 +62,40 @@ class DashboardDia extends Component
         }
 
         $this->hallazgosTZPorHora = $horas;
+    }
+
+    public function cargarHallazgosToleranciaZeroPorCuarto()
+    {
+        // Obtener hallazgos de tolerancia cero para la fecha, solo Cuarto Anterior y Posterior
+        $hallazgos = HallazgoToleranciaZero::where('fecha_operacion', $this->fecha)
+            ->with(['producto', 'tipoHallazgo'])
+            ->get();
+
+        // Inicializar array para tipos de hallazgo
+        $resultados = [];
+
+        // Agrupar hallazgos por tipo y contar por cuarto
+        foreach ($hallazgos as $hallazgo) {
+            $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
+            $producto = $hallazgo->producto->nombre ?? 'Desconocido';
+
+            // Solo incluir CUARTO ANTERIOR y CUARTO POSTERIOR
+            if (!in_array($producto, ['CUARTO ANTERIOR', 'CUARTO POSTERIOR'])) {
+                continue;
+            }
+
+            if (!isset($resultados[$tipo])) {
+                $resultados[$tipo] = [
+                    'tipo' => $tipo,
+                    'CUARTO ANTERIOR' => 0,
+                    'CUARTO POSTERIOR' => 0,
+                ];
+            }
+
+            $resultados[$tipo][$producto]++;
+        }
+
+        $this->hallazgosToleranciaZeroPorCuarto = array_values($resultados);
     }
 
     public function actualizarFecha($nuevaFecha)

@@ -9,6 +9,7 @@ use App\Models\Producto;
 use App\Models\Ubicacion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class RegistroHallazgoToleranciaZero extends Component
 {
@@ -216,9 +217,12 @@ class RegistroHallazgoToleranciaZero extends Component
         $this->validate();
 
         try {
+            $codigoGenerado = 'TC-' . Carbon::now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
+
             HallazgoToleranciaZero::create([
                 'fecha_registro' => Carbon::now(),
                 'fecha_operacion' => $this->fecha_actual,
+                'codigo' => $codigoGenerado,
                 'producto_id' => $this->producto_id,
                 'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
                 'ubicacion_id' => $this->ubicacion_id ?? null,

@@ -41,45 +41,51 @@
             </div>
 
             <!-- Gráficos Principales -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-4 rounded-lg shadow-md">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="chartsContainer">
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosChartCanal1', 'Distribución de Hallazgos - Media Canal 1')">
                     <h3 class="font-bold mb-2 text-center">Distribución de Hallazgos - Media Canal 1</h3>
                     <div style="height: 300px;">
                         <canvas id="hallazgosChartCanal1"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosChartCanal2', 'Distribución de Hallazgos - Media Canal 2')">
                     <h3 class="font-bold mb-2 text-center">Distribución de Hallazgos - Media Canal 2</h3>
                     <div style="height: 300px;">
                         <canvas id="hallazgosChartCanal2"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('productosChart', 'Hallazgos por Producto')">
                     <h3 class="font-bold mb-2 text-center">Hallazgos por Producto</h3>
                     <div style="height: 300px;">
                         <canvas id="productosChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('puestosChart', 'Hallazgos por Operario y Tipo')">
                     <h3 class="font-bold mb-2 text-center">Hallazgos por Operario y Tipo</h3>
                     <p class="text-xs text-gray-500 text-center mb-1">Operario · Tipo de hallazgo</p>
                     <div style="height: 300px;">
                         <canvas id="puestosChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZAnteriorChart', 'Hallazgos de Tolerancia Cero - CUARTO ANTERIOR')">
                     <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - CUARTO ANTERIOR</h3>
                     <div style="height: 300px;">
                         <canvas id="hallazgosTZAnteriorChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZPosteriorChart', 'Hallazgos de Tolerancia Cero - CUARTO POSTERIOR')">
                     <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - CUARTO POSTERIOR</h3>
                     <div style="height: 300px;">
                         <canvas id="hallazgosTZPosteriorChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
+                <div class="bg-white p-4 rounded-lg shadow-md col-span-2 cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZComparativoChart', 'Hallazgos de Tolerancia Cero - Cuarto Anterior vs Posterior')">
+                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - Cuarto Anterior vs Posterior</h3>
+                    <div style="height: 300px;">
+                        <canvas id="hallazgosTZComparativoChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZOperarioChart', 'Hallazgos de Tolerancia Cero por Operario')">
                     <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero por Operario</h3>
                     <p class="text-xs text-gray-500 text-center mb-1">Operario · Tipo de hallazgo</p>
                     <div style="height: 300px;">
@@ -299,21 +305,27 @@
                 }
             });
 
-            // 5. Hallazgos de Tolerancia Cero - Doughnut Charts por Producto
+            // 5. Hallazgos de Tolerancia Cero - Doughnut Charts por Producto con Ubicación
             @php
-                $tzAnterior = $hallazgosTZPorDia['CUARTO ANTERIOR'] ?? ['MATERIA FECAL' => 0, 'CONTENIDO RUMINAL' => 0, 'LECHE VISIBLE' => 0];
-                $tzPosterior = $hallazgosTZPorDia['CUARTO POSTERIOR'] ?? ['MATERIA FECAL' => 0, 'CONTENIDO RUMINAL' => 0, 'LECHE VISIBLE' => 0];
+                $tzAnterior = $hallazgosTZPorDia['CUARTO ANTERIOR'] ?? [];
+                $tzPosterior = $hallazgosTZPorDia['CUARTO POSTERIOR'] ?? [];
+                
+                // Paleta de colores azules para Cuarto Anterior
+                $coloresAnterior = ['#1D4ED8', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#DBEAFE'];
+                
+                // Paleta de colores naranjas para Cuarto Posterior
+                $coloresPosterior = ['#B45309', '#D97706', '#F97316', '#FB923C', '#FBBD23', '#FCD34D', '#FEF3C7'];
             @endphp
 
-            // Cuarto Anterior
+            // Cuarto Anterior (con ubicación - tonos azules)
             new Chart(document.getElementById('hallazgosTZAnteriorChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Materia Fecal', 'Contenido Ruminal', 'Leche Visible'],
+                    labels: {!! json_encode(array_keys($tzAnterior)) !!},
                     datasets: [{
-                        data: [{{ $tzAnterior['MATERIA FECAL'] }}, {{ $tzAnterior['CONTENIDO RUMINAL'] }}, {{ $tzAnterior['LECHE VISIBLE'] }}],
-                        backgroundColor: ['#FCD34D', '#F97316', '#3B82F6'],
-                        borderColor: ['#F59E0B', '#EA580C', '#1D4ED8'],
+                        data: {!! json_encode(array_values($tzAnterior)) !!},
+                        backgroundColor: {!! json_encode(array_slice(array_merge($coloresAnterior, array_fill(0, 20, '#5B9FDB')), 0, count($tzAnterior))) !!},
+                        borderColor: '#fff',
                         borderWidth: 2
                     }]
                 },
@@ -331,21 +343,21 @@
                             color: '#fff',
                             textStrokeColor: '#333',
                             textStrokeWidth: 1.5,
-                            font: { weight: 'bold', size: 12 }
+                            font: { weight: 'bold', size: 11 }
                         }
                     }
                 }
             });
 
-            // Cuarto Posterior
+            // Cuarto Posterior (con ubicación - tonos naranjas)
             new Chart(document.getElementById('hallazgosTZPosteriorChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Materia Fecal', 'Contenido Ruminal', 'Leche Visible'],
+                    labels: {!! json_encode(array_keys($tzPosterior)) !!},
                     datasets: [{
-                        data: [{{ $tzPosterior['MATERIA FECAL'] }}, {{ $tzPosterior['CONTENIDO RUMINAL'] }}, {{ $tzPosterior['LECHE VISIBLE'] }}],
-                        backgroundColor: ['#FCD34D', '#F97316', '#3B82F6'],
-                        borderColor: ['#F59E0B', '#EA580C', '#1D4ED8'],
+                        data: {!! json_encode(array_values($tzPosterior)) !!},
+                        backgroundColor: {!! json_encode(array_slice(array_merge($coloresPosterior, array_fill(0, 20, '#F59E0B')), 0, count($tzPosterior))) !!},
+                        borderColor: '#fff',
                         borderWidth: 2
                     }]
                 },
@@ -363,13 +375,48 @@
                             color: '#fff',
                             textStrokeColor: '#333',
                             textStrokeWidth: 1.5,
-                            font: { weight: 'bold', size: 12 }
+                            font: { weight: 'bold', size: 11 }
                         }
                     }
                 }
             });
 
-            // Hallazgos de Tolerancia Cero por Operario
+            // Gráfico Comparativo - Cuarto Anterior vs Posterior (Total Impacto)
+            @php
+                $totalAnterior = array_sum($tzAnterior);
+                $totalPosterior = array_sum($tzPosterior);
+            @endphp
+            
+            new Chart(document.getElementById('hallazgosTZComparativoChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Cuarto Anterior', 'Cuarto Posterior'],
+                    datasets: [{
+                        data: [{{ $totalAnterior }}, {{ $totalPosterior }}],
+                        backgroundColor: ['#3B82F6', '#F97316'],
+                        borderColor: ['#1D4ED8', '#EA580C'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    ...baseChartOptions,
+                    plugins: {
+                        ...baseChartOptions.plugins,
+                        legend: { display: true, position: 'right' },
+                        datalabels: {
+                            formatter: (value, ctx) => {
+                                const total = ctx.chart.getDatasetMeta(0).total;
+                                const percentage = total > 0 ? (value / total) * 100 : 0;
+                                return percentage > 5 ? percentage.toFixed(1) + '%' : '';
+                            },
+                            color: '#fff',
+                            textStrokeColor: '#333',
+                            textStrokeWidth: 1.5,
+                            font: { weight: 'bold', size: 12 }
+                        }
+                    }
+                }
+            });
             new Chart(document.getElementById('hallazgosTZOperarioChart'), {
                 type: 'doughnut',
                 data: {
@@ -399,6 +446,113 @@
                     }
                 }
             });
+
+            // Función para abrir gráfico en modal
+            window.abrirGrafico = function(canvasId, titulo) {
+                const modal = document.getElementById('graficoModal');
+                const modalTitle = document.getElementById('modalGraficoTitulo');
+                const modalCanvas = document.getElementById('modalGraficoCanvas');
+                
+                // Actualizar título
+                modalTitle.textContent = titulo;
+                
+                // Buscar el gráfico en las instancias de Chart.js
+                let chartOriginal = null;
+                
+                for (let key in Chart.instances) {
+                    const instance = Chart.instances[key];
+                    if (instance.canvas && instance.canvas.id === canvasId) {
+                        chartOriginal = instance;
+                        break;
+                    }
+                }
+                
+                if (chartOriginal) {
+                    // Destruir gráfico anterior en el modal si existe
+                    if (window.modalChartInstance) {
+                        window.modalChartInstance.destroy();
+                        window.modalChartInstance = null;
+                    }
+                    
+                    // Clonar configuración del gráfico
+                    const config = {
+                        type: chartOriginal.config.type,
+                        data: {
+                            labels: chartOriginal.data.labels,
+                            datasets: chartOriginal.data.datasets.map(ds => ({
+                                ...ds,
+                                data: [...ds.data]
+                            }))
+                        },
+                        options: {
+                            ...chartOriginal.config.options,
+                            responsive: true,
+                            maintainAspectRatio: true
+                        }
+                    };
+                    
+                    // Crear nuevo gráfico en el modal
+                    const ctx = modalCanvas.getContext('2d');
+                    window.modalChartInstance = new Chart(ctx, config);
+                }
+                
+                // Mostrar modal
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            };
+
+            // Función para cerrar modal
+            window.cerrarGrafico = function() {
+                const modal = document.getElementById('graficoModal');
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                
+                if (window.modalChartInstance) {
+                    window.modalChartInstance.destroy();
+                    window.modalChartInstance = null;
+                }
+            };
+
+            // Cerrar modal al hacer click fuera
+            document.getElementById('graficoModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    cerrarGrafico();
+                }
+            });
+
+            // Cerrar modal con tecla ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    cerrarGrafico();
+                }
+            });
         });
     </script>
+
+    <!-- Modal para ampliar gráficos -->
+    <div id="graficoModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[9999] flex items-center justify-center p-4" style="z-index: 9999;">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-auto" onclick="event.stopPropagation();">
+            <!-- Encabezado del modal -->
+            <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-white">
+                <h2 id="modalGraficoTitulo" class="text-2xl font-bold text-gray-900"></h2>
+                <button onclick="cerrarGrafico()" class="text-gray-500 hover:text-gray-700 text-3xl font-bold px-4 py-2 hover:bg-gray-100 rounded">
+                    ×
+                </button>
+            </div>
+
+            <!-- Cuerpo del modal con gráfico -->
+            <div class="p-8">
+                <div style="position: relative; height: 70vh; width: 100%;">
+                    <canvas id="modalGraficoCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Footer del modal -->
+            <div class="flex justify-end p-6 border-t border-gray-200 bg-white">
+                <button onclick="cerrarGrafico()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
 </x-app-layout>
