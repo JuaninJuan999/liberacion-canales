@@ -7,34 +7,34 @@
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-4 sm:py-6">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
             
             <!-- Filtro de Fechas -->
-            <div class="bg-white shadow-sm sm:rounded-lg p-4">
-                <form id="formFiltroDashboard" method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-center gap-4">
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm font-medium text-gray-700">Desde:</label>
+            <div class="bg-white shadow-sm rounded-lg p-3 sm:p-4">
+                <form id="formFiltroDashboard" method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-center gap-2 sm:gap-4">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 w-full sm:w-auto">
+                        <label class="text-xs sm:text-sm font-medium text-gray-700">Desde:</label>
                         <input type="date" 
                                name="fecha_inicio" 
                                value="{{ $fecha_inicio }}"
                                onchange="this.form.submit()"
-                               class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                               class="w-full sm:w-auto text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm font-medium text-gray-700">Hasta:</label>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 w-full sm:w-auto">
+                        <label class="text-xs sm:text-sm font-medium text-gray-700">Hasta:</label>
                         <input type="date" 
                                name="fecha_fin" 
                                value="{{ $fecha_fin }}"
                                onchange="this.form.submit()"
-                               class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                               class="w-full sm:w-auto text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <button type="submit" 
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                        Aplicar Filtro
+                            class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs sm:text-sm font-medium">
+                        Aplicar
                     </button>
                     <a href="{{ route('dashboard') }}" 
-                       class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium">
+                       class="w-full sm:w-auto text-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-xs sm:text-sm font-medium">
                         Limpiar filtro
                     </a>
                 </form>
@@ -42,53 +42,53 @@
 
             <!-- Gráficos Principales -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="chartsContainer">
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosChartCanal1', 'Distribución de Hallazgos - Media Canal 1')">
-                    <h3 class="font-bold mb-2 text-center">Distribución de Hallazgos - Media Canal 1</h3>
-                    <div style="height: 300px;">
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosChartCanal1', 'Distribución de Hallazgos - Media Canal 1')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Distribución de Hallazgos - Media Canal 1</h3>
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="hallazgosChartCanal1"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosChartCanal2', 'Distribución de Hallazgos - Media Canal 2')">
-                    <h3 class="font-bold mb-2 text-center">Distribución de Hallazgos - Media Canal 2</h3>
-                    <div style="height: 300px;">
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosChartCanal2', 'Distribución de Hallazgos - Media Canal 2')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Distribución de Hallazgos - Media Canal 2</h3>
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="hallazgosChartCanal2"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('productosChart', 'Hallazgos por Producto')">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos por Producto</h3>
-                    <div style="height: 300px;">
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('productosChart', 'Hallazgos por Producto')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Hallazgos por Producto</h3>
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="productosChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('puestosChart', 'Hallazgos por Operario y Tipo')">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos por Operario y Tipo</h3>
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('puestosChart', 'Hallazgos por Operario y Tipo')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Hallazgos por Operario y Tipo</h3>
                     <p class="text-xs text-gray-500 text-center mb-1">Operario · Tipo de hallazgo</p>
-                    <div style="height: 300px;">
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="puestosChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZAnteriorChart', 'Hallazgos de Tolerancia Cero - CUARTO ANTERIOR')">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - CUARTO ANTERIOR</h3>
-                    <div style="height: 300px;">
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZAnteriorChart', 'Hallazgos de Tolerancia Cero - CUARTO ANTERIOR')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Hallazgos TC - CUARTO ANTERIOR</h3>
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="hallazgosTZAnteriorChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZPosteriorChart', 'Hallazgos de Tolerancia Cero - CUARTO POSTERIOR')">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - CUARTO POSTERIOR</h3>
-                    <div style="height: 300px;">
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZPosteriorChart', 'Hallazgos de Tolerancia Cero - CUARTO POSTERIOR')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Hallazgos TC - CUARTO POSTERIOR</h3>
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="hallazgosTZPosteriorChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md col-span-2 cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZComparativoChart', 'Hallazgos de Tolerancia Cero - Cuarto Anterior vs Posterior')">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero - Cuarto Anterior vs Posterior</h3>
-                    <div style="height: 300px;">
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md lg:col-span-2 cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZComparativoChart', 'Hallazgos de Tolerancia Cero - Cuarto Anterior vs Posterior')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Hallazgos TC - Anterior vs Posterior</h3>
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="hallazgosTZComparativoChart"></canvas>
                     </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZOperarioChart', 'Hallazgos de Tolerancia Cero por Operario')">
-                    <h3 class="font-bold mb-2 text-center">Hallazgos de Tolerancia Cero por Operario</h3>
+                <div class="bg-white p-3 sm:p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="abrirGrafico('hallazgosTZOperarioChart', 'Hallazgos de Tolerancia Cero por Operario')">
+                    <h3 class="font-bold mb-2 text-center text-sm sm:text-base">Hallazgos TC por Operario</h3>
                     <p class="text-xs text-gray-500 text-center mb-1">Operario · Tipo de hallazgo</p>
-                    <div style="height: 300px;">
+                    <div class="h-48 sm:h-64 md:h-72 lg:h-80">
                         <canvas id="hallazgosTZOperarioChart"></canvas>
                     </div>
                 </div>
@@ -530,26 +530,26 @@
     </script>
 
     <!-- Modal para ampliar gráficos -->
-    <div id="graficoModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[9999] flex items-center justify-center p-4" style="z-index: 9999;">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-auto" onclick="event.stopPropagation();">
+    <div id="graficoModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[9999] flex items-center justify-center p-2 sm:p-4" style="z-index: 9999;">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-7xl max-h-[98vh] sm:max-h-[95vh] overflow-auto" onclick="event.stopPropagation();">
             <!-- Encabezado del modal -->
-            <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-white">
-                <h2 id="modalGraficoTitulo" class="text-2xl font-bold text-gray-900"></h2>
-                <button onclick="cerrarGrafico()" class="text-gray-500 hover:text-gray-700 text-3xl font-bold px-4 py-2 hover:bg-gray-100 rounded">
+            <div class="flex justify-between items-center p-3 sm:p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
+                <h2 id="modalGraficoTitulo" class="text-base sm:text-xl md:text-2xl font-bold text-gray-900 pr-2"></h2>
+                <button onclick="cerrarGrafico()" class="text-gray-500 hover:text-gray-700 text-2xl sm:text-3xl font-bold px-2 sm:px-4 py-1 sm:py-2 hover:bg-gray-100 rounded flex-shrink-0">
                     ×
                 </button>
             </div>
 
             <!-- Cuerpo del modal con gráfico -->
-            <div class="p-8">
-                <div style="position: relative; height: 70vh; width: 100%;">
+            <div class="p-3 sm:p-6 md:p-8">
+                <div class="relative w-full" style="height: 50vh; min-height: 300px; max-height: 600px;">
                     <canvas id="modalGraficoCanvas"></canvas>
                 </div>
             </div>
 
             <!-- Footer del modal -->
-            <div class="flex justify-end p-6 border-t border-gray-200 bg-white">
-                <button onclick="cerrarGrafico()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+            <div class="flex justify-end p-3 sm:p-6 border-t border-gray-200 bg-white sticky bottom-0">
+                <button onclick="cerrarGrafico()" class="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base">
                     Cerrar
                 </button>
             </div>
