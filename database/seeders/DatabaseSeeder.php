@@ -17,6 +17,9 @@ class DatabaseSeeder extends Seeder
             LadoSeeder::class,
             TipoHallazgoSeeder::class,
             UbicacionSeeder::class,
+            UbicacionesToleranciaZeroSeeder::class,
+            CrearTransferenciaSeeder::class,
+            RelacionarUbicacionesPuestosSeeder::class,
         ]);
     }
 }

@@ -31,6 +31,11 @@ class GestionUsuarios extends Component
     public $mensaje = '';
     public $tipoMensaje = 'success';
 
+    // Modal contraseña temporal
+    public $passwordTemporal = '';
+    public $mostrarPasswordModal = false;
+    public $usuarioPasswordNombre = '';
+
     protected $messages = [
         'nombre.required' => 'El nombre es obligatorio.',
         'email.required' => 'El email es obligatorio.',
@@ -85,8 +90,11 @@ class GestionUsuarios extends Component
         $query = User::with('rol');
 
         if ($this->buscar) {
-            $query->where('name', 'like', '%' . $this->buscar . '%')
-                  ->orWhere('email', 'like', '%' . $this->buscar . '%');
+            $query->where(function ($q) {
+                $q->where('name', 'like', '%' . $this->buscar . '%')
+                  ->orWhere('email', 'like', '%' . $this->buscar . '%')
+                  ->orWhere('username', 'like', '%' . $this->buscar . '%');
+            });
         }
 
         if ($this->filtro_rol) {
@@ -204,7 +212,9 @@ class GestionUsuarios extends Component
             $usuario->password = Hash::make($contrasenaTemporal);
             $usuario->save();
 
-            $this->mostrarMensaje("Contraseña restablecida: $contrasenaTemporal (Cópiala y comparte con el usuario)", 'success');
+            $this->passwordTemporal = $contrasenaTemporal;
+            $this->usuarioPasswordNombre = $usuario->name;
+            $this->mostrarPasswordModal = true;
         } catch (\Exception $e) {
             $this->mostrarMensaje('Error: ' . $e->getMessage(), 'error');
         }
@@ -268,6 +278,13 @@ class GestionUsuarios extends Component
     public function limpiarMensaje()
     {
         $this->mensaje = '';
+    }
+
+    public function cerrarPasswordModal()
+    {
+        $this->mostrarPasswordModal = false;
+        $this->passwordTemporal = '';
+        $this->usuarioPasswordNombre = '';
     }
 
     public function render()

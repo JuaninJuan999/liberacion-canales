@@ -111,7 +111,7 @@ class HistorialRegistros extends Component
         $stats = (clone $query)
             ->select(
                 DB::raw('COUNT(registros_hallazgos.id) as total'),
-                DB::raw('SUM(CASE WHEN tipos_hallazgo.es_critico = 1 THEN 1 ELSE 0 END) as criticos')
+                DB::raw('SUM(CASE WHEN tipos_hallazgo.es_critico = TRUE THEN 1 ELSE 0 END) as criticos')
             )
             ->join('tipos_hallazgo', 'registros_hallazgos.tipo_hallazgo_id', '=', 'tipos_hallazgo.id')
             ->first();

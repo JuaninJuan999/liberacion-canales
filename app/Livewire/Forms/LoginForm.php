@@ -30,9 +30,8 @@ class LoginForm extends Form
     {
         $this->ensureIsNotRateLimited();
 
-        // Intentar autenticar por username o email
-        if (! Auth::attempt(['username' => $this->username, 'password' => $this->password], $this->remember) &&
-            ! Auth::attempt(['email' => $this->username, 'password' => $this->password], $this->remember)) {
+        // Autenticacion solo por username.
+        if (! Auth::attempt(['username' => $this->username, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -57,7 +56,7 @@ class LoginForm extends Form
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'form.email' => trans('auth.throttle', [
+            'form.username' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),

@@ -76,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
     // Gestión de Usuarios y Catálogos (Solo Admin)
     // La validación se hace en el componente Livewire
     Route::middleware(['auth'])->group(function () {
+        Route::get('/usuarios', GestionUsuarios::class)->name('usuarios.index');
         Route::get('/usuarios/gestion', GestionUsuarios::class)->name('usuarios.gestion');
         // Route::resource('usuarios', UsuarioController::class); // Usar GestionUsuarios component en su lugar
         // Nueva ruta para Puestos de Trabajo

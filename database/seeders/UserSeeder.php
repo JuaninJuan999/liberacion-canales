@@ -11,8 +11,8 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Obtener rol de Admin
-        $adminRol = Rol::where('nombre', 'Admin')->first();
+        // Mantener consistencia con RolSeeder (ADMINISTRADOR).
+        $adminRol = Rol::firstOrCreate(['nombre' => 'ADMINISTRADOR']);
 
         // Usuario Admin principal
         User::create([

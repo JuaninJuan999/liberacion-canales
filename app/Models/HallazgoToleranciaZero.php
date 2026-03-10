@@ -73,12 +73,12 @@ class HallazgoToleranciaZero extends Model
         return $query->where(function ($q) use ($fechaCarbon, $fechaSiguiente) {
             $q->whereDate('hallazgos_tolerancia_cero.fecha_operacion', $fechaCarbon)
                 ->where(function ($subQ) {
-                    $subQ->whereRaw('HOUR(hallazgos_tolerancia_cero.fecha_registro) >= 12')
-                        ->orWhereRaw('HOUR(hallazgos_tolerancia_cero.fecha_registro) < 7');
+                    $subQ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) >= 12')
+                        ->orWhereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
                 })
                 ->orWhere(function ($subQ) use ($fechaSiguiente) {
                     $subQ->whereDate('hallazgos_tolerancia_cero.fecha_operacion', $fechaSiguiente)
-                        ->whereRaw('HOUR(hallazgos_tolerancia_cero.fecha_registro) < 7');
+                        ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
                 });
         });
     }
@@ -94,12 +94,12 @@ class HallazgoToleranciaZero extends Model
         return $query->where(function ($q) use ($inicio, $fin) {
             $q->whereBetween('hallazgos_tolerancia_cero.fecha_operacion', [$inicio, $fin])
                 ->where(function ($subQ) {
-                    $subQ->whereRaw('HOUR(hallazgos_tolerancia_cero.fecha_registro) >= 12')
-                        ->orWhereRaw('HOUR(hallazgos_tolerancia_cero.fecha_registro) < 7');
+                    $subQ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) >= 12')
+                        ->orWhereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
                 })
                 ->orWhere(function ($subQ) use ($inicio, $fin) {
                     $subQ->whereBetween('hallazgos_tolerancia_cero.fecha_operacion', [$inicio->copy()->addDay(), $fin->copy()->addDay()])
-                        ->whereRaw('HOUR(hallazgos_tolerancia_cero.fecha_registro) < 7');
+                        ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
                 });
         });
     }

@@ -46,7 +46,7 @@ new #[Layout('layouts.guest')] class extends Component
                    class="form-input" 
                    type="text" 
                    name="username" 
-                   placeholder="Usuario o correo electrónico"
+                     placeholder="Nombre de usuario"
                    required 
                    autofocus 
                    autocomplete="username" />
