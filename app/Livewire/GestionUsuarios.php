@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\User;
 use App\Models\Rol;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class GestionUsuarios extends Component
@@ -36,6 +37,13 @@ class GestionUsuarios extends Component
     public $mostrarPasswordModal = false;
     public $usuarioPasswordNombre = '';
 
+    // Edición inline
+    public $editandoUsuarioId = null;
+    public $editandoNombre = '';
+    public $editandoEmail = '';
+    public $editandoUsername = '';
+    public $editandoRolId = '';
+
     protected $messages = [
         'nombre.required' => 'El nombre es obligatorio.',
         'email.required' => 'El email es obligatorio.',
@@ -59,11 +67,13 @@ class GestionUsuarios extends Component
         // Si estamos creando un usuario, la contraseña es obligatoria y username debe ser único
         if ($this->modo === 'crear') {
             $rules['username'] .= '|unique:users,username';
+            $rules['email'] .= '|unique:users,email';
             $rules['password'] = 'required|string|min:8';
         }
-        // Si estamos editando, validar username único pero no el del usuario actual
+        // Si estamos editando, validar username y email único pero excluyendo el usuario actual
         elseif ($this->modo === 'editar') {
             $rules['username'] .= '|unique:users,username,' . $this->usuario_id_editar;
+            $rules['email'] .= '|unique:users,email,' . $this->usuario_id_editar;
         }
 
         return $rules;
@@ -139,6 +149,7 @@ class GestionUsuarios extends Component
         $this->reset(['nombre', 'email', 'username', 'password', 'rol_id', 'activo', 'usuario_id_editar']);
         $this->activo = true;
         $this->modo = 'crear';
+        $this->dispatch('formulario-abierto');
     }
 
     public function mostrarFormularioEditar($userId)
@@ -161,11 +172,21 @@ class GestionUsuarios extends Component
 
     public function guardar()
     {
-        $this->validate();
-
         try {
+            // Preparar campos antes de validar
+            $this->nombre = trim($this->nombre);
+            $this->email = strtolower(trim($this->email));
+            $this->username = strtolower(trim($this->username));
+
+            Log::info('GestionUsuarios guardar - Iniciando', ['modo' => $this->modo, 'usuario_id' => $this->usuario_id_editar ?? null]);
+
+            // Validar
+            $this->validate();
+
             if ($this->modo === 'crear') {
-                User::create([
+                Log::info('Creando nuevo usuario', ['nombre' => $this->nombre, 'email' => $this->email]);
+                
+                $usuario = User::create([
                     'name' => $this->nombre,
                     'email' => $this->email,
                     'username' => $this->username,
@@ -173,49 +194,59 @@ class GestionUsuarios extends Component
                     'rol_id' => $this->rol_id,
                     'activo' => $this->activo,
                 ]);
-                $this->mostrarMensaje('Usuario creado exitosamente', 'success');
+                
+                if ($usuario) {
+                    Log::info('Usuario creado exitosamente', ['id' => $usuario->id]);
+                    $this->mostrarMensaje('Usuario creado exitosamente', 'success');
+                    $this->cancelar();
+                    $this->cargarDatos();
+                } else {
+                    Log::error('Error al crear usuario - create retornó null');
+                    $this->mostrarMensaje('Error: No se pudo crear el usuario', 'error');
+                }
             } elseif ($this->modo === 'editar') {
+                // Verificar que el usuario existe
                 $usuario = User::find($this->usuario_id_editar);
-                $usuario->name = $this->nombre;
-                $usuario->email = $this->email;
-                $usuario->username = $this->username;
-                $usuario->rol_id = $this->rol_id;
-                $usuario->activo = $this->activo;
-
-                // Solo actualizar contraseña si se proporciona una nueva
-                if ($this->password) {
-                    $usuario->password = Hash::make($this->password);
+                if (!$usuario) {
+                    Log::error('Usuario no encontrado para editar', ['id' => $this->usuario_id_editar]);
+                    $this->mostrarMensaje('Usuario no encontrado', 'error');
+                    return;
                 }
 
-                $usuario->save();
+                Log::info('Editando usuario', ['id' => $usuario->id, 'nombre' => $this->nombre, 'email' => $this->email]);
+
+                // Actualizar usuario con los datos nuevos
+                $datosActualizacion = [
+                    'name' => $this->nombre,
+                    'email' => $this->email,
+                    'username' => $this->username,
+                    'rol_id' => $this->rol_id,
+                    'activo' => $this->activo,
+                ];
+
+                // Solo agregar contraseña si se proporciona una nueva
+                if (!empty($this->password)) {
+                    $datosActualizacion['password'] = Hash::make($this->password);
+                }
+
+                $filasActualizadas = $usuario->update($datosActualizacion);
+                Log::info('Update ejecutado', ['filas' => $filasActualizadas, 'id' => $usuario->id]);
+
+                // Verificar que realmente se guardó
+                $usuarioVerificado = User::find($this->usuario_id_editar);
+                Log::info('Usuario después del update', ['nombre_bd' => $usuarioVerificado->name, 'nombre_env' => $this->nombre]);
+
                 $this->mostrarMensaje('Usuario actualizado exitosamente', 'success');
+                $this->cancelar();
+                $this->cargarDatos();
             }
-
-            $this->cancelar();
-            $this->cargarDatos();
         } catch (\Exception $e) {
-            $this->mostrarMensaje('Error: ' . $e->getMessage(), 'error');
-        }
-    }
-
-    public function restablecerContrasena($userId)
-    {
-        try {
-            $usuario = User::find($userId);
-            if (!$usuario) {
-                $this->mostrarMensaje('Usuario no encontrado', 'error');
-                return;
-            }
-
-            // Generar contraseña temporal
-            $contrasenaTemporal = Str::random(12);
-            $usuario->password = Hash::make($contrasenaTemporal);
-            $usuario->save();
-
-            $this->passwordTemporal = $contrasenaTemporal;
-            $this->usuarioPasswordNombre = $usuario->name;
-            $this->mostrarPasswordModal = true;
-        } catch (\Exception $e) {
+            Log::error('Error en GestionUsuarios guardar:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'modo' => $this->modo,
+                'usuario_id' => $this->usuario_id_editar ?? null
+            ]);
             $this->mostrarMensaje('Error: ' . $e->getMessage(), 'error');
         }
     }
@@ -234,7 +265,10 @@ class GestionUsuarios extends Component
 
             $mensaje = $usuario->activo ? 'Usuario activado' : 'Usuario desactivado';
             $this->mostrarMensaje($mensaje, 'success');
+            
+            // Recargar datos después de la acción
             $this->cargarDatos();
+            $this->dispatch('accion-completada');
         } catch (\Exception $e) {
             $this->mostrarMensaje('Error: ' . $e->getMessage(), 'error');
         }
@@ -257,7 +291,34 @@ class GestionUsuarios extends Component
 
             $usuario->delete();
             $this->mostrarMensaje('Usuario eliminado exitosamente', 'success');
+            
+            // Recargar datos después de la acción
             $this->cargarDatos();
+            $this->dispatch('accion-completada');
+        } catch (\Exception $e) {
+            $this->mostrarMensaje('Error: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    public function restablecerContrasena($userId)
+    {
+        try {
+            $usuario = User::find($userId);
+            if (!$usuario) {
+                $this->mostrarMensaje('Usuario no encontrado', 'error');
+                return;
+            }
+
+            // Generar contraseña temporal
+            $contrasenaTemporal = Str::random(12);
+            $usuario->password = Hash::make($contrasenaTemporal);
+            $usuario->save();
+
+            $this->passwordTemporal = $contrasenaTemporal;
+            $this->usuarioPasswordNombre = $usuario->name;
+            $this->mostrarPasswordModal = true;
+            
+            $this->dispatch('contrasena-restablecida');
         } catch (\Exception $e) {
             $this->mostrarMensaje('Error: ' . $e->getMessage(), 'error');
         }
@@ -285,6 +346,96 @@ class GestionUsuarios extends Component
         $this->mostrarPasswordModal = false;
         $this->passwordTemporal = '';
         $this->usuarioPasswordNombre = '';
+    }
+
+    public function iniciarEdicionInline($userId)
+    {
+        $usuario = User::find($userId);
+        if (!$usuario) {
+            $this->mostrarMensaje('Usuario no encontrado', 'error');
+            return;
+        }
+
+        $this->editandoUsuarioId = $userId;
+        $this->editandoNombre = $usuario->name;
+        $this->editandoEmail = $usuario->email;
+        $this->editandoUsername = $usuario->username;
+        $this->editandoRolId = $usuario->rol_id;
+    }
+
+    public function cancelarEdicionInline()
+    {
+        $this->reset(['editandoUsuarioId', 'editandoNombre', 'editandoEmail', 'editandoUsername', 'editandoRolId']);
+        $this->dispatch('edicion-cancelada');
+    }
+
+    public function guardarEdicionInline()
+    {
+        try {
+            Log::info('Iniciando guardarEdicionInline', [
+                'usuario_id' => $this->editandoUsuarioId,
+                'nombre' => $this->editandoNombre,
+                'email' => $this->editandoEmail,
+                'username' => $this->editandoUsername,
+                'rol_id' => $this->editandoRolId
+            ]);
+
+            // Preparar datos
+            $this->editandoNombre = trim($this->editandoNombre);
+            $this->editandoEmail = strtolower(trim($this->editandoEmail));
+            $this->editandoUsername = strtolower(trim($this->editandoUsername));
+
+            // Validar datos
+            $this->validate([
+                'editandoNombre' => 'required|string|min:3|max:255',
+                'editandoEmail' => 'required|email|unique:users,email,' . $this->editandoUsuarioId,
+                'editandoUsername' => 'required|string|min:3|max:255|regex:/^[a-z0-9._-]+$/|unique:users,username,' . $this->editandoUsuarioId,
+                'editandoRolId' => 'required|exists:roles,id',
+            ]);
+
+            Log::info('Validación pasada');
+
+            $usuario = User::find($this->editandoUsuarioId);
+            if (!$usuario) {
+                Log::error('Usuario no encontrado', ['id' => $this->editandoUsuarioId]);
+                $this->mostrarMensaje('Usuario no encontrado', 'error');
+                return;
+            }
+
+            Log::info('Actualizando usuario', ['id' => $usuario->id]);
+
+            $resultado = $usuario->update([
+                'name' => $this->editandoNombre,
+                'email' => $this->editandoEmail,
+                'username' => $this->editandoUsername,
+                'rol_id' => (int)$this->editandoRolId,
+            ]);
+
+            Log::info('Resultado del update', ['resultado' => $resultado]);
+
+            // Verificar que se guardó
+            $usuarioActualizado = User::find($this->editandoUsuarioId);
+            Log::info('Usuario después del update', [
+                'nombre_bd' => $usuarioActualizado->name,
+                'nombre_env' => $this->editandoNombre,
+                'email_bd' => $usuarioActualizado->email
+            ]);
+
+            $this->mostrarMensaje('Usuario actualizado exitosamente', 'success');
+            
+            // Reset completo del estado de edición
+            $this->reset(['editandoUsuarioId', 'editandoNombre', 'editandoEmail', 'editandoUsername', 'editandoRolId']);
+            $this->cargarDatos();
+            $this->dispatch('usuario-guardado');
+            
+        } catch (\Exception $e) {
+            Log::error('Error en edición inline', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'usuario_id' => $this->editandoUsuarioId
+            ]);
+            $this->mostrarMensaje('Error al guardar: ' . $e->getMessage(), 'error');
+        }
     }
 
     public function render()

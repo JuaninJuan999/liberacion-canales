@@ -174,13 +174,23 @@
 
     {{-- Modal para mostrar evidencia --}}
     @if($mostrarModalEvidencia)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div class="bg-white rounded-lg shadow-xl p-4 max-w-2xl max-h-full overflow-auto">
-                <div class="flex justify-end">
-                    <button wire:click="cerrarModalEvidencia" class="text-gray-500 hover:text-gray-800">&times;</button>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" wire:click="cerrarModalEvidencia">
+            <div class="bg-white rounded-lg shadow-xl p-6 max-w-3xl max-h-[90vh] overflow-auto" @click="$event.stopPropagation()">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Evidencia</h3>
+                    <button wire:click="cerrarModalEvidencia" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
                 </div>
-                <div class="mt-4">
-                    <img src="{{ $evidenciaMostradaUrl }}" alt="Evidencia en grande" class="max-w-full h-auto">
+                <div class="flex justify-center bg-gray-100 rounded-lg p-8 min-h-[400px]">
+                    @if($evidenciaMostradaUrl)
+                        <img src="{{ $evidenciaMostradaUrl }}" 
+                             alt="Evidencia" 
+                             class="max-w-full max-h-[70vh] object-contain rounded-lg"
+                             loading="lazy">
+                    @else
+                        <div class="text-center text-gray-500 py-8">
+                            <p>No hay imagen disponible</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

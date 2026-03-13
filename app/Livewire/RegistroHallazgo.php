@@ -35,6 +35,7 @@ class RegistroHallazgo extends Component
     public $productos = [];
     public $tiposHallazgo = [];
     public $ubicaciones = [];
+    public $ubicacionesFiltradas = [];
     public $lados = [];
 
     // --- Control Flags ---
@@ -107,6 +108,7 @@ class RegistroHallazgo extends Component
         $this->reset(['ubicacion_id', 'lado_id', 'nombreUbicacionSeleccionada']);
         $this->mostrarUbicacion = false;
         $this->mostrarLado = false;
+        $this->ubicacionesFiltradas = [];
 
         if ($value) {
             $hallazgo = TipoHallazgo::find($value);
@@ -114,6 +116,10 @@ class RegistroHallazgo extends Component
 
             if ($this->nombreHallazgoSeleccionado === 'COBERTURA DE GRASA') {
                 $this->mostrarUbicacion = true;
+                // Filtrar solo Cadera y Pierna para Cobertura de Grasa (con los nombres exactos de la BD)
+                $this->ubicacionesFiltradas = Ubicacion::whereIn('nombre', ['Cadera', 'Pierna'])
+                    ->orderBy('nombre')
+                    ->get();
             } elseif (str_contains($this->nombreHallazgoSeleccionado, 'CORTE') && str_contains($this->nombreHallazgoSeleccionado, 'PIERNA')) {
                 $this->mostrarLado = true;
             }
@@ -151,7 +157,7 @@ class RegistroHallazgo extends Component
                 try {
                     // Usar timestamp para nombre único de foto
                     $nombreFoto = 'foto_' . time() . '_' . uniqid() . '.' . $this->foto->getClientOriginalExtension();
-                    $fotoPath = $this->foto->storeAs('evidencias', $nombreFoto, 'public');
+                    $fotoPath = $this->foto->storeAs('hallazgos', $nombreFoto, 'public');
                     
                     if (!$fotoPath) {
                         throw new \Exception('No se pudo guardar la foto en el servidor.');

@@ -67,7 +67,14 @@ class HistorialRegistros extends Component
     {
         $registro = RegistroHallazgo::findOrFail($registroId);
         if ($registro->evidencia_path) {
-            $this->evidenciaMostradaUrl = Storage::url($registro->evidencia_path);
+            $ruta = $registro->evidencia_path;
+            
+            // Si la ruta no contiene "hallazgos/", agregarla
+            if (!str_contains($ruta, 'hallazgos/')) {
+                $ruta = 'hallazgos/' . $ruta;
+            }
+            
+            $this->evidenciaMostradaUrl = '/storage/' . $ruta;
             $this->mostrarModalEvidencia = true;
         }
     }
