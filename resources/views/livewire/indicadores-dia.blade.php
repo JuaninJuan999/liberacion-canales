@@ -1,18 +1,18 @@
 <div wire:poll.3s="actualizarDespuesDeRegistro" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     {{-- Header dinámico --}}
     <div class="mb-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <img src="{{ asset('logo.png') }}" alt="Logo" class="h-12 w-auto object-contain">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">📊 Indicador Diario</h1>
-                        <p class="text-gray-500 mt-1 text-sm">Monitoreo en tiempo real de hallazgos</p>
-                    </div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                <img src="{{ asset('logo.png') }}" alt="Logo" class="h-6 sm:h-10 max-w-[40px] sm:max-w-[80px] object-contain flex-shrink-0">
+                <div class="min-w-0">
+                    <h1 class="text-lg sm:text-2xl font-bold text-gray-900 truncate">📊 Indicador Diario</h1>
+                    <p class="text-gray-500 mt-1 text-xs sm:text-sm">Monitoreo en tiempo real de hallazgos</p>
                 </div>
-                <div class="text-right">
-                    <p class="text-xs text-gray-500">Mes seleccionado:</p>
-                    <p class="text-xl font-bold text-blue-600">{{ \Carbon\Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM Y') }}</p>
+            </div>
+            <div class="text-left sm:text-right flex-shrink-0">
+                <p class="text-xs text-gray-500">Mes seleccionado:</p>
+                <p class="text-base sm:text-xl font-bold text-blue-600">{{ \Carbon\Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM Y') }}</p>
                 </div>
             </div>
         </div>

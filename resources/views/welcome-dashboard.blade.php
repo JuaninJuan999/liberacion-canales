@@ -1,24 +1,20 @@
 <x-app-layout>
     <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         {{-- Header de Bienvenida --}}
-        <div class="bg-white border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-4xl font-bold text-gray-900">¡Bienvenido! 👋</h1>
-                        <p class="text-lg text-gray-600 mt-2">{{ auth()->user()->name }}, accede a los módulos desde aquí</p>
-                    </div>
-                    <div class="hidden md:block text-gray-300">
-                        <svg class="w-20 h-20 opacity-10" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                        </svg>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <img src="{{ asset('logo.png') }}" alt="Logo" class="h-6 sm:h-10 max-w-[40px] sm:max-w-[80px] object-contain flex-shrink-0">
+                    <div class="min-w-0">
+                        <h1 class="text-xl sm:text-3xl font-bold text-gray-900 truncate">¡Bienvenido! 👋</h1>
+                        <p class="text-sm sm:text-base text-gray-500 mt-1 truncate">{{ auth()->user()->name }}, accede a los módulos desde aquí</p>
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- Contenido Principal --}}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             
             {{-- Grid de Módulos Principales (2 filas de 4) --}}
             <div class="mb-16">
@@ -113,6 +109,29 @@
                             </div>
                         </a>
                     </div>
+                </div>
+            @endif
+
+            {{-- Tiempo de Usabilidad (Solo Admin) --}}
+            @if(strtoupper(auth()->user()->rol->nombre ?? '') === 'ADMINISTRADOR')
+                <div class="mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-2">
+                        <div class="w-1 h-8 bg-cyan-600 rounded"></div>
+                        Tiempo de Usabilidad
+                    </h2>
+                    <a href="{{ route('tiempo-usabilidad') }}" 
+                       class="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-8 border border-gray-100 hover:border-cyan-500 block">
+                        <div class="flex items-center gap-4">
+                            <div class="text-5xl">⏱️</div>
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-gray-900 text-lg group-hover:text-cyan-600 transition-colors">Tiempo de Usabilidad</h3>
+                                <p class="text-gray-500 text-sm mt-1">Controla el tiempo de uso del sistema por usuario con gráficas y estadísticas</p>
+                            </div>
+                            <svg class="w-5 h-5 text-gray-400 group-hover:text-cyan-600 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                    </a>
                 </div>
             @endif
 

@@ -3,14 +3,12 @@
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
 
             {{-- Header con logo --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <img src="{{ asset('logo.png') }}" alt="Logo" class="h-12 w-auto object-contain">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">Dashboard - Indicadores de Calidad</h1>
-                            <p class="text-gray-500 mt-1 text-sm">Resumen diario de operaciones</p>
-                        </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <img src="{{ asset('logo.png') }}" alt="Logo" class="h-6 sm:h-10 max-w-[40px] sm:max-w-[80px] object-contain flex-shrink-0">
+                    <div class="min-w-0">
+                        <h1 class="text-lg sm:text-2xl font-bold text-gray-900 truncate">Dashboard - Indicadores de Calidad</h1>
+                        <p class="text-gray-500 mt-1 text-xs sm:text-sm">Resumen diario de operaciones</p>
                     </div>
                 </div>
             </div>

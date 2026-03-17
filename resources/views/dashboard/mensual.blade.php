@@ -3,17 +3,17 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Header con logo --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <img src="{{ asset('logo.png') }}" alt="Logo" class="h-12 w-auto object-contain">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">Dashboard Mensual - Indicadores</h1>
-                            <p class="text-gray-500 mt-1 text-sm">Análisis completo de indicadores y tendencias</p>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <img src="{{ asset('logo.png') }}" alt="Logo" class="h-6 sm:h-10 max-w-[40px] sm:max-w-[80px] object-contain flex-shrink-0">
+                        <div class="min-w-0">
+                            <h1 class="text-lg sm:text-2xl font-bold text-gray-900 truncate">Dashboard Mensual - Indicadores</h1>
+                            <p class="text-gray-500 mt-1 text-xs sm:text-sm">Análisis completo de indicadores y tendencias</p>
                         </div>
                     </div>
                     <a href="{{ route('dashboard') }}"
-                       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm">
+                       class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-xs sm:text-sm flex-shrink-0 text-center">
                         ← Volver al Dashboard Diario
                     </a>
                 </div>

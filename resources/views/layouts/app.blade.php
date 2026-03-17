@@ -26,10 +26,10 @@
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
-            <!-- Sidebar Toggle Button -->
+            <!-- Sidebar Toggle Button (oculto por defecto, el JS lo muestra al cerrar sidebar) -->
             <button id="sidebarToggleBtn"
                     class="fixed top-4 left-4 z-50 p-2 text-gray-700 bg-white rounded-lg shadow-lg hover:bg-gray-100 cursor-pointer"
-                    style="transition: opacity 0.2s ease;">
+                    style="transition: opacity 0.2s ease; display: none;">
                 <svg class="w-6 h-6" id="toggleIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
@@ -41,10 +41,10 @@
                 <div class="h-full px-3 py-4 overflow-y-auto">
                     <!-- Logo/Título + botón cerrar sidebar -->
                     <div class="mb-5 px-3 flex items-center justify-between">
-                        <div>
+                        <a href="{{ route('home') }}" class="block hover:opacity-80 transition-opacity">
                             <h2 class="text-xl font-bold text-white">Liberación de Canales</h2>
                             <p class="text-xs text-gray-400 mt-1">Sistema de Calidad</p>
-                        </div>
+                        </a>
                         <button id="sidebarCloseBtn" class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg cursor-pointer" title="Ocultar menú">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
