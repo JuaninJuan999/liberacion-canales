@@ -138,7 +138,7 @@
                 <h3 class="text-2xl font-bold text-red-700 flex items-center gap-2">
                     <span>🚨</span> Hallazgos Tolerancia Cero del Mes
                 </h3>
-                <p class="text-sm text-gray-600 mt-1">Distribución de hallazgos críticos: {{ $toleranciaZeroDatos['total'] }} total</p>
+                <p class="text-sm text-gray-600 mt-1">{{ $toleranciaZeroDatos['total'] }} hallazgos | {{ number_format($toleranciaZeroDatos['totalAnimales']) }} animales procesados | Meta: 1.00%</p>
             </div>
 
             {{-- Tarjetas de Tolerancia Cero --}}
@@ -147,15 +147,10 @@
                 <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow-lg p-6 border-l-4 border-yellow-500">
                     <div class="flex justify-between items-start mb-3">
                         <h4 class="font-bold text-gray-800 text-sm">💛 MATERIA FECAL</h4>
-                        <span class="text-2xl">🚯</span>
+                        <span class="text-xs font-bold px-2 py-1 rounded {{ $toleranciaZeroDatos['materiaFecalPct'] <= 1.0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">META: 1.00%</span>
                     </div>
-                    <div class="text-4xl font-extrabold text-yellow-600 mb-2">{{ $toleranciaZeroDatos['materiaFecal'] }}</div>
-                    <div class="w-full bg-gray-300 rounded-full h-2">
-                        <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ $toleranciaZeroDatos['total'] > 0 ? ($toleranciaZeroDatos['materiaFecal'] / $toleranciaZeroDatos['total']) * 100 : 0 }}%"></div>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-2">
-                        {{ $toleranciaZeroDatos['total'] > 0 ? number_format(($toleranciaZeroDatos['materiaFecal'] / $toleranciaZeroDatos['total']) * 100, 1) : 0 }}% del total
-                    </p>
+                    <div class="text-4xl font-extrabold {{ $toleranciaZeroDatos['materiaFecalPct'] <= 1.0 ? 'text-green-600' : 'text-red-600' }} mb-2">{{ number_format($toleranciaZeroDatos['materiaFecalPct'], 2) }}%</div>
+                    <p class="text-xs text-gray-600 mb-2">{{ $toleranciaZeroDatos['materiaFecal'] }} hallazgos</p>
                     <div class="mt-3 text-xs text-gray-700">
                         <p>🥩 Anterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['MATERIA FECAL']['CUARTO ANTERIOR'] }}</span></p>
                         <p>🥩 Posterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['MATERIA FECAL']['CUARTO POSTERIOR'] }}</span></p>
@@ -166,15 +161,10 @@
                 <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-lg p-6 border-l-4 border-orange-500">
                     <div class="flex justify-between items-start mb-3">
                         <h4 class="font-bold text-gray-800 text-sm">🧡 CONTENIDO RUMINAL</h4>
-                        <span class="text-2xl">🔶</span>
+                        <span class="text-xs font-bold px-2 py-1 rounded {{ $toleranciaZeroDatos['contenidoRuminalPct'] <= 1.0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">META: 1.00%</span>
                     </div>
-                    <div class="text-4xl font-extrabold text-orange-600 mb-2">{{ $toleranciaZeroDatos['contenidoRuminal'] }}</div>
-                    <div class="w-full bg-gray-300 rounded-full h-2">
-                        <div class="bg-orange-500 h-2 rounded-full" style="width: {{ $toleranciaZeroDatos['total'] > 0 ? ($toleranciaZeroDatos['contenidoRuminal'] / $toleranciaZeroDatos['total']) * 100 : 0 }}%"></div>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-2">
-                        {{ $toleranciaZeroDatos['total'] > 0 ? number_format(($toleranciaZeroDatos['contenidoRuminal'] / $toleranciaZeroDatos['total']) * 100, 1) : 0 }}% del total
-                    </p>
+                    <div class="text-4xl font-extrabold {{ $toleranciaZeroDatos['contenidoRuminalPct'] <= 1.0 ? 'text-green-600' : 'text-red-600' }} mb-2">{{ number_format($toleranciaZeroDatos['contenidoRuminalPct'], 2) }}%</div>
+                    <p class="text-xs text-gray-600 mb-2">{{ $toleranciaZeroDatos['contenidoRuminal'] }} hallazgos</p>
                     <div class="mt-3 text-xs text-gray-700">
                         <p>🥩 Anterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['CONTENIDO RUMINAL']['CUARTO ANTERIOR'] }}</span></p>
                         <p>🥩 Posterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['CONTENIDO RUMINAL']['CUARTO POSTERIOR'] }}</span></p>
@@ -185,15 +175,10 @@
                 <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
                     <div class="flex justify-between items-start mb-3">
                         <h4 class="font-bold text-gray-800 text-sm">💙 LECHE VISIBLE</h4>
-                        <span class="text-2xl">🔵</span>
+                        <span class="text-xs font-bold px-2 py-1 rounded {{ $toleranciaZeroDatos['lecheVisiblePct'] <= 1.0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">META: 1.00%</span>
                     </div>
-                    <div class="text-4xl font-extrabold text-blue-600 mb-2">{{ $toleranciaZeroDatos['lecheVisible'] }}</div>
-                    <div class="w-full bg-gray-300 rounded-full h-2">
-                        <div class="bg-blue-500 h-2 rounded-full" style="width: {{ $toleranciaZeroDatos['total'] > 0 ? ($toleranciaZeroDatos['lecheVisible'] / $toleranciaZeroDatos['total']) * 100 : 0 }}%"></div>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-2">
-                        {{ $toleranciaZeroDatos['total'] > 0 ? number_format(($toleranciaZeroDatos['lecheVisible'] / $toleranciaZeroDatos['total']) * 100, 1) : 0 }}% del total
-                    </p>
+                    <div class="text-4xl font-extrabold {{ $toleranciaZeroDatos['lecheVisiblePct'] <= 1.0 ? 'text-green-600' : 'text-red-600' }} mb-2">{{ number_format($toleranciaZeroDatos['lecheVisiblePct'], 2) }}%</div>
+                    <p class="text-xs text-gray-600 mb-2">{{ $toleranciaZeroDatos['lecheVisible'] }} hallazgos</p>
                     <div class="mt-3 text-xs text-gray-700">
                         <p>🥩 Anterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['LECHE VISIBLE']['CUARTO ANTERIOR'] }}</span></p>
                         <p>🥩 Posterior: <span class="font-bold">{{ $toleranciaZeroDatos['porProducto']['LECHE VISIBLE']['CUARTO POSTERIOR'] }}</span></p>
@@ -205,9 +190,9 @@
             <div class="bg-white rounded-lg shadow-lg p-8 mb-8 border border-gray-200">
                 <div class="mb-6">
                     <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <span>📊</span> Distribución por Tipo
+                        <span>📊</span> Distribución por Tipo (%)
                     </h3>
-                    <p class="text-sm text-gray-600 mt-1">Proporción de hallazgos de tolerancia cero</p>
+                    <p class="text-sm text-gray-600 mt-1">Porcentaje TC = (hallazgos / (animales × 4)) × 100 | Meta: 1.00%</p>
                 </div>
                 <div class="h-80 bg-gradient-to-b from-red-50 to-white rounded-lg p-4 flex items-center justify-center">
                     <canvas id="chartToleranciaZeroMes" wire:ignore></canvas>
@@ -350,23 +335,32 @@
                             plugins: {
                                 legend: {
                                     display: true,
-                                    position: 'right',
+                                    position: 'bottom',
                                     labels: {
                                         font: {
                                             size: 13,
                                             weight: 'bold'
                                         },
                                         padding: 20,
-                                        usePointStyle: true
+                                        usePointStyle: true,
+                                        pointStyle: 'circle'
                                     }
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
-                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                            return context.label + ': ' + context.parsed.toFixed(2) + '%';
                                         }
+                                    }
+                                },
+                                datalabels: {
+                                    color: '#fff',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 14
+                                    },
+                                    formatter: function(value) {
+                                        return value > 0 ? value.toFixed(2) + '%' : '';
                                     }
                                 }
                             }

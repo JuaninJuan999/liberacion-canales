@@ -19,12 +19,31 @@ export function initDashboardCharts(chartData) {
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            font: { size: 12 },
+                            callback: function(value) {
+                                return value.toFixed(2) + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: { size: 12 },
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
                     }
                 },
                 plugins: {
                     legend: {
-                        position: 'top',
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 13, weight: 'bold' },
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     },
                     datalabels: {
                         display: true,

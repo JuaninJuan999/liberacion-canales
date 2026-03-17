@@ -46,7 +46,7 @@ class DashboardMensualController extends Controller
 
         // Metas hardcodeadas temporalmente
         $metas = [
-            'meta_sobrebarriga_rotas' => 0.9,
+            'meta_sobrebarriga_rotas' => 1.0,
             'meta_hematomas' => 0.5,
             'meta_corte_en_piernas' => 1.0,
             'meta_cobertura_grasa' => 1.5,
@@ -96,8 +96,6 @@ class DashboardMensualController extends Controller
 
         $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
         
-        // Inicializar estructuras para cada día
-        $fechas = [];
         $resultado = [
             'fechas' => [],
             'MATERIA FECAL' => [],
@@ -105,13 +103,14 @@ class DashboardMensualController extends Controller
             'LECHE VISIBLE' => []
         ];
         
-        // Recorrer cada indicador (día del mes)
         foreach ($indicadores as $indicador) {
             $fecha = Carbon::parse($indicador->fecha_operacion);
             $fechaTexto = $fecha->format('Y-m-d');
             $resultado['fechas'][] = $fecha->format('d/m');
             
-            // Contar hallazgos por tipo para este día
+            $animalesProcesados = (int) ($indicador->animales_procesados ?? 0);
+            $divisor = $animalesProcesados * 4;
+            
             foreach ($tiposNuevos as $tipo) {
                 $cantidad = HallazgoToleranciaZero::porFechaConTurno($fechaTexto)
                     ->whereHas('tipoHallazgo', function ($query) use ($tipo) {
@@ -119,7 +118,7 @@ class DashboardMensualController extends Controller
                     })
                     ->count();
                 
-                $resultado[$tipo][] = $cantidad;
+                $resultado[$tipo][] = $divisor > 0 ? round(($cantidad / $divisor) * 100, 2) : 0;
             }
         }
         

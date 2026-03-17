@@ -111,7 +111,7 @@
 
             {{-- Gráfico de Hallazgos Nuevos --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-semibold mb-4 text-gray-800">Hallazgos por Tipo (Materia Fecal, Contenido Ruminal, Leche Visible)</h3>
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">Hallazgos TC por Tipo</h3>
                 <div class="h-64">
                     <canvas id="chartHallazgosNuevos"></canvas>
                 </div>
@@ -215,28 +215,42 @@
                     plugins: {
                         legend: {
                             display: true,
-                            position: 'top',
+                            position: 'bottom',
                             labels: {
                                 font: {
-                                    size: 12,
+                                    size: 13,
                                     weight: 'bold'
                                 },
                                 padding: 15,
-                                usePointStyle: true
+                                usePointStyle: true,
+                                pointStyle: 'circle'
                             }
                         },
                         datalabels: {
                             anchor: 'end',
                             align: 'top',
-                            color: '#000',
-                            font: { weight: 'bold', size: 11 }
+                            color: '#333',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: function(value) {
+                                return value > 0 ? value.toFixed(2) + '%' : '';
+                            }
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 1
+                                font: { size: 12 },
+                                callback: function(value) {
+                                    return value.toFixed(2) + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 12 },
+                                maxRotation: 45,
+                                minRotation: 0
                             }
                         }
                     }

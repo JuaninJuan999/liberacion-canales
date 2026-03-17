@@ -86,14 +86,28 @@ class DashboardMes extends Component
             }
         }
 
+        // Calcular total animales procesados del mes para la fórmula TC
+        $totalAnimalesMes = IndicadorDiario::whereBetween('fecha_operacion', [$fechaInicio, $fechaFin])
+            ->sum('animales_procesados');
+        $divisorTC = $totalAnimalesMes * 4;
+
         $this->toleranciaZeroDatos = [
             'materiaFecal' => $materiaFecal,
             'contenidoRuminal' => $contenidoRuminal,
             'lecheVisible' => $lecheVisible,
             'total' => $materiaFecal + $contenidoRuminal + $lecheVisible,
+            'totalAnimales' => $totalAnimalesMes,
+            'materiaFecalPct' => $divisorTC > 0 ? round(($materiaFecal / $divisorTC) * 100, 2) : 0,
+            'contenidoRuminalPct' => $divisorTC > 0 ? round(($contenidoRuminal / $divisorTC) * 100, 2) : 0,
+            'lecheVisiblePct' => $divisorTC > 0 ? round(($lecheVisible / $divisorTC) * 100, 2) : 0,
+            'totalPct' => $divisorTC > 0 ? round((($materiaFecal + $contenidoRuminal + $lecheVisible) / $divisorTC) * 100, 2) : 0,
             'porProducto' => $tzPorProducto,
             'labels' => ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'],
-            'values' => [$materiaFecal, $contenidoRuminal, $lecheVisible],
+            'values' => [
+                $divisorTC > 0 ? round(($materiaFecal / $divisorTC) * 100, 2) : 0,
+                $divisorTC > 0 ? round(($contenidoRuminal / $divisorTC) * 100, 2) : 0,
+                $divisorTC > 0 ? round(($lecheVisible / $divisorTC) * 100, 2) : 0,
+            ],
             'colors' => ['#FCD34D', '#F97316', '#3B82F6'],
         ];
     }
