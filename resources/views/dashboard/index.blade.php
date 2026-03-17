@@ -114,40 +114,7 @@
                 </div>
             </div>
 
-            <!-- Últimos Hallazgos -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold mb-4">Últimos Hallazgos Registrados</h3>
-                    @if($hallazgosDia->count() > 0)
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hallazgo</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Operario</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200">
-                                    @foreach($hallazgosDia->take(15) as $hallazgo)
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-2 text-sm">{{ $hallazgo->fecha_operacion->format('d/m/Y') }}</td>
-                                            <td class="px-4 py-2 text-sm font-medium">{{ $hallazgo->codigo }}</td>
-                                            <td class="px-4 py-2 text-sm">{{ $hallazgo->producto->nombre }}</td>
-                                            <td class="px-4 py-2 text-sm">{{ $hallazgo->tipoHallazgo->nombre }}</td>
-                                            <td class="px-4 py-2 text-sm">{{ $hallazgo->operario?->nombre_completo ?? 'N/A' }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <p class="text-gray-500 text-center py-4">No hay hallazgos registrados para el rango de fechas</p>
-                    @endif
-                </div>
-            </div>
+
 
         </div>
     </div>
@@ -182,6 +149,18 @@
                 },
             };
 
+            const legendaCompleta = {
+                display: true,
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12,
+                    padding: 8,
+                    font: { size: 11 },
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            };
+
             const colores = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51', '#A8DADC', '#457B9D', '#1D3557'];
 
             // 1. Hallazgos - Media Canal 1
@@ -198,7 +177,7 @@
                     ...baseChartOptions,
                     plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;
@@ -228,7 +207,7 @@
                     ...baseChartOptions,
                     plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;
@@ -258,7 +237,7 @@
                     ...baseChartOptions,
                     plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;
@@ -289,7 +268,7 @@
                     ...baseChartOptions,
                      plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;
@@ -333,7 +312,7 @@
                     ...baseChartOptions,
                     plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;
@@ -365,7 +344,7 @@
                     ...baseChartOptions,
                     plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;
@@ -402,7 +381,7 @@
                     ...baseChartOptions,
                     plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;
@@ -431,7 +410,7 @@
                     ...baseChartOptions,
                      plugins: {
                         ...baseChartOptions.plugins,
-                        legend: { display: true, position: 'right' },
+                        legend: legendaCompleta,
                         datalabels: {
                             formatter: (value, ctx) => {
                                 const total = ctx.chart.getDatasetMeta(0).total;

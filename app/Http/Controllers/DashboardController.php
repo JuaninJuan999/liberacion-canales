@@ -136,7 +136,7 @@ class DashboardController extends Controller
     private function contarHallazgosTZPorOperario($fecha_inicio, $fecha_fin)
     {
         $hallazgos = HallazgoToleranciaZero::porRangoFechasConTurno($fecha_inicio, $fecha_fin)
-            ->with(['tipoHallazgo', 'ubicacion.puestoTrabajo'])
+            ->with(['tipoHallazgo', 'ubicacion'])
             ->get();
 
         $resultado = [];
@@ -145,27 +145,26 @@ class DashboardController extends Controller
             $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
             $operario = 'Sin asignación';
 
-            // Obtener operario a través de: ubicacion → puesto_trabajo → operarios_por_dia
-            if ($hallazgo->ubicacion && $hallazgo->ubicacion->puestoTrabajo) {
-                $fechaEfectiva = $hallazgo->getFechaOperacionEfectiva()->toDateString();
-
-                $operarioPorDia = DB::table('operarios_por_dia')
-                    ->where('puesto_trabajo_id', $hallazgo->ubicacion->puestoTrabajo->id)
-                    ->whereDate('fecha_operacion', $fechaEfectiva)
-                    ->first();
-
-                if ($operarioPorDia) {
-                    $operarioObj = DB::table('operarios')
-                        ->where('id', $operarioPorDia->operario_id)
+            // Obtener operario a través de las relaciones
+            if ($hallazgo->ubicacion) {
+                $puestoTrabajo = $hallazgo->ubicacion->puestoTrabajo;
+                
+                if ($puestoTrabajo) {
+                    // Buscar el operario asignado para este puesto y fecha
+                    $operarioPorDia = $puestoTrabajo->operariosPorDia()
+                        ->whereDate('fecha_operacion', $hallazgo->fecha_operacion)
+                        ->with('operario')
                         ->first();
-                    if ($operarioObj) {
-                        $operario = $operarioObj->nombre;
+
+                    if ($operarioPorDia && $operarioPorDia->operario) {
+                        $operario = $operarioPorDia->operario->nombre;
                     }
                 }
             }
 
             if (in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
-                $clave = $operario . ' | ' . $tipo;
+                $ubicacionNombre = $hallazgo->ubicacion->nombre ?? 'Sin ubicación';
+                $clave = $operario . ' | ' . $tipo . ' | ' . $ubicacionNombre;
                 $resultado[$clave] = ($resultado[$clave] ?? 0) + 1;
             }
         }
