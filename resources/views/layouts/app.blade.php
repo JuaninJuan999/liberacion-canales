@@ -27,20 +27,29 @@
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
             <!-- Sidebar Toggle Button -->
-            <button id="sidebarToggleBtn" 
-                    class="fixed top-4 left-4 z-50 p-2 text-gray-700 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition">
+            <button id="sidebarToggleBtn"
+                    class="fixed top-4 left-4 z-50 p-2 text-gray-700 bg-white rounded-lg shadow-lg hover:bg-gray-100 cursor-pointer"
+                    style="transition: opacity 0.2s ease;">
                 <svg class="w-6 h-6" id="toggleIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
             </button>
 
             <!-- Sidebar -->
+            <div id="sidebarOverlay" class="fixed inset-0 z-30 bg-black/50 hidden" style="transition: opacity 0.3s ease;"></div>
             <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen sidebar-transition bg-gray-800 translate-x-0">
-                <div class="h-full px-3 py-4 overflow-y-auto pb-24">
-                    <!-- Logo/Título -->
-                    <div class="mb-5 px-3">
-                        <h2 class="text-xl font-bold text-white">Liberación de Canales</h2>
-                        <p class="text-xs text-gray-400 mt-1">Sistema de Calidad</p>
+                <div class="h-full px-3 py-4 overflow-y-auto">
+                    <!-- Logo/Título + botón cerrar sidebar -->
+                    <div class="mb-5 px-3 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Liberación de Canales</h2>
+                            <p class="text-xs text-gray-400 mt-1">Sistema de Calidad</p>
+                        </div>
+                        <button id="sidebarCloseBtn" class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg cursor-pointer" title="Ocultar menú">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                            </svg>
+                        </button>
                     </div>
 
                     <!-- Menú de Navegación -->
@@ -220,6 +229,19 @@
                         </li>
                         @endif
 
+                        <!-- Tiempo de Usabilidad -->
+                        @if($puedeVer(['Admin']))
+                        <li>
+                            <a href="{{ route('tiempo-usabilidad') }}" 
+                               class="flex items-center p-2 text-white rounded-lg hover:bg-gray-700 {{ request()->routeIs('tiempo-usabilidad') ? 'bg-gray-700' : '' }}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="ml-3">Tiempo de Usabilidad</span>
+                            </a>
+                        </li>
+                        @endif
+
                         <!-- Separador -->
                         <li class="pt-4 mt-4 border-t border-gray-700">
                             <p class="px-3 text-xs font-semibold text-gray-400 uppercase">Cuenta</p>
@@ -238,7 +260,7 @@
                     </ul>
 
                     <!-- Usuario y Logout en la parte inferior -->
-                    <div class="absolute bottom-4 left-0 right-0 px-3 space-y-3">
+                    <div class="mt-6 px-1 space-y-3 pb-4 border-t border-gray-700 pt-4">
                         <div class="p-3 bg-gray-700 rounded-lg">
                             <p class="text-sm font-medium text-white truncate">{{ Auth::user()->name }}</p>
                             <p class="text-xs text-gray-400 mt-1">{{ Auth::user()->email }}</p>
@@ -255,14 +277,6 @@
                     </div>
                 </div>
             </aside>
-
-            <!-- Botón para toggle sidebar en móvil -->
-            <button id="sidebarToggle" 
-                    class="fixed top-4 left-4 z-50 md:hidden p-2 text-gray-500 rounded-lg bg-white shadow-lg hover:bg-gray-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                </svg>
-            </button>
 
             <!-- Contenido principal -->
             <div id="mainContent" class="md:ml-64 transition-all duration-300">
@@ -282,56 +296,73 @@
             </div>
         </div>
 
-        <!-- Script para toggle del sidebar en móvil -->
+        <!-- Script unificado para sidebar toggle -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const sidebar = document.getElementById('sidebar');
-                const sidebarToggle = document.getElementById('sidebarToggle');
-                
-                // Ocultar sidebar en móvil por defecto
-                if (window.innerWidth < 768) {
-                    sidebar.style.transform = 'translateX(-100%)';
-                }
-                
-                sidebarToggle.addEventListener('click', function() {
-                    if (sidebar.style.transform === 'translateX(-100%)') {
-                        sidebar.style.transform = 'translateX(0)';
+                const overlay = document.getElementById('sidebarOverlay');
+                const mainContent = document.getElementById('mainContent');
+                const openBtn = document.getElementById('sidebarToggleBtn');
+                const closeBtn = document.getElementById('sidebarCloseBtn');
+                let abierto = true;
+
+                function esMobil() { return window.innerWidth < 768; }
+
+                function actualizarUI() {
+                    openBtn.style.display = abierto ? 'none' : 'block';
+                    if (esMobil()) {
+                        overlay.classList.toggle('hidden', !abierto);
+                        mainContent.style.paddingLeft = '';
+                        mainContent.classList.remove('md:ml-0');
+                        mainContent.classList.add('md:ml-64');
                     } else {
-                        sidebar.style.transform = 'translateX(-100%)';
+                        overlay.classList.add('hidden');
+                        if (abierto) {
+                            mainContent.classList.add('md:ml-64');
+                            mainContent.classList.remove('md:ml-0');
+                            mainContent.style.paddingLeft = '';
+                        } else {
+                            mainContent.classList.remove('md:ml-64');
+                            mainContent.classList.add('md:ml-0');
+                            mainContent.style.paddingLeft = '3.5rem';
+                        }
                     }
-                });
-                
-                // Cerrar sidebar al hacer clic fuera en móvil
-                document.addEventListener('click', function(event) {
-                    if (window.innerWidth < 768) {
-                        if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
-                            sidebar.style.transform = 'translateX(-100%)';
+                }
+
+                // En móvil empieza cerrado
+                if (esMobil()) {
+                    abierto = false;
+                    sidebar.classList.remove('translate-x-0');
+                    sidebar.classList.add('-translate-x-full');
+                }
+                actualizarUI();
+
+                function abrir() {
+                    abierto = true;
+                    sidebar.classList.add('translate-x-0');
+                    sidebar.classList.remove('-translate-x-full');
+                    actualizarUI();
+                }
+
+                function cerrar() {
+                    abierto = false;
+                    sidebar.classList.remove('translate-x-0');
+                    sidebar.classList.add('-translate-x-full');
+                    actualizarUI();
+                }
+
+                openBtn.addEventListener('click', abrir);
+                closeBtn.addEventListener('click', cerrar);
+                overlay.addEventListener('click', cerrar);
+
+                // Cerrar al hacer clic fuera en móvil
+                document.addEventListener('click', function(e) {
+                    if (esMobil() && abierto) {
+                        if (!sidebar.contains(e.target) && !openBtn.contains(e.target)) {
+                            cerrar();
                         }
                     }
                 });
-            });
-        </script>
-        
-        <script>
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-            const toggleIcon = document.getElementById('toggleIcon');
-            
-            sidebarToggleBtn.addEventListener('click', function() {
-                if (sidebar.classList.contains('translate-x-0')) {
-                    sidebar.classList.remove('translate-x-0');
-                    sidebar.classList.add('-translate-x-full');
-                    mainContent.classList.remove('md:ml-64');
-                    mainContent.classList.add('md:ml-0');
-                    toggleIcon.classList.add('rotate-180');
-                } else {
-                    sidebar.classList.add('translate-x-0');
-                    sidebar.classList.remove('-translate-x-full');
-                    mainContent.classList.add('md:ml-64');
-                    mainContent.classList.remove('md:ml-0');
-                    toggleIcon.classList.remove('rotate-180');
-                }
             });
         </script>
         @stack('scripts')

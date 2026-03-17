@@ -1,14 +1,19 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Dashboard - Indicadores de Calidad
-            </h2>
-        </div>
-    </x-slot>
-
     <div class="py-4 sm:py-6">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
+
+            {{-- Header con logo --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <img src="{{ asset('logo.png') }}" alt="Logo" class="h-12 w-auto object-contain">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">Dashboard - Indicadores de Calidad</h1>
+                            <p class="text-gray-500 mt-1 text-sm">Resumen diario de operaciones</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Filtro de Fechas -->
             <div class="bg-white shadow-sm rounded-lg p-3 sm:p-4">

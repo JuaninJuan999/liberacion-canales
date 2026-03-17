@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Form;
+use App\Models\SesionUsuario;
 
 class LoginForm extends Form
 {
@@ -40,6 +41,15 @@ class LoginForm extends Form
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        // Registrar sesión de usuario
+        $sesion = SesionUsuario::create([
+            'user_id' => Auth::id(),
+            'login_at' => now(),
+            'ultima_actividad' => now(),
+            'ip_address' => request()->ip(),
+        ]);
+        session(['sesion_usuario_id' => $sesion->id]);
     }
 
     /**

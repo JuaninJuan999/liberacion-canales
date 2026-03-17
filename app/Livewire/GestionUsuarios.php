@@ -273,6 +273,25 @@ class GestionUsuarios extends Component
         $this->flash($usuario->activo ? 'Usuario activado.' : 'Usuario desactivado.');
     }
 
+    public function eliminar(int $id): void
+    {
+        if ($id === auth()->id()) {
+            $this->flash('No puedes eliminar tu propia cuenta.', 'error');
+            return;
+        }
+
+        $usuario = User::find($id);
+        if (!$usuario) {
+            $this->flash('Usuario no encontrado.', 'error');
+            return;
+        }
+
+        $nombre = $usuario->name;
+        $usuario->delete();
+
+        $this->flash("Usuario {$nombre} eliminado exitosamente.");
+    }
+
     public function limpiarMensaje(): void
     {
         $this->mensaje = '';

@@ -23,6 +23,7 @@ use App\Livewire\IndicadoresDia;
 use App\Livewire\GestionOperariosDia;
 use App\Livewire\AsignacionOperarios;
 use App\Livewire\GestionUsuarios;
+use App\Livewire\TiempoUsabilidad;
 use App\Livewire\Pages\Auth\Login;
 
 // Rutas públicas (sin autenticación)
@@ -78,6 +79,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['auth'])->group(function () {
         Route::get('/usuarios', GestionUsuarios::class)->name('usuarios.index');
         Route::get('/usuarios/gestion', GestionUsuarios::class)->name('usuarios.gestion');
+        Route::get('/tiempo-usabilidad', TiempoUsabilidad::class)->name('tiempo-usabilidad');
         // Route::resource('usuarios', UsuarioController::class); // Usar GestionUsuarios component en su lugar
         // Nueva ruta para Puestos de Trabajo
         Route::resource('puestos_trabajo', PuestoTrabajoController::class)->except(['show']);
