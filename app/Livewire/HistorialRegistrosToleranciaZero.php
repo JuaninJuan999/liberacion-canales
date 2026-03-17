@@ -140,12 +140,8 @@ class HistorialRegistrosToleranciaZero extends Component
     
     protected function construirQuery()
     {
-        return HallazgoToleranciaZero::query()
+        return HallazgoToleranciaZero::porRangoFechasConTurno($this->fecha_inicio, $this->fecha_fin)
             ->with(['producto', 'tipoHallazgo', 'usuario', 'ubicacion.puestoTrabajo'])
-            ->whereBetween('fecha_operacion', [
-                Carbon::parse($this->fecha_inicio)->startOfDay(),
-                Carbon::parse($this->fecha_fin)->endOfDay()
-            ])
             ->when($this->producto_id, function($query) {
                 $query->where('producto_id', $this->producto_id);
             })

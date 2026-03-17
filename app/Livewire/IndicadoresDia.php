@@ -24,12 +24,14 @@ class IndicadoresDia extends Component
     public $contenidoRuminalTC = 0;
     public $lecheVisibleTC = 0;
     public $totalHallazgosTC = 0;
+    public $detalleTCDia = null;
 
     /** Metas de porcentaje según especificación */
     const META_COBERTURA = 1.50;
     const META_HEMATOMA = 0.50;
     const META_CORTES_PIERNA = 1.00;
     const META_SOBREBARRIGA = 1.00;
+    const META_TC = 1.00;
 
     protected $listeners = ['hallazgo-registrado' => 'actualizarDespuesDeRegistro', 'fechaCambiada' => 'actualizarFecha', 'hallazgo-tolerancia-cero-registrado' => 'actualizarDespuesDeRegistro'];
 
@@ -194,9 +196,19 @@ class IndicadoresDia extends Component
 
         foreach ($resumenPorDia as $fechaDia => &$fila) {
             $indicadorDia = IndicadorDiario::whereDate('fecha_operacion', $fechaDia)->first();
-            $mediasCanales = (int) ($indicadorDia->medias_canales_total ?? 0);
-            $fila['participacion'] = $mediasCanales > 0
-                ? round(($fila['total_hallazgos'] / $mediasCanales) * 100, 2)
+            $animalesProcesados = (int) ($indicadorDia->animales_procesados ?? 0);
+            $divisor = $animalesProcesados * 4;
+            $fila['participacion'] = $divisor > 0
+                ? round(($fila['total_hallazgos'] / $divisor) * 100, 2)
+                : 0;
+            $fila['contenido_ruminal_pct'] = $divisor > 0
+                ? round(($fila['contenido_ruminal'] / $divisor) * 100, 2)
+                : 0;
+            $fila['materia_fecal_pct'] = $divisor > 0
+                ? round(($fila['materia_fecal'] / $divisor) * 100, 2)
+                : 0;
+            $fila['leche_visible_pct'] = $divisor > 0
+                ? round(($fila['leche_visible'] / $divisor) * 100, 2)
                 : 0;
         }
         unset($fila);
@@ -208,6 +220,26 @@ class IndicadoresDia extends Component
         $this->contenidoRuminalTC = array_sum(array_column($this->resumenToleranciaZero, 'contenido_ruminal'));
         $this->lecheVisibleTC = array_sum(array_column($this->resumenToleranciaZero, 'leche_visible'));
         $this->totalHallazgosTC = array_sum(array_column($this->resumenToleranciaZero, 'total_hallazgos'));
+
+        // Auto-seleccionar el día actual si existe en el resumen
+        $this->detalleTCDia = null;
+        foreach ($this->resumenToleranciaZero as $fila) {
+            if ($fila['fecha_operacion'] === $this->fecha) {
+                $this->detalleTCDia = $fila;
+                break;
+            }
+        }
+    }
+
+    public function seleccionarDiaTC($fechaDia)
+    {
+        foreach ($this->resumenToleranciaZero as $fila) {
+            if ($fila['fecha_operacion'] === $fechaDia) {
+                $this->detalleTCDia = $fila;
+                return;
+            }
+        }
+        $this->detalleTCDia = null;
     }
 
     public function render()

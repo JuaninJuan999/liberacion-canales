@@ -255,6 +255,7 @@
                 <h4 class="font-bold text-lg text-gray-900 mb-4">📊 Desglose Detallado de Hallazgos</h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     @foreach($hallazgosPorTipo as $hallazgo)
+                        @if(!in_array(strtoupper($hallazgo['nombre']), ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE']))
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg text-center shadow-sm border border-gray-200 transform transition hover:scale-105 hover:shadow-md">
                             <div class="font-semibold text-gray-700 text-xs mb-2 leading-tight">{{ $hallazgo['nombre'] }}</div>
                             <div class="text-3xl font-bold text-gray-800">{{ $hallazgo['total'] }}</div>
@@ -262,6 +263,7 @@
                                 <span class="text-xs text-gray-600 font-medium">{{ $indicadores->medias_canales_total > 0 ? number_format(($hallazgo['total'] / $indicadores->medias_canales_total) * 100, 2) : 0 }}%</span>
                             </div>
                         </div>
+                        @endif
                     @endforeach
                 </div>
             </div>
@@ -273,8 +275,67 @@
         </div>
     @endif
 
+    {{-- RESUMEN METAS TOLERANCIA CERO --}}
+    @if(count($resumenToleranciaZero) > 0)
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 mt-8">
+        {{-- META CONTENIDO RUMINAL --}}
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-md p-5 border-l-4 border-orange-500 transform transition hover:scale-105">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">🟠 CONTENIDO RUMINAL</h3>
+                <span class="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">META: {{ \App\Livewire\IndicadoresDia::META_TC }}%</span>
+            </div>
+            @php
+                $crFuera = array_filter($resumenToleranciaZero, function($row) {
+                    return !\App\Livewire\IndicadoresDia::cumpleMeta($row['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC);
+                });
+            @endphp
+            <div class="text-3xl font-bold text-orange-600 mb-2">{{ count($crFuera) }}/{{ count($resumenToleranciaZero) }}</div>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+                <div class="bg-orange-500 h-2 rounded-full" style="width: {{ count($resumenToleranciaZero) > 0 ? (count($crFuera) / count($resumenToleranciaZero)) * 100 : 0 }}%"></div>
+            </div>
+            <p class="text-xs text-gray-600 mt-2">{{ count($crFuera) }} días fuera de meta</p>
+        </div>
+
+        {{-- META MATERIA FECAL --}}
+        <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow-md p-5 border-l-4 border-yellow-500 transform transition hover:scale-105">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">🟡 MATERIA FECAL</h3>
+                <span class="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">META: {{ \App\Livewire\IndicadoresDia::META_TC }}%</span>
+            </div>
+            @php
+                $mfFuera = array_filter($resumenToleranciaZero, function($row) {
+                    return !\App\Livewire\IndicadoresDia::cumpleMeta($row['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC);
+                });
+            @endphp
+            <div class="text-3xl font-bold text-yellow-600 mb-2">{{ count($mfFuera) }}/{{ count($resumenToleranciaZero) }}</div>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+                <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ count($resumenToleranciaZero) > 0 ? (count($mfFuera) / count($resumenToleranciaZero)) * 100 : 0 }}%"></div>
+            </div>
+            <p class="text-xs text-gray-600 mt-2">{{ count($mfFuera) }} días fuera de meta</p>
+        </div>
+
+        {{-- META LECHE VISIBLE --}}
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md p-5 border-l-4 border-blue-500 transform transition hover:scale-105">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">🔵 LECHE VISIBLE</h3>
+                <span class="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded">META: {{ \App\Livewire\IndicadoresDia::META_TC }}%</span>
+            </div>
+            @php
+                $lvFuera = array_filter($resumenToleranciaZero, function($row) {
+                    return !\App\Livewire\IndicadoresDia::cumpleMeta($row['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC);
+                });
+            @endphp
+            <div class="text-3xl font-bold text-blue-600 mb-2">{{ count($lvFuera) }}/{{ count($resumenToleranciaZero) }}</div>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+                <div class="bg-blue-500 h-2 rounded-full" style="width: {{ count($resumenToleranciaZero) > 0 ? (count($lvFuera) / count($resumenToleranciaZero)) * 100 : 0 }}%"></div>
+            </div>
+            <p class="text-xs text-gray-600 mt-2">{{ count($lvFuera) }} días fuera de meta</p>
+        </div>
+    </div>
+    @endif
+
     {{-- TABLA HALLAZGOS TOLERANCIA CERO --}}
-    <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg border border-red-300 mt-8">
+    <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg border border-red-300">
         <div class="p-6 border-b border-red-300 bg-gradient-to-r from-red-50 to-orange-50">
             <div class="flex justify-between items-start">
                 <div>
@@ -288,22 +349,6 @@
                     <p class="text-3xl font-bold text-red-600">{{ $totalHallazgosTC }}</p>
                     <p class="text-xs text-gray-600">Total registros</p>
                 </div>
-            </div>
-        </div>
-
-        {{-- Estadísticas Rápidas --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50 border-b border-gray-200">
-            <div class="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200">
-                <p class="text-2xl font-bold text-yellow-600">{{ $materiaFecalTC }}</p>
-                <p class="text-xs text-gray-600 mt-1">Materia Fecal</p>
-            </div>
-            <div class="bg-orange-50 rounded-lg p-4 text-center border border-orange-200">
-                <p class="text-2xl font-bold text-orange-600">{{ $contenidoRuminalTC }}</p>
-                <p class="text-xs text-gray-600 mt-1">Contenido Ruminal</p>
-            </div>
-            <div class="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
-                <p class="text-2xl font-bold text-blue-600">{{ $lecheVisibleTC }}</p>
-                <p class="text-xs text-gray-600 mt-1">Leche Visible</p>
             </div>
         </div>
 
@@ -325,7 +370,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
                         @foreach($resumenToleranciaZero as $fila)
-                            <tr class="hover:bg-red-50 transition duration-150">
+                            <tr wire:click="seleccionarDiaTC('{{ $fila['fecha_operacion'] }}')" class="hover:bg-red-50 cursor-pointer transition duration-150 {{ $detalleTCDia && $detalleTCDia['fecha_operacion'] === $fila['fecha_operacion'] ? 'bg-red-100 font-bold' : '' }}">
                                 <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                                     📅 {{ \Carbon\Carbon::parse($fila['fecha_operacion'])->format('d/m/Y') }}
                                 </td>
@@ -338,17 +383,23 @@
                                 <td class="px-4 py-3 text-center text-sm font-bold text-red-700">
                                     {{ $fila['total_hallazgos'] }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-orange-700 font-semibold">
-                                    {{ $fila['contenido_ruminal'] }}
-                                </td>
-                                <td class="px-4 py-3 text-center text-sm text-yellow-700 font-semibold">
-                                    {{ $fila['materia_fecal'] }}
-                                </td>
-                                <td class="px-4 py-3 text-center text-sm text-blue-700 font-semibold">
-                                    {{ $fila['leche_visible'] }}
+                                <td class="px-4 py-3 text-center text-sm">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ number_format($fila['contenido_ruminal_pct'], 2) }}%
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3 text-center text-sm">
-                                    <span class="inline-flex items-center px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ number_format($fila['materia_fecal_pct'], 2) }}%
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        {{ number_format($fila['leche_visible_pct'], 2) }}%
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['participacion'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                         {{ number_format($fila['participacion'], 2) }}%
                                     </span>
                                 </td>
@@ -363,4 +414,79 @@
             </div>
         @endif
     </div>
+
+    {{-- Detalle del día seleccionado TC --}}
+    @if($detalleTCDia)
+        <div class="rounded-lg shadow-lg p-6 mb-6 mt-6" style="background: linear-gradient(to right, #dc2626, #b91c1c); color: #ffffff;">
+            <h3 class="text-2xl font-bold mb-2">🚨 Tolerancia Cero del {{ \Carbon\Carbon::parse($detalleTCDia['fecha_operacion'])->locale('es')->isoFormat('dddd, DD MMMM YYYY') }}</h3>
+            <p style="color: #fca5a5;">Haz clic en una fila de la tabla para cambiar el día</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <div class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg shadow-md border-l-4 border-red-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">⚠️ TOTAL HALLAZGOS TC</div>
+                <div class="text-4xl font-extrabold text-red-600 mb-1">{{ $detalleTCDia['total_hallazgos'] }}</div>
+                <div class="text-xs text-gray-600">Cuarto Ant: {{ $detalleTCDia['cuarto_anterior'] }} | Cuarto Post: {{ $detalleTCDia['cuarto_posterior'] }}</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg shadow-md border-l-4 border-orange-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">🟠 CONTENIDO RUMINAL</div>
+                <div class="text-4xl font-extrabold text-orange-600 mb-1">{{ number_format($detalleTCDia['contenido_ruminal_pct'], 2) }}%</div>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-gray-600">{{ $detalleTCDia['contenido_ruminal'] }} hallazgos</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                        {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅ Cumple' : '❌ Fuera' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-lg shadow-md border-l-4 border-yellow-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">🟡 MATERIA FECAL</div>
+                <div class="text-4xl font-extrabold text-yellow-600 mb-1">{{ number_format($detalleTCDia['materia_fecal_pct'], 2) }}%</div>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-gray-600">{{ $detalleTCDia['materia_fecal'] }} hallazgos</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                        {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅ Cumple' : '❌ Fuera' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg shadow-md border-l-4 border-blue-500 transform transition hover:scale-105">
+                <div class="font-bold text-sm text-gray-700 mb-2">🔵 LECHE VISIBLE</div>
+                <div class="text-4xl font-extrabold text-blue-600 mb-1">{{ number_format($detalleTCDia['leche_visible_pct'], 2) }}%</div>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-gray-600">{{ $detalleTCDia['leche_visible'] }} hallazgos</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                        {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅ Cumple' : '❌ Fuera' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Barra de participación TC del día --}}
+        <div class="bg-white rounded-lg shadow-lg p-6 border border-red-200 mb-6">
+            <h4 class="font-bold text-lg text-gray-900 mb-4">📊 Participación TC del Día</h4>
+            <div class="flex items-center gap-4">
+                <div class="flex-1">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700">Participación Total TC</span>
+                        <span class="text-sm font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['participacion'], \App\Livewire\IndicadoresDia::META_TC) ? 'text-green-600' : 'text-red-600' }}">{{ number_format($detalleTCDia['participacion'], 2) }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div class="h-4 rounded-full {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['participacion'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-500' : 'bg-red-500' }}" style="width: {{ min($detalleTCDia['participacion'] * 10, 100) }}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1">
+                        <span class="text-xs text-gray-500">0%</span>
+                        <span class="text-xs text-gray-500">Meta: {{ \App\Livewire\IndicadoresDia::META_TC }}%</span>
+                        <span class="text-xs text-gray-500">10%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @elseif(count($resumenToleranciaZero) > 0)
+        <div class="text-center py-8 px-4 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg border-2 border-dashed border-red-300 mt-6 mb-6">
+            <p class="text-2xl mb-2">👆</p>
+            <p class="text-gray-600 font-medium">Selecciona una fecha en la tabla de Tolerancia Cero para ver el detalle del día</p>
+        </div>
+    @endif
 </div>

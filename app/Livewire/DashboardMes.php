@@ -55,8 +55,8 @@ class DashboardMes extends Component
 
     private function cargarToleranciaZero($fechaInicio, $fechaFin)
     {
-        // Contar hallazgos por tipo para Tolerancia Cero
-        $hallazgos = HallazgoToleranciaZero::whereBetween('fecha_operacion', [$fechaInicio, $fechaFin])
+        // Contar hallazgos por tipo para Tolerancia Cero (respetando turno 12PM-7AM)
+        $hallazgos = HallazgoToleranciaZero::porRangoFechasConTurno($fechaInicio, $fechaFin)
             ->with(['tipoHallazgo', 'producto'])
             ->get();
 

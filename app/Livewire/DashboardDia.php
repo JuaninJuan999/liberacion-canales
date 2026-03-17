@@ -32,8 +32,8 @@ class DashboardDia extends Component
 
     public function cargarHallazgosTZ()
     {
-        // Obtener hallazgos de tolerancia cero para la fecha
-        $hallazgos = HallazgoToleranciaZero::where('fecha_operacion', $this->fecha)
+        // Obtener hallazgos de tolerancia cero para la fecha (respetando turno 12PM-7AM)
+        $hallazgos = HallazgoToleranciaZero::porFechaConTurno($this->fecha)
             ->with('tipoHallazgo')
             ->get();
 
@@ -66,8 +66,8 @@ class DashboardDia extends Component
 
     public function cargarHallazgosToleranciaZeroPorCuarto()
     {
-        // Obtener hallazgos de tolerancia cero para la fecha, solo Cuarto Anterior y Posterior
-        $hallazgos = HallazgoToleranciaZero::where('fecha_operacion', $this->fecha)
+        // Obtener hallazgos de tolerancia cero para la fecha (respetando turno 12PM-7AM)
+        $hallazgos = HallazgoToleranciaZero::porFechaConTurno($this->fecha)
             ->with(['producto', 'tipoHallazgo'])
             ->get();
 
