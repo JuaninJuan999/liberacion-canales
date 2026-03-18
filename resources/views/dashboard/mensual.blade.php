@@ -265,4 +265,14 @@
         });
     </script>
     @endpush
+
+    {{-- Auto-refresh cada 30 segundos --}}
+    <script>
+        (function() {
+            let autoRefreshInterval = 15000;
+            setInterval(function() {
+                window.location.reload();
+            }, autoRefreshInterval);
+        })();
+    </script>
 </x-app-layout>

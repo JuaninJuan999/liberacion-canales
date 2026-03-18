@@ -537,4 +537,17 @@
             </div>
         </div>
     </div>
+
+    {{-- Auto-refresh cada 30 segundos --}}
+    <script>
+        (function() {
+            let autoRefreshInterval = 30000;
+            let refreshTimer = setInterval(function() {
+                // No recargar si el modal está abierto
+                const modal = document.getElementById('graficoModal');
+                if (modal && !modal.classList.contains('hidden')) return;
+                window.location.reload();
+            }, autoRefreshInterval);
+        })();
+    </script>
 </x-app-layout>

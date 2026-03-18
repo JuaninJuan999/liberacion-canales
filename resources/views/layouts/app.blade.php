@@ -293,6 +293,14 @@
                 <main>
                     {{ $slot }}
                 </main>
+
+                <!-- Footer de derechos de autor -->
+                <footer style="text-align: center; padding: 12px 16px; border-top: 1px solid #e5e7eb; margin-top: 8px; color: #9ca3af; font-size: 12px; font-family: inherit;">
+                    <span>&copy; {{ date('Y') }} Colbeef &mdash; Liberación de Canales</span>
+                    <span style="display: block; margin-top: 2px;">
+                        Desarrollado por "<span style="color: #10b981; font-weight: 600;">Juan Pablo Carreño</span>"
+                    </span>
+                </footer>
             </div>
         </div>
 
