@@ -21,7 +21,6 @@ class DashboardMensualController extends Controller
             ->get();
 
         // --- Calcular porcentajes para los gráficos ---
-        // El cálculo se hace sobre el total de MEDIAS CANALES (animales * 2)
         $indicadores->each(function ($indicador) {
             $mediasCanales = ($indicador->animales_procesados > 0 ? $indicador->animales_procesados : 1) * 2;
             $indicador->porcentaje_sobrebarriga_rotas = ($indicador->sobrebarriga_rota / $mediasCanales) * 100;
@@ -29,7 +28,7 @@ class DashboardMensualController extends Controller
             $indicador->porcentaje_corte_en_piernas = ($indicador->cortes_piernas / $mediasCanales) * 100;
             $indicador->porcentaje_cobertura_grasa = ($indicador->cobertura_grasa / $mediasCanales) * 100;
         });
-        
+
         $totales = [
             'animales' => $indicadores->sum('animales_procesados'),
             'hallazgos' => $indicadores->sum('total_hallazgos'),
@@ -40,11 +39,37 @@ class DashboardMensualController extends Controller
             'sobrebarriga_rotas' => $indicadores->sum('sobrebarriga_rota'),
         ];
 
-        // --- Datos para Gráficos ---
-        $labels = $indicadores->map(fn($d) => Carbon::parse($d->fecha_operacion)->format('d/m'));
-        $daysCount = $indicadores->count();
+        // --- Generar todos los días del mes ---
+        $inicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        // Si el mes es el actual, solo mostramos hasta hoy
+        if ($inicio->year === now()->year && $inicio->month === now()->month) {
+            $fin = now()->startOfDay();
+        }
 
-        // Metas hardcodeadas temporalmente
+        $indicadoresPorFecha = $indicadores->keyBy(fn($d) => Carbon::parse($d->fecha_operacion)->format('Y-m-d'));
+
+        $labels = [];
+        $sobrebarrigaData = [];
+        $hematomasData = [];
+        $cortesData = [];
+        $coberturaData = [];
+
+        $cursor = $inicio->copy();
+        while ($cursor->lte($fin)) {
+            $fechaKey = $cursor->format('Y-m-d');
+            $labels[] = $cursor->format('d/m');
+            $ind = $indicadoresPorFecha->get($fechaKey);
+            $sobrebarrigaData[] = $ind ? round($ind->porcentaje_sobrebarriga_rotas, 2) : 0;
+            $hematomasData[]    = $ind ? round($ind->porcentaje_hematomas, 2) : 0;
+            $cortesData[]       = $ind ? round($ind->porcentaje_corte_en_piernas, 2) : 0;
+            $coberturaData[]    = $ind ? round($ind->porcentaje_cobertura_grasa, 2) : 0;
+            $cursor->addDay();
+        }
+
+        $daysCount = count($labels);
+
+        // Metas
         $metas = [
             'meta_sobrebarriga_rotas' => 1.0,
             'meta_hematomas' => 0.5,
@@ -56,72 +81,65 @@ class DashboardMensualController extends Controller
             'labels' => $labels,
             'datasets' => [
                 'sobrebarriga' => [
-                    ['label' => 'Sobrerbarriga R', 'data' => $indicadores->pluck('porcentaje_sobrebarriga_rotas'), 'borderColor' => '#EF4444', 'tension' => 0.1],
+                    ['label' => 'Sobrerbarriga R', 'data' => $sobrebarrigaData, 'borderColor' => '#EF4444', 'tension' => 0.1],
                     ['label' => 'META', 'data' => array_fill(0, $daysCount, $metas['meta_sobrebarriga_rotas']), 'borderColor' => '#F97316', 'borderDash' => [5, 5], 'pointRadius' => 0],
                 ],
                 'hematomas' => [
-                    ['label' => 'Hematomas', 'data' => $indicadores->pluck('porcentaje_hematomas'), 'borderColor' => '#22C55E', 'tension' => 0.1],
+                    ['label' => 'Hematomas', 'data' => $hematomasData, 'borderColor' => '#22C55E', 'tension' => 0.1],
                     ['label' => 'META', 'data' => array_fill(0, $daysCount, $metas['meta_hematomas']), 'borderColor' => '#F97316', 'borderDash' => [5, 5], 'pointRadius' => 0],
                 ],
                 'cortes_piernas' => [
-                    ['label' => 'Cortes en Piernas', 'data' => $indicadores->pluck('porcentaje_corte_en_piernas'), 'borderColor' => '#EC4899', 'tension' => 0.1],
+                    ['label' => 'Cortes en Piernas', 'data' => $cortesData, 'borderColor' => '#EC4899', 'tension' => 0.1],
                     ['label' => 'META', 'data' => array_fill(0, $daysCount, $metas['meta_corte_en_piernas']), 'borderColor' => '#F97316', 'borderDash' => [5, 5], 'pointRadius' => 0],
                 ],
                 'cobertura_grasa' => [
-                    ['label' => 'Cobertura Grasa', 'data' => $indicadores->pluck('porcentaje_cobertura_grasa'), 'borderColor' => '#3B82F6', 'tension' => 0.1],
+                    ['label' => 'Cobertura Grasa', 'data' => $coberturaData, 'borderColor' => '#3B82F6', 'tension' => 0.1],
                     ['label' => 'META', 'data' => array_fill(0, $daysCount, $metas['meta_cobertura_grasa']), 'borderColor' => '#F97316', 'borderDash' => [5, 5], 'pointRadius' => 0],
-                ]
-            ]
+                ],
+            ],
         ];
-        
-        // Datos de hallazgos nuevos
-        $hallazgosNuevos = $this->contarHallazgosNuevos($indicadores);
-        
-        // Agregar meta al array
+
+        // Datos de hallazgos TC por tipo
+        $hallazgosNuevos = $this->contarHallazgosNuevos($labels, $inicio, $fin, $indicadoresPorFecha);
         $hallazgosNuevos['meta'] = 1.0;
-        
+
         return view('dashboard.mensual', compact('mes', 'anio', 'indicadores', 'totales', 'chartData', 'hallazgosNuevos'));
     }
 
-    private function contarHallazgosNuevos($indicadores)
+    private function contarHallazgosNuevos(array $labels, Carbon $inicio, Carbon $fin, $indicadoresPorFecha): array
     {
-        if ($indicadores->isEmpty()) {
-            return [
-                'fechas' => [],
-                'MATERIA FECAL' => [],
-                'CONTENIDO RUMINAL' => [],
-                'LECHE VISIBLE' => []
-            ];
+        $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
+
+        $resultado = [
+            'fechas'            => $labels,
+            'MATERIA FECAL'     => [],
+            'CONTENIDO RUMINAL' => [],
+            'LECHE VISIBLE'     => [],
+        ];
+
+        $cursor = $inicio->copy();
+        while ($cursor->lte($fin)) {
+            $fechaKey = $cursor->format('Y-m-d');
+            $ind = $indicadoresPorFecha->get($fechaKey);
+            $animalesProcesados = (int) ($ind->animales_procesados ?? 0);
+            $divisor = $animalesProcesados * 4;
+
+            foreach ($tiposNuevos as $tipo) {
+                if ($ind && $divisor > 0) {
+                    $cantidad = HallazgoToleranciaZero::porFechaConTurno($fechaKey)
+                        ->whereHas('tipoHallazgo', function ($query) use ($tipo) {
+                            $query->where('nombre', $tipo);
+                        })
+                        ->count();
+                    $resultado[$tipo][] = round(($cantidad / $divisor) * 100, 2);
+                } else {
+                    $resultado[$tipo][] = 0;
+                }
+            }
+
+            $cursor->addDay();
         }
 
-        $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
-        
-        $resultado = [
-            'fechas' => [],
-            'MATERIA FECAL' => [],
-            'CONTENIDO RUMINAL' => [],
-            'LECHE VISIBLE' => []
-        ];
-        
-        foreach ($indicadores as $indicador) {
-            $fecha = Carbon::parse($indicador->fecha_operacion);
-            $fechaTexto = $fecha->format('Y-m-d');
-            $resultado['fechas'][] = $fecha->format('d/m');
-            
-            $animalesProcesados = (int) ($indicador->animales_procesados ?? 0);
-            $divisor = $animalesProcesados * 4;
-            
-            foreach ($tiposNuevos as $tipo) {
-                $cantidad = HallazgoToleranciaZero::porFechaConTurno($fechaTexto)
-                    ->whereHas('tipoHallazgo', function ($query) use ($tipo) {
-                        $query->where('nombre', $tipo);
-                    })
-                    ->count();
-                
-                $resultado[$tipo][] = $divisor > 0 ? round(($cantidad / $divisor) * 100, 2) : 0;
-            }
-        }
-        
         return $resultado;
     }
 }

@@ -38,7 +38,7 @@ Route::middleware('auth')->group(function () {
                 $sesion->update([
                     'logout_at' => now(),
                     'ultima_actividad' => now(),
-                    'duracion_minutos' => round($sesion->login_at->diffInSeconds(now()) / 60, 2),
+                    'duracion_minutos' => (int) round($sesion->login_at->diffInSeconds(now()) / 60),
                 ]);
             }
         }

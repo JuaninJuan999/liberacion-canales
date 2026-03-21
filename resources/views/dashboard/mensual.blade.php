@@ -84,30 +84,86 @@
 
             {{-- Gráficos de Tendencia --}}
             @if($indicadores->count() > 0)
+
+            {{-- Botón Descargar Gráficas --}}
+            <div class="flex justify-end mb-2">
+                <button onclick="abrirModalDescarga()"
+                        class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    Descargar gráficas
+                </button>
+            </div>
+
+            {{-- Modal de selección --}}
+            <div id="modalDescarga" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Seleccionar gráficas a descargar</h3>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-center gap-3">
+                            <input type="checkbox" id="chk_sobrebarriga" value="chartSobrebarriga" checked
+                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
+                            <label for="chk_sobrebarriga" class="text-sm text-gray-700 cursor-pointer">Sobrebarriga rotas</label>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <input type="checkbox" id="chk_hematomas" value="chartHematomas" checked
+                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
+                            <label for="chk_hematomas" class="text-sm text-gray-700 cursor-pointer">Hematomas</label>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <input type="checkbox" id="chk_cortes" value="chartCortePiernas" checked
+                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
+                            <label for="chk_cortes" class="text-sm text-gray-700 cursor-pointer">Corte en piernas</label>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <input type="checkbox" id="chk_cobertura" value="chartCoberturaGrasa" checked
+                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
+                            <label for="chk_cobertura" class="text-sm text-gray-700 cursor-pointer">Cobertura grasa</label>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <input type="checkbox" id="chk_hallazgos" value="chartHallazgosNuevos" checked
+                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
+                            <label for="chk_hallazgos" class="text-sm text-gray-700 cursor-pointer">Hallazgos TC por tipo</label>
+                        </li>
+                    </ul>
+                    <div class="flex gap-3 justify-end">
+                        <button onclick="cerrarModalDescarga()"
+                                class="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Cancelar
+                        </button>
+                        <button onclick="descargarGraficasSeleccionadas()"
+                                class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition">
+                            Descargar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de sobrebarriga rotas</h3>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Sobrebarriga rotas</h3>
                     <div class="h-64">
                         <canvas id="chartSobrebarriga"></canvas>
                     </div>
                 </div>
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de hematomas</h3>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Hematomas</h3>
                     <div class="h-64">
                         <canvas id="chartHematomas"></canvas>
                     </div>
                 </div>
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de corte en piernas</h3>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Corte en Piernas</h3>
                     <div class="h-64">
                         <canvas id="chartCortePiernas"></canvas>
                     </div>
                 </div>
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de cobertura grasa</h3>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Cobertura Grasa</h3>
                     <div class="h-64">
                         <canvas id="chartCoberturaGrasa"></canvas>
                     </div>
@@ -266,13 +322,92 @@
     </script>
     @endpush
 
-    {{-- Auto-refresh cada 30 segundos --}}
+    <script>
+        const chartTitulos = {
+            chartSobrebarriga:    'Indicador de Sobrebarriga Rotas',
+            chartHematomas:       'Indicador de Hematomas',
+            chartCortePiernas:    'Indicador de Corte en Piernas',
+            chartCoberturaGrasa:  'Indicador de Cobertura Grasa',
+            chartHallazgosNuevos: 'Hallazgos TC por Tipo',
+        };
+        const chartNombresArchivo = {
+            chartSobrebarriga:    'sobrebarriga-rotas',
+            chartHematomas:       'hematomas',
+            chartCortePiernas:    'corte-piernas',
+            chartCoberturaGrasa:  'cobertura-grasa',
+            chartHallazgosNuevos: 'hallazgos-tc',
+        };
+
+        function abrirModalDescarga() {
+            window._pausarAutoRefresh = true;
+            document.getElementById('modalDescarga').classList.remove('hidden');
+        }
+
+        function cerrarModalDescarga() {
+            window._pausarAutoRefresh = false;
+            document.getElementById('modalDescarga').classList.add('hidden');
+        }
+
+        function descargarGraficasSeleccionadas() {
+            const checkboxes = document.querySelectorAll('#modalDescarga input[type=checkbox]:checked');
+
+            if (checkboxes.length === 0) {
+                alert('Selecciona al menos una gráfica.');
+                return;
+            }
+
+            const TITULO_H   = 40;  // altura reservada para el título
+            const PADDING    = 16;
+
+            checkboxes.forEach(function(chk) {
+                const canvas = document.getElementById(chk.value);
+                if (!canvas) return;
+
+                const titulo = chartTitulos[chk.value] || chk.value;
+
+                // Canvas temporal con espacio extra para el título
+                const tmpCanvas = document.createElement('canvas');
+                tmpCanvas.width  = canvas.width;
+                tmpCanvas.height = canvas.height + TITULO_H;
+                const ctx = tmpCanvas.getContext('2d');
+
+                // Fondo blanco
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+
+                // Título
+                ctx.fillStyle = '#1f2937';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(titulo, PADDING, TITULO_H / 2);
+
+                // Gráfica
+                ctx.drawImage(canvas, 0, TITULO_H);
+
+                const link = document.createElement('a');
+                link.href = tmpCanvas.toDataURL('image/png');
+                link.download = (chartNombresArchivo[chk.value] || chk.value) + '.png';
+                link.click();
+            });
+
+            cerrarModalDescarga();
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('modalDescarga').addEventListener('click', function(e) {
+            if (e.target === this) cerrarModalDescarga();
+        });
+    </script>
+
+    {{-- Auto-refresh cada 15 segundos (pausado mientras el modal está abierto) --}}
     <script>
         (function() {
-            let autoRefreshInterval = 15000;
+            window._pausarAutoRefresh = false;
             setInterval(function() {
-                window.location.reload();
-            }, autoRefreshInterval);
+                if (!window._pausarAutoRefresh) {
+                    window.location.reload();
+                }
+            }, 15000);
         })();
     </script>
 </x-app-layout>

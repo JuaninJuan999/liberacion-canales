@@ -221,10 +221,11 @@ class IndicadoresDia extends Component
         $this->lecheVisibleTC = array_sum(array_column($this->resumenToleranciaZero, 'leche_visible'));
         $this->totalHallazgosTC = array_sum(array_column($this->resumenToleranciaZero, 'total_hallazgos'));
 
-        // Auto-seleccionar el día actual si existe en el resumen
+        // Mantener la fecha ya seleccionada; si no hay ninguna, intentar con el día actual
+        $fechaBuscada = $this->detalleTCDia['fecha_operacion'] ?? $this->fecha;
         $this->detalleTCDia = null;
         foreach ($this->resumenToleranciaZero as $fila) {
-            if ($fila['fecha_operacion'] === $this->fecha) {
+            if ($fila['fecha_operacion'] === $fechaBuscada) {
                 $this->detalleTCDia = $fila;
                 break;
             }
