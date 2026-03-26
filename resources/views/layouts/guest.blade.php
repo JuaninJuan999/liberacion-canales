@@ -179,7 +179,7 @@
                 justify-content: center;
                 background: var(--color-dark);
                 position: relative;
-                overflow-y: auto;
+                overflow-y: none;
             }
 
             .login-form-panel::before {
@@ -596,9 +596,31 @@
         </style>
     </head>
     <body>
+                <!-- Botón SUIT PRINCIPAL en la parte superior izquierda -->
+                <a href="http://192.168.20.177:8000/site.html" target="_blank" rel="noopener" style="
+                    position: fixed;
+                    top: 18px;
+                    left: 18px;
+                    z-index: 1000;
+                    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+                    color: #fff;
+                    padding: 10px 18px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 15px;
+                    box-shadow: 0 2px 8px rgba(16,185,129,0.18);
+                    text-decoration: none;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: background 0.2s;
+                " onmouseover="this.style.background='#13bd7f'" onmouseout="this.style.background='linear-gradient(135deg, #0eeea7 0%, #c93131 100%)'">
+                    <svg style="width:20px;height:20px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" /><path stroke="currentColor" stroke-width="2" d="M8 12h8M12 8v8" /></svg>
+                    SUIT PRINCIPAL
+                </a>
         <!-- Panel lateral decorativo (visible solo en desktop) -->
         <div class="login-brand-panel">
-            <div class="brand-pattern"></div>
+        <div class="brand-pattern"></div>
             <div class="brand-content">
                 <div class="brand-logo">
                     <img src="/logo.png" alt="Logo">
