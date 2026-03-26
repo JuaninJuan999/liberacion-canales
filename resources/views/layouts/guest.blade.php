@@ -597,7 +597,7 @@
     </head>
     <body>
                 <!-- Botón SUIT PRINCIPAL en la parte superior izquierda -->
-                <a href="http://192.168.20.177:8000/site.html" target="_blank" rel="noopener" style="
+                <a href="http://192.168.20.177:8000/site.html" style="
                     position: fixed;
                     top: 18px;
                     left: 18px;
