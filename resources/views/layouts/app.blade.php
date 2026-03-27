@@ -67,7 +67,7 @@
                     <ul class="space-y-2 font-medium">
                                                 <!-- SUIT PRINCIPAL -->
                                                 <li>
-                                                    <a href="http://192.168.20.177:8000/site.html" class="flex items-center p-2 text-white rounded-lg hover:bg-blue-700">
+                                                    <a href="http://192.168.20.205:8000/site.html" class="flex items-center p-2 text-white rounded-lg hover:bg-blue-700">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
                                                             <path stroke="currentColor" stroke-width="2" d="M8 12h8M12 8v8" />
