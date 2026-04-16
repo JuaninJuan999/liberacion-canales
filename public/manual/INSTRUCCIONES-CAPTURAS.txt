@@ -1,0 +1,30 @@
+MANUAL PDF — CAPTURAS DE PANTALLA
+==================================
+
+1) Arranque la aplicación (Laragon con el virtual host del proyecto, o desde la carpeta del proyecto:
+   php artisan serve
+   y use la URL correspondiente en MANUAL_BASE_URL).
+
+2) En la raíz del proyecto, copie el ejemplo de variables:
+   copy .env.manual.example .env.manual
+   Edite .env.manual y complete MANUAL_BASE_URL, MANUAL_USERNAME y MANUAL_PASSWORD
+   con un usuario ADMINISTRADOR (así se podrán capturar todas las pantallas).
+
+3) Ejecute:
+   npm run manual:capturas
+
+   Se guardarán PNG en: public\manual\capturas\
+
+4) Genere o descargue el PDF:
+   - Desde el navegador, iniciado sesión: ruta /manual/usuario (vista previa) o /manual/usuario.pdf (descarga)
+   - O por consola: php artisan manual:export
+
+5) Archivo PDF estático (para enviar por correo sin entrar al sistema):
+   Tras "php artisan manual:export" quedará en:
+   public\manual\Manual-Usuario-Liberacion-Canales.pdf
+
+Notas
+-----
+- Si solo necesita la portada con la pantalla de login, puede ejecutar el script sin .env.manual:
+  solo se creará 01-login.png.
+- Si alguna ruta devuelve 403 para su usuario, esa captura no se generará (revise el rol).
