@@ -228,7 +228,7 @@
                 <div class="font-bold text-sm text-gray-700 mb-2">⚠️ TOTAL HALLAZGOS</div>
                 <div class="text-4xl font-extrabold text-yellow-600 mb-1">{{ number_format($indicadores->total_hallazgos ?? 0) }}</div>
                 <div class="w-full bg-gray-300 rounded-full h-2 mt-2">
-                    <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ ($indicadores->total_hallazgos ?? 0) > 0 ? min((($indicadores->total_hallazgos ?? 0) / (($indicadores->medias_canales_total ?? 1) / 10)) * 100, 100) : 0 }}%"></div>
+                    <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ ($indicadores->total_hallazgos ?? 0) > 0 && ($indicadores->medias_canales_total ?? 0) > 0 ? min((($indicadores->total_hallazgos ?? 0) / (($indicadores->medias_canales_total ?? 0) / 10)) * 100, 100) : 0 }}%"></div>
                 </div>
             </div>
 
