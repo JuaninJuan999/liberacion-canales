@@ -3,10 +3,22 @@
 namespace App\Services;
 
 use App\Models\IndicadorDiario;
+use App\Observers\RegistroHallazgoObserver;
 use Carbon\Carbon;
 
 class CalculadoraIndicadores
 {
+    /**
+     * Recalcula y devuelve los indicadores del día (tabla indicadores_diarios).
+     */
+    public function calcularIndicadoresDia(string|Carbon $fecha): ?IndicadorDiario
+    {
+        $fechaStr = Carbon::parse($fecha)->toDateString();
+        app(RegistroHallazgoObserver::class)->sincronizarIndicadoresParaFecha($fechaStr);
+
+        return IndicadorDiario::where('fecha_operacion', $fechaStr)->first();
+    }
+
     /**
      * Calcular indicadores mensuales a partir de los registros diarios.
      */
@@ -26,11 +38,11 @@ class CalculadoraIndicadores
         $columnas = array_keys($indicadoresDiarios->first()->getAttributes());
 
         foreach ($columnas as $columna) {
-            if (is_numeric($indicadoresDiarios->first()->$columna) && !in_array($columna, ['id', 'mes', 'año'])) {
+            if (is_numeric($indicadoresDiarios->first()->$columna) && ! in_array($columna, ['id', 'mes', 'año'])) {
                 $sumas[$columna] = $indicadoresDiarios->sum($columna);
             }
         }
-        
+
         // Calcular promedios y porcentajes agregados
         $diasProcesados = $indicadoresDiarios->count();
         $totalAnimales = $sumas['animales_procesados'] ?? 0;
@@ -38,16 +50,16 @@ class CalculadoraIndicadores
         $mediasCanalTotal = $sumas['medias_canales_total'] ?? 0;
         $canalesLiberadas = ($sumas['medias_canal_1'] ?? 0) + ($sumas['medias_canal_2'] ?? 0);
 
-        $promedio_liberacion = $mediasCanalTotal > 0 
+        $promedio_liberacion = $mediasCanalTotal > 0
             ? round(($canalesLiberadas / $mediasCanalTotal) * 100, 2)
             : 0;
 
-        $participacionMensual = $mediasCanalTotal > 0 
+        $participacionMensual = $mediasCanalTotal > 0
             ? round(($totalHallazgos / $mediasCanalTotal) * 100, 2)
             : 0;
 
         // Hallazgos críticos y leves (hallazgos críticos son cobertura_grasa + hematomas + cortes_piernas + sobrebarriga_rota)
-        $hallazgos_criticos = ($sumas['cobertura_grasa'] ?? 0) + ($sumas['hematomas'] ?? 0) 
+        $hallazgos_criticos = ($sumas['cobertura_grasa'] ?? 0) + ($sumas['hematomas'] ?? 0)
                             + ($sumas['cortes_piernas'] ?? 0) + ($sumas['sobrebarriga_rota'] ?? 0);
         $hallazgos_leves = $totalHallazgos - $hallazgos_criticos;
 
@@ -68,7 +80,7 @@ class CalculadoraIndicadores
 
         return $resultado;
     }
-    
+
     /**
      * Obtener tendencia semanal de los últimos 7 días.
      */
@@ -81,7 +93,7 @@ class CalculadoraIndicadores
             ->get([
                 'fecha_operacion as fecha',
                 'participacion_total as participacion',
-                'total_hallazgos'
+                'total_hallazgos',
             ]);
     }
 }

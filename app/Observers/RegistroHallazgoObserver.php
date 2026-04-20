@@ -14,21 +14,21 @@ class RegistroHallazgoObserver
     {
         // Recalcular para la fecha efectiva del turno
         $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
-        $this->recalcularIndicadores($fechaEfectiva);
+        $this->sincronizarIndicadoresParaFecha($fechaEfectiva);
     }
 
     public function updated(RegistroHallazgo $registroHallazgo): void
     {
         // Recalcular para la fecha efectiva del turno
         $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
-        $this->recalcularIndicadores($fechaEfectiva);
+        $this->sincronizarIndicadoresParaFecha($fechaEfectiva);
 
         if ($registroHallazgo->isDirty('fecha_operacion')) {
             $fechaAnterior = $registroHallazgo->getOriginal('fecha_operacion');
             // Crear un objeto temporal para obtener la fecha efectiva anterior
             $registroTemp = new RegistroHallazgo(['created_at' => $fechaAnterior]);
             $fechaAnteriorEfectiva = $registroTemp->getFechaOperacionEfectiva();
-            $this->recalcularIndicadores($fechaAnteriorEfectiva);
+            $this->sincronizarIndicadoresParaFecha($fechaAnteriorEfectiva);
         }
     }
 
@@ -36,7 +36,16 @@ class RegistroHallazgoObserver
     {
         // Recalcular para la fecha efectiva del turno
         $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
-        $this->recalcularIndicadores($fechaEfectiva);
+        $this->sincronizarIndicadoresParaFecha($fechaEfectiva);
+    }
+
+    /**
+     * Persiste fila en indicadores_diarios según hallazgos y animales del día (Y-m-d).
+     * Público para poder invocarlo tras clonar / recalcular desde servicios.
+     */
+    public function sincronizarIndicadoresParaFecha($fechaOperacionEfectiva): void
+    {
+        $this->recalcularIndicadores($fechaOperacionEfectiva);
     }
 
     protected function recalcularIndicadores($fechaOperacionEfectiva)

@@ -2,16 +2,20 @@
 
 namespace App\Livewire;
 
-use App\Models\IndicadorDiario;
 use App\Models\HallazgoToleranciaZero;
+use App\Models\IndicadorDiario;
+use App\Observers\RegistroHallazgoObserver;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class DashboardDia extends Component
 {
     public $fecha;
+
     public $indicadores;
+
     public $hallazgosTZPorHora = [];
+
     public $hallazgosToleranciaZeroPorCuarto = [];
 
     // Escucha el evento 'fechaCambiada' para actualizar la fecha
@@ -43,7 +47,7 @@ class DashboardDia extends Component
             $horas[$i] = [
                 'MATERIA FECAL' => 0,
                 'CONTENIDO RUMINAL' => 0,
-                'LECHE VISIBLE' => 0
+                'LECHE VISIBLE' => 0,
             ];
         }
 
@@ -51,10 +55,10 @@ class DashboardDia extends Component
         foreach ($hallazgos as $hallazgo) {
             $hora = (int) Carbon::parse($hallazgo->created_at)->format('H');
             $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
-            
+
             // Solo contar los 3 tipos de tolerancia cero
             if (in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
-                if (!isset($horas[$hora][$tipo])) {
+                if (! isset($horas[$hora][$tipo])) {
                     $horas[$hora][$tipo] = 0;
                 }
                 $horas[$hora][$tipo]++;
@@ -80,11 +84,11 @@ class DashboardDia extends Component
             $producto = $hallazgo->producto->nombre ?? 'Desconocido';
 
             // Solo incluir CUARTO ANTERIOR y CUARTO POSTERIOR
-            if (!in_array($producto, ['CUARTO ANTERIOR', 'CUARTO POSTERIOR'])) {
+            if (! in_array($producto, ['CUARTO ANTERIOR', 'CUARTO POSTERIOR'])) {
                 continue;
             }
 
-            if (!isset($resultados[$tipo])) {
+            if (! isset($resultados[$tipo])) {
                 $resultados[$tipo] = [
                     'tipo' => $tipo,
                     'CUARTO ANTERIOR' => 0,
@@ -116,15 +120,16 @@ class DashboardDia extends Component
      */
     public function recalcularIndicadores()
     {
-        $this->cargarIndicadores(); // Simplemente vuelve a cargar desde la DB
-        session()->flash('message', 'Datos del dashboard actualizados.');
+        app(RegistroHallazgoObserver::class)->sincronizarIndicadoresParaFecha($this->fecha);
+        $this->cargarIndicadores();
+        session()->flash('message', 'Indicadores recalculados desde los registros del día.');
     }
-    
+
     public function render()
     {
         // Asegurarse de que siempre haya un objeto, incluso si está vacío
-        if (!$this->indicadores) {
-            $this->indicadores = new IndicadorDiario();
+        if (! $this->indicadores) {
+            $this->indicadores = new IndicadorDiario;
         }
 
         return view('livewire.dashboard-dia');

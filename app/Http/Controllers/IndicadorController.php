@@ -5,46 +5,47 @@ namespace App\Http\Controllers;
 use App\Models\IndicadorDiario;
 use App\Services\CalculadoraIndicadores;
 use App\Services\GeneradorReportes;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class IndicadorController extends Controller
 {
     protected $calculadora;
+
     protected $generador;
-    
+
     public function __construct(CalculadoraIndicadores $calculadora, GeneradorReportes $generador)
     {
         $this->calculadora = $calculadora;
         $this->generador = $generador;
     }
-    
+
     /**
      * Mostrar indicadores del día
      */
     public function indicadoresDia(Request $request)
     {
         $fecha = $request->get('fecha', now()->format('Y-m-d'));
-        
+
         // Buscar indicadores existentes
-        $indicadores = IndicadorDiario::where('fecha', $fecha)->first();
-        
+        $indicadores = IndicadorDiario::where('fecha_operacion', $fecha)->first();
+
         // Si no existen, calcularlos
-        if (!$indicadores) {
+        if (! $indicadores) {
             $indicadores = $this->calculadora->calcularIndicadoresDia($fecha);
         }
-        
+
         // Obtener tendencia semanal
         $tendencia = $this->calculadora->obtenerTendenciaSemanal();
-        
+
         // Indicadores por puesto
-        $indicadoresPorPuesto = $indicadores 
-            ? json_decode($indicadores->indicadores_puesto, true) 
+        $indicadoresPorPuesto = $indicadores
+            ? json_decode($indicadores->indicadores_puesto, true)
             : [];
-        
+
         return view('indicadores.dia', compact('indicadores', 'tendencia', 'indicadoresPorPuesto', 'fecha'));
     }
-    
+
     /**
      * Mostrar indicadores del mes
      */
@@ -52,39 +53,42 @@ class IndicadorController extends Controller
     {
         $mes = $request->get('mes', now()->month);
         $anio = $request->get('anio', now()->year);
-        
+
         $indicadoresMes = $this->calculadora->calcularIndicadoresMes($mes, $anio);
-        
+
         // Obtener indicadores diarios del mes
         $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
         $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
-        
-        $indicadoresDiarios = IndicadorDiario::whereBetween('fecha', [$fechaInicio, $fechaFin])
-            ->orderBy('fecha', 'asc')
+
+        $indicadoresDiarios = IndicadorDiario::whereBetween('fecha_operacion', [
+            $fechaInicio->toDateString(),
+            $fechaFin->toDateString(),
+        ])
+            ->orderBy('fecha_operacion', 'asc')
             ->get();
-        
+
         return view('indicadores.mes', compact('indicadoresMes', 'indicadoresDiarios', 'mes', 'anio'));
     }
-    
+
     /**
      * Recalcular indicadores de un día específico
      */
     public function recalcular(Request $request)
     {
         $request->validate([
-            'fecha' => 'required|date'
+            'fecha' => 'required|date',
         ]);
-        
+
         $fecha = $request->fecha;
         $indicadores = $this->calculadora->calcularIndicadoresDia($fecha);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Indicadores recalculados correctamente',
-            'indicadores' => $indicadores
+            'indicadores' => $indicadores,
         ]);
     }
-    
+
     /**
      * Obtener indicadores por operario
      */
@@ -92,10 +96,10 @@ class IndicadorController extends Controller
     {
         $fecha = $request->get('fecha', now()->format('Y-m-d'));
         $indicadores = $this->calculadora->calcularIndicadoresPorOperario($fecha);
-        
+
         return response()->json($indicadores);
     }
-    
+
     /**
      * Exportar indicadores a Excel
      */
@@ -103,15 +107,15 @@ class IndicadorController extends Controller
     {
         $request->validate([
             'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio'
+            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
         ]);
-        
+
         return $this->generador->exportarIndicadoresExcel(
             $request->fecha_inicio,
             $request->fecha_fin
         );
     }
-    
+
     /**
      * Obtener datos para gráficos
      */
@@ -119,19 +123,26 @@ class IndicadorController extends Controller
     {
         $dias = $request->get('dias', 7);
         $fechaInicio = Carbon::now()->subDays($dias);
-        
-        $indicadores = IndicadorDiario::where('fecha', '>=', $fechaInicio)
-            ->orderBy('fecha', 'asc')
+
+        $indicadores = IndicadorDiario::where('fecha_operacion', '>=', $fechaInicio->toDateString())
+            ->orderBy('fecha_operacion', 'asc')
             ->get();
-        
-        $labels = $indicadores->pluck('fecha')->map(function($fecha) {
+
+        $labels = $indicadores->pluck('fecha_operacion')->map(function ($fecha) {
             return Carbon::parse($fecha)->format('d/m');
         });
-        
+
+        $porcentajeLiberacion = $indicadores->map(function (IndicadorDiario $ind) {
+            $mediasCanales = ($ind->animales_procesados > 0 ? $ind->animales_procesados : 1) * 2;
+            $canalesLiberadas = ($ind->medias_canal_1 ?? 0) + ($ind->medias_canal_2 ?? 0);
+
+            return $mediasCanales > 0 ? round(($canalesLiberadas / $mediasCanales) * 100, 2) : 0;
+        });
+
         $datasets = [
             [
                 'label' => 'Porcentaje de Liberación',
-                'data' => $indicadores->pluck('porcentaje_liberacion'),
+                'data' => $porcentajeLiberacion,
                 'borderColor' => 'rgb(34, 197, 94)',
                 'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
             ],
@@ -140,34 +151,34 @@ class IndicadorController extends Controller
                 'data' => $indicadores->pluck('total_hallazgos'),
                 'borderColor' => 'rgb(239, 68, 68)',
                 'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
-            ]
+            ],
         ];
-        
+
         return response()->json([
             'labels' => $labels,
-            'datasets' => $datasets
+            'datasets' => $datasets,
         ]);
     }
-    
+
     /**
      * Dashboard de indicadores
      */
     public function dashboard()
     {
         $hoy = now()->format('Y-m-d');
-        $indicadoresHoy = IndicadorDiario::where('fecha', $hoy)->first();
-        
-        if (!$indicadoresHoy) {
+        $indicadoresHoy = IndicadorDiario::where('fecha_operacion', $hoy)->first();
+
+        if (! $indicadoresHoy) {
             $indicadoresHoy = $this->calculadora->calcularIndicadoresDia($hoy);
         }
-        
+
         $tendenciaSemanal = $this->calculadora->obtenerTendenciaSemanal();
-        
+
         $indicadoresMes = $this->calculadora->calcularIndicadoresMes(
             now()->month,
             now()->year
         );
-        
+
         return view('indicadores.dashboard', compact(
             'indicadoresHoy',
             'tendenciaSemanal',
