@@ -6,7 +6,6 @@ use App\Models\AnimalProcesado;
 use App\Models\IndicadorDiario;
 use App\Models\RegistroHallazgo;
 use App\Models\TipoHallazgo;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class RegistroHallazgoObserver
@@ -23,7 +22,7 @@ class RegistroHallazgoObserver
         // Recalcular para la fecha efectiva del turno
         $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
         $this->recalcularIndicadores($fechaEfectiva);
-        
+
         if ($registroHallazgo->isDirty('fecha_operacion')) {
             $fechaAnterior = $registroHallazgo->getOriginal('fecha_operacion');
             // Crear un objeto temporal para obtener la fecha efectiva anterior
@@ -44,8 +43,8 @@ class RegistroHallazgoObserver
     {
         try {
             // Convertir fecha a formato Y-m-d si es necesario
-            $fechaFormato = is_string($fechaOperacionEfectiva) 
-                ? $fechaOperacionEfectiva 
+            $fechaFormato = is_string($fechaOperacionEfectiva)
+                ? $fechaOperacionEfectiva
                 : $fechaOperacionEfectiva->format('Y-m-d');
 
             // Obtener animales procesados para la fecha efectiva
@@ -55,12 +54,12 @@ class RegistroHallazgoObserver
 
             // Obtener estadísticas de hallazgos usando el scope de turno
             $query = RegistroHallazgo::porFechaConTurno($fechaFormato);
-            
-            $stats = $query->selectRaw("
+
+            $stats = $query->selectRaw('
                 COUNT(*) as total_hallazgos,
                 SUM(CASE WHEN producto_id = 1 THEN 1 ELSE 0 END) as medias_canal_1,
                 SUM(CASE WHEN producto_id = 2 THEN 1 ELSE 0 END) as medias_canal_2
-            ")->first();
+            ')->first();
 
             $desgloseHallazgos = [];
             $dataIndicadores = [];
@@ -72,12 +71,12 @@ class RegistroHallazgoObserver
                 $count = RegistroHallazgo::porFechaConTurno($fechaFormato)
                     ->where('tipo_hallazgo_id', $tipo->id)
                     ->count();
-                
+
                 $desgloseHallazgos[$tipo->nombre] = $count;
 
                 // Mapear tipos de hallazgo a columnas de indicadores
                 $tipoNombre = strtoupper($tipo->nombre);
-                
+
                 if (strpos($tipoNombre, 'COBERTURA') !== false && strpos($tipoNombre, 'GRASA') !== false) {
                     $dataIndicadores['cobertura_grasa'] = $count;
                     if ($mediasCanalTotal > 0) {
@@ -130,7 +129,7 @@ class RegistroHallazgoObserver
             );
 
         } catch (\Exception $e) {
-            Log::error("Error al recalcular indicadores para la fecha {$fecha}: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
+            Log::error("Error al recalcular indicadores para la fecha {$fechaFormato}: ".$e->getMessage().' | Trace: '.$e->getTraceAsString());
         }
     }
 }

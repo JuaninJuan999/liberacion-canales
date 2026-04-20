@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnimalProcesado;
+use App\Models\HallazgoToleranciaZero;
 use App\Models\IndicadorDiario;
 use App\Models\RegistroHallazgo;
-use App\Models\HallazgoToleranciaZero;
-use App\Models\AnimalProcesado;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -16,7 +16,7 @@ class DashboardController extends Controller
     {
         return $this->index($request);
     }
-    
+
     public function index(Request $request)
     {
         // Dashboard diario: por defecto fecha del día actual; días anteriores se consultan manualmente
@@ -24,55 +24,55 @@ class DashboardController extends Controller
         $fecha_inicio = $request->get('fecha_inicio', $hoy);
         $fecha_fin = $request->get('fecha_fin', $hoy);
 
-        // Consultas - Usar el scope que considera el turno de 12 PM a 7 AM
+        // Indicadores y hallazgos por fecha_operacion (el turno ya está aplicado al guardar cada registro)
         $indicadoresRango = IndicadorDiario::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])->get();
         $hallazgosRango = RegistroHallazgo::porRangoFechasConTurno($fecha_inicio, $fecha_fin)
             ->with(['tipoHallazgo', 'producto', 'ubicacion', 'lado', 'operario', 'usuario', 'puestoTrabajo'])
             ->latest('created_at')
             ->get();
-        
+
         // Sumarizados para las tarjetas
         $animalesProcesados = AnimalProcesado::whereBetween('fecha_operacion', [$fecha_inicio, $fecha_fin])->sum('cantidad_animales');
-        $indicador = (object)[
-            'total_hallazgos'      => $indicadoresRango->sum('total_hallazgos'),
-            'participacion_total'  => $indicadoresRango->avg('participacion_total'),
+        $indicador = (object) [
+            'total_hallazgos' => $indicadoresRango->sum('total_hallazgos'),
+            'participacion_total' => $indicadoresRango->avg('participacion_total'),
             'medias_canales_total' => $indicadoresRango->sum('medias_canales_total'),
         ];
-        
+
         $topHallazgos = $hallazgosRango->groupBy('tipoHallazgo.nombre')
-            ->map(fn($item) => $item->count())
+            ->map(fn ($item) => $item->count())
             ->sortDesc()
             ->take(5);
 
         // --- Datos para Gráficos ---
         $hallazgosChartDataCanal1 = $hallazgosRango->filter(function ($hallazgo) {
             return $hallazgo->producto && str_contains($hallazgo->producto->nombre, 'Media Canal 1');
-        })->groupBy('tipoHallazgo.nombre')->map(fn($item) => $item->count());
+        })->groupBy('tipoHallazgo.nombre')->map(fn ($item) => $item->count());
 
         $hallazgosChartDataCanal2 = $hallazgosRango->filter(function ($hallazgo) {
             return $hallazgo->producto && str_contains($hallazgo->producto->nombre, 'Media Canal 2');
-        })->groupBy('tipoHallazgo.nombre')->map(fn($item) => $item->count());
+        })->groupBy('tipoHallazgo.nombre')->map(fn ($item) => $item->count());
 
-        $productosChartData = $hallazgosRango->groupBy('producto.nombre')->map(fn($item) => $item->count());
+        $productosChartData = $hallazgosRango->groupBy('producto.nombre')->map(fn ($item) => $item->count());
 
         // Hallazgos por operario y tipo (usando la lógica de obtenerOperarioResponsable)
         $hallazgosPorOperarioYTipo = $this->calcularHallazgosPorOperarioYTipo($hallazgosRango);
-        
+
         // Hallazgos de tolerancia cero por día/hora
         $hallazgosTZPorDia = $this->contarHallazgosTZPorDia($fecha_inicio, $fecha_fin);
-        
+
         // Hallazgos de tolerancia cero por operario y tipo
         $hallazgosTZPorOperario = $this->contarHallazgosTZPorOperario($fecha_inicio, $fecha_fin);
-        
+
         // Promedios del mes
         $indicadoresMes = IndicadorDiario::whereMonth('fecha_operacion', Carbon::parse($fecha_fin)->month)
             ->whereYear('fecha_operacion', Carbon::parse($fecha_fin)->year)
             ->get();
-        
+
         $promediosMes = [
             'participacion' => $indicadoresMes->avg('participacion_total'),
         ];
-        
+
         return view('dashboard.index', [
             'fecha_inicio' => $fecha_inicio,
             'fecha_fin' => $fecha_fin,
@@ -102,7 +102,7 @@ class DashboardController extends Controller
         // Inicializar estructura por producto
         $resultado = [
             'CUARTO ANTERIOR' => [],
-            'CUARTO POSTERIOR' => []
+            'CUARTO POSTERIOR' => [],
         ];
 
         // Agrupar por producto, tipo y ubicación
@@ -111,17 +111,17 @@ class DashboardController extends Controller
             $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
             $ubicacion = $hallazgo->ubicacion->nombre ?? 'Sin ubicación';
 
-            if (!in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
+            if (! in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
                 continue;
             }
 
-            if (!isset($resultado[$producto])) {
+            if (! isset($resultado[$producto])) {
                 continue;
             }
 
             // Crear clave combinada de tipo y ubicación
-            $clave = $tipo . ' - ' . $ubicacion;
-            if (!isset($resultado[$producto][$clave])) {
+            $clave = $tipo.' - '.$ubicacion;
+            if (! isset($resultado[$producto][$clave])) {
                 $resultado[$producto][$clave] = 0;
             }
             $resultado[$producto][$clave]++;
@@ -148,7 +148,7 @@ class DashboardController extends Controller
             // Obtener operario a través de las relaciones
             if ($hallazgo->ubicacion) {
                 $puestoTrabajo = $hallazgo->ubicacion->puestoTrabajo;
-                
+
                 if ($puestoTrabajo) {
                     // Buscar el operario asignado para este puesto y fecha
                     $operarioPorDia = $puestoTrabajo->operariosPorDia()
@@ -164,7 +164,7 @@ class DashboardController extends Controller
 
             if (in_array($tipo, ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'])) {
                 $ubicacionNombre = $hallazgo->ubicacion->nombre ?? 'Sin ubicación';
-                $clave = $operario . ' | ' . $tipo . ' | ' . $ubicacionNombre;
+                $clave = $operario.' | '.$tipo.' | '.$ubicacionNombre;
                 $resultado[$clave] = ($resultado[$clave] ?? 0) + 1;
             }
         }
@@ -184,9 +184,9 @@ class DashboardController extends Controller
             $tipoHallazgo = $registro->tipoHallazgo->nombre ?? 'Desconocido';
             $cantidad = $registro->cantidad ?? 1;
 
-            $clave = $operarioResponsable . ' | ' . $tipoHallazgo;
+            $clave = $operarioResponsable.' | '.$tipoHallazgo;
 
-            if (!isset($resultado[$clave])) {
+            if (! isset($resultado[$clave])) {
                 $resultado[$clave] = 0;
             }
 
@@ -221,7 +221,7 @@ class DashboardController extends Controller
 
         switch (true) {
             // COBERTURA DE GRASA
-            case (str_contains($tipoHallazgo, 'COBERTURA') && str_contains($tipoHallazgo, 'GRASA')):
+            case str_contains($tipoHallazgo, 'COBERTURA') && str_contains($tipoHallazgo, 'GRASA'):
                 if ($esMediaCanal1) {
                     if ($ubicacion === 'CADERA') {
                         $puestoTrabajoNombre = 'CADERA 1';
@@ -241,7 +241,7 @@ class DashboardController extends Controller
                 }
                 break;
 
-            // CORTE EN PIERNA
+                // CORTE EN PIERNA
             case str_contains($tipoHallazgo, 'CORTE') && str_contains($tipoHallazgo, 'PIERNA'):
                 if ($esMediaCanal1) {
                     $puestoTrabajoNombre = ($paridad === 'PAR') ? 'PRIMERA PAR' : 'PRIMERA IMPAR';
@@ -250,7 +250,7 @@ class DashboardController extends Controller
                 }
                 break;
 
-            // SOBREBARRIGA ROTA
+                // SOBREBARRIGA ROTA
             case str_contains($tipoHallazgo, 'SOBREBARRIGA'):
                 if ($esMediaCanal1) {
                     $puestoTrabajoNombre = 'ZAPATA IZQUIERDA';
@@ -259,7 +259,7 @@ class DashboardController extends Controller
                 }
                 break;
 
-            // HEMATOMAS (cualquier variante)
+                // HEMATOMAS (cualquier variante)
             case str_contains($tipoHallazgo, 'HEMATOMA'):
                 $puestoTrabajoNombre = 'LIMPIEZA SUPERIOR';
                 break;
@@ -272,10 +272,10 @@ class DashboardController extends Controller
                     ->first();
 
                 if ($puestoTrabajo) {
-                    $fechaOperacion = !empty($registro->fecha_operacion) 
-                        ? Carbon::parse($registro->fecha_operacion) 
+                    $fechaOperacion = ! empty($registro->fecha_operacion)
+                        ? Carbon::parse($registro->fecha_operacion)
                         : Carbon::parse($registro->created_at);
-                    
+
                     $asignacion = DB::table('operarios_por_dia')
                         ->where('puesto_trabajo_id', $puestoTrabajo->id)
                         ->whereDate('fecha_operacion', $fechaOperacion->toDateString())
@@ -294,7 +294,7 @@ class DashboardController extends Controller
                 // Log the exception for debugging
             }
         }
-        
+
         if ($registro->operario_id) {
             $operarioDirecto = DB::table('operarios')
                 ->where('id', $registro->operario_id)
@@ -313,7 +313,7 @@ class DashboardController extends Controller
     private function contarHallazgosNuevos($hallazgosRango)
     {
         $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
-        
+
         $resultado = [];
         foreach ($tiposNuevos as $tipo) {
             $resultado[$tipo] = $hallazgosRango
@@ -322,7 +322,7 @@ class DashboardController extends Controller
                 })
                 ->count();
         }
-        
+
         return $resultado;
     }
 }

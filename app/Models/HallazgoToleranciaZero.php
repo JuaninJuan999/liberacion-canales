@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class HallazgoToleranciaZero extends Model
 {
@@ -63,45 +63,26 @@ class HallazgoToleranciaZero extends Model
     }
 
     /**
-     * Scope para filtrar por fecha considerando el turno de 12 PM a 7 AM.
+     * Filtra por fecha operativa (columna fecha_operacion).
+     *
+     * @see RegistroHallazgo::scopePorFechaConTurno (misma convención: el turno se aplica al guardar)
      */
     public function scopePorFechaConTurno($query, $fecha)
     {
-        $fechaCarbon = Carbon::parse($fecha);
-        $fechaSiguiente = $fechaCarbon->copy()->addDay();
+        $dia = Carbon::parse($fecha)->toDateString();
 
-        return $query->where(function ($q) use ($fechaCarbon, $fechaSiguiente) {
-            $q->whereDate('hallazgos_tolerancia_cero.fecha_operacion', $fechaCarbon)
-                ->where(function ($subQ) {
-                    $subQ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) >= 12')
-                        ->orWhereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
-                })
-                ->orWhere(function ($subQ) use ($fechaSiguiente) {
-                    $subQ->whereDate('hallazgos_tolerancia_cero.fecha_operacion', $fechaSiguiente)
-                        ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
-                });
-        });
+        return $query->whereDate('hallazgos_tolerancia_cero.fecha_operacion', $dia);
     }
 
     /**
-     * Scope para filtrar por rango de fechas considerando el turno de 12 PM a 7 AM.
+     * Filtra por rango de fechas operativas (columna fecha_operacion).
      */
     public function scopePorRangoFechasConTurno($query, $fechaInicio, $fechaFin)
     {
-        $inicio = Carbon::parse($fechaInicio);
-        $fin = Carbon::parse($fechaFin);
+        $inicio = Carbon::parse($fechaInicio)->toDateString();
+        $fin = Carbon::parse($fechaFin)->toDateString();
 
-        return $query->where(function ($q) use ($inicio, $fin) {
-            $q->whereBetween('hallazgos_tolerancia_cero.fecha_operacion', [$inicio, $fin])
-                ->where(function ($subQ) {
-                    $subQ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) >= 12')
-                        ->orWhereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
-                })
-                ->orWhere(function ($subQ) use ($inicio, $fin) {
-                    $subQ->whereBetween('hallazgos_tolerancia_cero.fecha_operacion', [$inicio->copy()->addDay(), $fin->copy()->addDay()])
-                        ->whereRaw('EXTRACT(HOUR FROM hallazgos_tolerancia_cero.fecha_registro) < 7');
-                });
-        });
+        return $query->whereBetween('hallazgos_tolerancia_cero.fecha_operacion', [$inicio, $fin]);
     }
 
     /**
