@@ -13,6 +13,7 @@ class PuestoTrabajoController extends Controller
     public function index()
     {
         $puestos = PuestoTrabajo::orderBy('orden', 'asc')->get();
+
         return view('puestos_trabajo.index', compact('puestos'));
     }
 
@@ -21,7 +22,10 @@ class PuestoTrabajoController extends Controller
      */
     public function create()
     {
-        return view('puestos_trabajo.create');
+        $maxOrden = PuestoTrabajo::withoutGlobalScope('ordered')->max('orden');
+        $siguienteOrden = (int) $maxOrden + 1;
+
+        return view('puestos_trabajo.create', compact('siguienteOrden'));
     }
 
     /**
@@ -29,15 +33,18 @@ class PuestoTrabajoController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:puestos_trabajo,nombre',
+            'descripcion' => 'nullable|string|max:255',
             'orden' => 'required|integer',
         ]);
 
-        PuestoTrabajo::create($request->all());
+        $validated['descripcion'] = $this->normalizarDescripcion($validated['descripcion'] ?? null);
+
+        PuestoTrabajo::create($validated);
 
         return redirect()->route('puestos_trabajo.index')
-                         ->with('success', '✅ Puesto de trabajo creado exitosamente.');
+            ->with('success', '✅ Puesto de trabajo creado exitosamente.');
     }
 
     /**
@@ -46,6 +53,7 @@ class PuestoTrabajoController extends Controller
     public function edit(PuestoTrabajo $puestos_trabajo)
     {
         $puestoTrabajo = $puestos_trabajo;
+
         return view('puestos_trabajo.edit', compact('puestoTrabajo'));
     }
 
@@ -54,15 +62,18 @@ class PuestoTrabajoController extends Controller
      */
     public function update(Request $request, PuestoTrabajo $puestos_trabajo)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255|unique:puestos_trabajo,nombre,' . $puestos_trabajo->id,
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255|unique:puestos_trabajo,nombre,'.$puestos_trabajo->id,
+            'descripcion' => 'nullable|string|max:255',
             'orden' => 'required|integer',
         ]);
 
-        $puestos_trabajo->update($request->all());
+        $validated['descripcion'] = $this->normalizarDescripcion($validated['descripcion'] ?? null);
+
+        $puestos_trabajo->update($validated);
 
         return redirect()->route('puestos_trabajo.index')
-                         ->with('success', '✅ Puesto de trabajo actualizado exitosamente.');
+            ->with('success', '✅ Puesto de trabajo actualizado exitosamente.');
     }
 
     /**
@@ -74,6 +85,19 @@ class PuestoTrabajoController extends Controller
         $puestos_trabajo->delete();
 
         return redirect()->route('puestos_trabajo.index')
-                         ->with('success', '🗑️ Puesto de trabajo eliminado exitosamente.');
+            ->with('success', '🗑️ Puesto de trabajo eliminado exitosamente.');
+    }
+
+    /**
+     * Cadena vacía o solo espacios → null (evita duplicar nombre sin querer en BD).
+     */
+    private function normalizarDescripcion(?string $descripcion): ?string
+    {
+        if ($descripcion === null) {
+            return null;
+        }
+        $t = trim($descripcion);
+
+        return $t === '' ? null : $t;
     }
 }

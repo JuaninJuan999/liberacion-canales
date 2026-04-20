@@ -32,6 +32,9 @@
                                     Nombre
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Descripción
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Orden
                                 </th>
                                 <th scope="col" class="relative px-6 py-3">
@@ -44,6 +47,9 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         {{ $puesto->nombre }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600 max-w-md">
+                                        {{ filled($puesto->descripcion) ? $puesto->descripcion : '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         {{ $puesto->orden }}
@@ -59,7 +65,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                                    <td colspan="4" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
                                         No hay puestos de trabajo registrados.
                                     </td>
                                 </tr>

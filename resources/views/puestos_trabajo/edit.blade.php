@@ -23,6 +23,14 @@
                         </div>
 
                         <div class="mb-4">
+                            <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción</label>
+                            <textarea name="descripcion" id="descripcion" rows="3" maxlength="255" placeholder="Texto más detallado del puesto." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">{{ old('descripcion', $puestoTrabajo->descripcion) }}</textarea>
+                            @error('descripcion')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="mb-4">
                             <label for="orden" class="block text-sm font-medium text-gray-700">Orden</label>
                             <input type="number" name="orden" id="orden" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required value="{{ old('orden', $puestoTrabajo->orden) }}">
                              @error('orden')
