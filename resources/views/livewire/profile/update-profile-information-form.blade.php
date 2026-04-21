@@ -1,9 +1,7 @@
 <?php
 
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Validation\Rule;
 use Livewire\Volt\Component;
 
 new class extends Component
@@ -30,7 +28,8 @@ new class extends Component
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
+            // Varios usuarios pueden compartir el mismo correo (login es por usuario, no por email).
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
         ]);
 
         $user->fill($validated);

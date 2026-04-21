@@ -181,7 +181,7 @@ class GestionUsuarios extends Component
             $rules['username'] = ['required', 'string', 'min:3', 'max:255', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'username')];
             $rules['password'] = 'required|string|min:6|confirmed';
         } else {
-            $rules['email'] = ['required', 'email', Rule::unique('users', 'email')->ignore($this->editandoId)];
+            $rules['email'] = ['required', 'email'];
             $rules['username'] = ['required', 'string', 'min:3', 'max:255', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($this->editandoId)];
         }
 
@@ -190,7 +190,6 @@ class GestionUsuarios extends Component
             'apellido.required' => 'El apellido es obligatorio.',
             'email.required'    => 'El email es obligatorio.',
             'email.email'       => 'Email inválido.',
-            'email.unique'      => 'Este email ya está registrado.',
             'username.required' => 'El usuario es obligatorio.',
             'username.unique'   => 'Este usuario ya existe.',
             'username.regex'    => 'Solo minúsculas, números, puntos y guiones.',

@@ -39,7 +39,7 @@ class UsuarioController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             // Se corrige la concatenación para la regla 'unique'.
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $usuario->id],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ]);
 
