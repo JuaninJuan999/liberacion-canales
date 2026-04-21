@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Alpine.js: evita parpadeo de elementos con x-show/x-cloak antes de hidratar */
+[x-cloak] {
+    display: none !important;
+}
