@@ -33,6 +33,9 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Código *</label>
                             <input type="text" name="codigo" value="{{ old('codigo') }}"
+                                   inputmode="numeric"
+                                   autocomplete="off"
+                                   enterkeyhint="done"
                                    class="mt-1 w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500">
                             @error('codigo') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>

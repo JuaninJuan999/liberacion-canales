@@ -13,6 +13,16 @@ class Rol extends Model
         'nombre',
     ];
 
+    /**
+     * Normaliza el nombre de rol para comparaciones (p. ej. Admin → ADMINISTRADOR).
+     */
+    public static function normalizarNombre(?string $nombre): string
+    {
+        $n = strtoupper(trim((string) $nombre));
+
+        return $n === 'ADMIN' ? 'ADMINISTRADOR' : $n;
+    }
+
     // Relación: Un rol tiene muchos usuarios
     public function users(): HasMany
     {

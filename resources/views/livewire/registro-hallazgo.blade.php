@@ -31,11 +31,14 @@
                 <label for="numero_canal" class="block text-sm font-medium text-gray-700 mb-1">
                     Código <span class="text-red-500">*</span>
                 </label>
-                <input type="text" 
-                       wire:model.lazy="numero_canal" 
+                <input type="text"
+                       inputmode="numeric"
+                       wire:model.lazy="numero_canal"
                        id="numero_canal"
                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                        placeholder="Ej: 2306-02256"
+                       autocomplete="off"
+                       enterkeyhint="done"
                        required>
                 @error('numero_canal') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
             </div>
@@ -126,10 +129,17 @@
                 </div>
                 
                 <div class="space-y-4">
-                    {{-- Input oculto con capture --}}
-                    <input type="file" 
+                    {{-- Galería: sin capture → el sistema ofrece galería / archivos (no fuerza cámara) --}}
+                    <input type="file"
                            @change="comprimirYCargar($event)"
-                           id="foto" 
+                           id="foto-galeria"
+                           class="hidden"
+                           accept="image/*">
+
+                    {{-- Cámara: solo cuando el usuario elige explícitamente tomar foto --}}
+                    <input type="file"
+                           @change="comprimirYCargar($event)"
+                           id="foto-camara"
                            class="hidden"
                            accept="image/*"
                            capture="environment">
@@ -139,23 +149,32 @@
                         <p x-text="`Comprimiendo: ${porcentajeCompresion}%`"></p>
                     </div>
 
-                    {{-- Botón para abrir cámara --}}
-                    <label for="foto" class="block cursor-pointer">
-                        <div class="relative group">
-                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-dashed border-blue-400 rounded-lg p-8 text-center hover:border-blue-600 hover:bg-blue-200 transition-all duration-300 transform hover:scale-105">
-                                <div class="flex flex-col items-center gap-3">
-                                    <svg class="w-12 h-12 text-blue-600 mx-auto group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/>
-                                        <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/>
+                    {{-- Dos opciones: galería o cámara --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label for="foto-galeria" class="block cursor-pointer">
+                            <div class="relative group h-full">
+                                <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-400 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 h-full flex flex-col items-center justify-center min-h-[140px]">
+                                    <svg class="w-10 h-10 text-slate-600 mx-auto mb-2 group-hover:scale-105 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
-                                    <div>
-                                        <p class="font-semibold text-gray-800">Tomar Foto</p>
-                                        <p class="text-xs text-gray-600 mt-1">Haz clic para abrir la cámara<br>Se comprimirá automáticamente</p>
-                                    </div>
+                                    <p class="font-semibold text-gray-800">Elegir de galería</p>
+                                    <p class="text-xs text-gray-600 mt-1">Fotos ya guardadas en el dispositivo</p>
                                 </div>
                             </div>
-                        </div>
-                    </label>
+                        </label>
+                        <label for="foto-camara" class="block cursor-pointer">
+                            <div class="relative group h-full">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-dashed border-blue-400 rounded-lg p-6 text-center hover:border-blue-600 hover:bg-blue-200 transition-all duration-300 h-full flex flex-col items-center justify-center min-h-[140px]">
+                                    <svg class="w-10 h-10 text-blue-600 mx-auto mb-2 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
+                                        <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                                    </svg>
+                                    <p class="font-semibold text-gray-800">Tomar foto</p>
+                                    <p class="text-xs text-gray-600 mt-1">Abre la cámara para capturar ahora</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
 
                     {{-- Vista previa de la foto --}}
                     @if ($foto)
@@ -172,13 +191,14 @@
                                 <img class="w-full h-48 object-cover rounded-lg border border-gray-300" src="{{ $foto->temporaryUrl() }}" alt="Previsualización de evidencia">
                                 <button type="button" 
                                         wire:click="$set('foto', null)"
+                                        @click="document.getElementById('foto-galeria').value=''; document.getElementById('foto-camara').value='';"
                                         class="mt-3 w-full px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-sm font-semibold transition">
                                     🗑️ Cambiar Foto
                                 </button>
                             </div>
                         </div>
                     @else
-                        <p class="text-xs text-gray-500 text-center py-2">💡 Toca el área de arriba para capturar una foto</p>
+                        <p class="text-xs text-gray-500 text-center py-2">💡 Elige galería o cámara; la imagen se comprimirá antes de subirla</p>
                     @endif
                 </div>
                 @error('foto') <span class="text-red-500 text-xs mt-2 block">{{ $message }}</span> @enderror
@@ -192,7 +212,8 @@
                         porcentajeCompresion: 0,
                         
                         async comprimirYCargar(event) {
-                            const archivo = event.target.files[0];
+                            const inputOrigen = event.target;
+                            const archivo = inputOrigen.files[0];
                             if (!archivo) return;
 
                             this.comprimiendo = true;
@@ -245,10 +266,9 @@
                                             { type: 'image/jpeg' }
                                         );
                                         
-                                        // Simular que se cambió el input pero con el archivo comprimido
                                         const dataTransfer = new DataTransfer();
                                         dataTransfer.items.add(archivoComprimido);
-                                        document.getElementById('foto').files = dataTransfer.files;
+                                        inputOrigen.files = dataTransfer.files;
                                         
                                         // Trigger Livewire update
                                         @this.upload('foto', archivoComprimido, false, null, null, () => {
@@ -277,11 +297,11 @@
 
         {{-- Buttons --}}
         <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end space-x-3">
-            <button type="button" 
-                    wire:click="limpiarFormulario"
-                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            {{-- Enlace directo (recarga completa) para no romper el JS del sidebar con wire:navigate --}}
+            <a href="{{ route('home') }}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Cancelar
-            </button>
+            </a>
             <button type="submit" 
                     class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     wire:loading.attr="disabled"

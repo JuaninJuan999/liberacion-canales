@@ -83,7 +83,10 @@ class MenuModuloSeeder extends Seeder
         ];
 
         foreach ($modulos as $modulo) {
-            MenuModulo::firstOrCreate(['nombre' => $modulo['nombre']], $modulo);
+            MenuModulo::updateOrCreate(
+                ['nombre' => $modulo['nombre']],
+                $modulo
+            );
         }
     }
 }

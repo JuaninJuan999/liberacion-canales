@@ -26,4 +26,14 @@ class MenuModulo extends Model
     {
         return $query->orderBy('orden', 'asc');
     }
+
+    public function visibleParaRol(string $rolNormalizado): bool
+    {
+        $rolesPermitidos = array_map(
+            fn ($r) => Rol::normalizarNombre(is_string($r) ? $r : (string) $r),
+            $this->roles ?? []
+        );
+
+        return $rolNormalizado !== '' && in_array($rolNormalizado, $rolesPermitidos, true);
+    }
 }

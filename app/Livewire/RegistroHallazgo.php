@@ -203,15 +203,6 @@ class RegistroHallazgo extends Component
         }
     }
 
-    public function limpiarFormulario()
-    {
-        $this->reset();
-        $this->resetValidation();
-        $this->mensaje = '';
-        $this->mostrarUbicacion = false;
-        $this->mostrarLado = false;
-    }
-
     public function actualizarContadorDia()
     {
         $this->total_registros_dia = ModeloRegistroHallazgo::where('fecha_operacion', $this->fecha_actual)->count();

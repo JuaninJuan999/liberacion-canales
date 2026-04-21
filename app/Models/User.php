@@ -57,6 +57,12 @@ class User extends Authenticatable
         return $this->belongsTo(Rol::class, 'rol_id');
     }
 
+    /** Nombre de rol normalizado para permisos (coincide con menú lateral y módulos del welcome). */
+    public function rolNormalizado(): string
+    {
+        return Rol::normalizarNombre($this->rol?->nombre);
+    }
+
     // Relación: Tiene muchos registros de hallazgos
     public function registrosHallazgos(): HasMany
     {
