@@ -24,12 +24,14 @@ class RegistroHallazgo extends Model
         'usuario_id',
         'observacion', // Added to prevent future errors
         'puesto_trabajo_id', // Added to fix relationship error
+        'ediciones_historial',
     ];
 
     protected $casts = [
         'fecha_registro' => 'datetime',
         'fecha_operacion' => 'date',
         'cantidad' => 'integer',
+        'ediciones_historial' => 'array',
     ];
 
     // Relaciones

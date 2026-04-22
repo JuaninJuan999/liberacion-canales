@@ -108,6 +108,9 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Usuario</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Operario</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Evidencia</th>
+                        @if($this->usuarioPuedeEditarOHistorialHallazgos())
+                            <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Acciones</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -154,10 +157,33 @@
                                     <span class="text-gray-400">N/A</span>
                                 @endif
                             </td>
+                            @if($this->usuarioPuedeEditarOHistorialHallazgos())
+                                <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <button type="button"
+                                                wire:click="abrirEditar({{ $registro->id }})"
+                                                title="Editar"
+                                                class="text-xl leading-none p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500">✏️</button>
+                                        @if(is_array($registro->ediciones_historial) && count($registro->ediciones_historial) > 0)
+                                            <button type="button"
+                                                    wire:click="abrirHistorialEdiciones({{ $registro->id }})"
+                                                    title="Ver historial de cambios (antes / después)"
+                                                    class="text-xl leading-none p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500">📜</button>
+                                        @endif
+                                        @if($this->usuarioEsAdministrador())
+                                            <button type="button"
+                                                    wire:click="eliminarRegistro({{ $registro->id }})"
+                                                    wire:confirm="¿Eliminar este registro de hallazgo? Esta acción no se puede deshacer."
+                                                    title="Eliminar"
+                                                    class="text-xl leading-none p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500">🗑️</button>
+                                        @endif
+                                    </div>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">
+                            <td colspan="{{ $this->usuarioPuedeEditarOHistorialHallazgos() ? 10 : 9 }}" class="px-6 py-4 text-center text-sm text-gray-500">
                                 No se encontraron registros que coincidan con los filtros aplicados.
                             </td>
                         </tr>
@@ -173,6 +199,141 @@
     </div>
 
     {{-- Modal para mostrar evidencia --}}
+    @if($mostrarModalEditar)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" wire:click="cerrarEditar">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" @click="$event.stopPropagation()">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-900">Editar registro de hallazgo</h3>
+                    <button type="button" wire:click="cerrarEditar" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de operación</label>
+                        <input type="date" wire:model="edit_fecha_operacion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                        @error('edit_fecha_operacion') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Código (canal)</label>
+                        <input type="text" wire:model="edit_codigo" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                        @error('edit_codigo') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
+                        <select wire:model="edit_producto_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                            <option value="">Seleccione…</option>
+                            @foreach($productos as $producto)
+                                <option value="{{ $producto->id }}">{{ $producto->nombre }}</option>
+                            @endforeach
+                        </select>
+                        @error('edit_producto_id') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de hallazgo</label>
+                        <select wire:model.live="edit_tipo_hallazgo_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                            <option value="">Seleccione…</option>
+                            @foreach($tiposHallazgo as $tipo)
+                                <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                            @endforeach
+                        </select>
+                        @error('edit_tipo_hallazgo_id') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    @if($mostrarUbicacionEdit)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+                            <select wire:model.live="edit_ubicacion_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                                <option value="">Seleccione…</option>
+                                @foreach($editUbicacionesFiltradas as $u)
+                                    <option value="{{ $u->id }}">{{ $u->nombre }}</option>
+                                @endforeach
+                            </select>
+                            @error('edit_ubicacion_id') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                    @endif
+                    @if($mostrarLadoEdit)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Lado (Par / Impar)</label>
+                            <select wire:model="edit_lado_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                                <option value="">Seleccione…</option>
+                                @foreach($ladosLista as $lado)
+                                    <option value="{{ $lado->id }}">{{ $lado->nombre }}</option>
+                                @endforeach
+                            </select>
+                            @error('edit_lado_id') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                    @endif
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                        <input type="number" min="1" wire:model="edit_cantidad" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                        @error('edit_cantidad') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observación</label>
+                        <textarea wire:model="edit_observacion" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500" placeholder="Opcional"></textarea>
+                        @error('edit_observacion') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+                <div class="p-6 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+                    <button type="button" wire:click="cerrarEditar" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">Cancelar</button>
+                    <button type="button" wire:click="guardarEdicion" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium">Guardar cambios</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($mostrarModalHistorialEdiciones)
+        @php $etiquetasHistorial = \App\Livewire\HistorialRegistros::etiquetasCampoHistorial(); @endphp
+        <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4" wire:click="cerrarHistorialEdiciones">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click="$event.stopPropagation()">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">📜 Trazabilidad de ediciones</h3>
+                        <p class="text-sm text-gray-600 mt-1">Antes y después de cada modificación guardada.</p>
+                    </div>
+                    <button type="button" wire:click="cerrarHistorialEdiciones" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+                </div>
+                <div class="p-6 space-y-8">
+                    @foreach($historialEdicionesVista as $idx => $revision)
+                        @php
+                            $antes = $revision['antes'] ?? [];
+                            $despues = $revision['despues'] ?? [];
+                            $fechaEd = isset($revision['editado_en']) ? \Carbon\Carbon::parse($revision['editado_en'])->format('d/m/Y H:i') : '—';
+                            $por = $revision['usuario_nombre'] ?? '—';
+                        @endphp
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 border-b border-gray-200">
+                                Cambio {{ $idx + 1 }} · {{ $fechaEd }} · por {{ $por }}
+                            </div>
+                            <div class="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                                <div class="p-4 bg-red-50/50">
+                                    <p class="text-xs font-bold text-red-700 uppercase tracking-wide mb-3">Antes</p>
+                                    <dl class="space-y-2 text-sm">
+                                        @foreach($etiquetasHistorial as $campo => $etiqueta)
+                                            <div class="flex flex-col sm:flex-row sm:gap-2">
+                                                <dt class="text-gray-500 shrink-0 sm:w-40">{{ $etiqueta }}</dt>
+                                                <dd class="text-gray-900 font-medium break-words">{{ $antes[$campo] ?? '—' }}</dd>
+                                            </div>
+                                        @endforeach
+                                    </dl>
+                                </div>
+                                <div class="p-4 bg-green-50/50">
+                                    <p class="text-xs font-bold text-green-700 uppercase tracking-wide mb-3">Después</p>
+                                    <dl class="space-y-2 text-sm">
+                                        @foreach($etiquetasHistorial as $campo => $etiqueta)
+                                            <div class="flex flex-col sm:flex-row sm:gap-2">
+                                                <dt class="text-gray-500 shrink-0 sm:w-40">{{ $etiqueta }}</dt>
+                                                <dd class="text-gray-900 font-medium break-words">{{ $despues[$campo] ?? '—' }}</dd>
+                                            </div>
+                                        @endforeach
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if($mostrarModalEvidencia)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" wire:click="cerrarModalEvidencia">
             <div class="bg-white rounded-lg shadow-xl p-6 max-w-3xl max-h-[90vh] overflow-auto" @click="$event.stopPropagation()">
