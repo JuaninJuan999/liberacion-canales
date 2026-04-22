@@ -269,6 +269,12 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 18,
+                            right: 6,
+                        },
+                    },
                     interaction: {
                         mode: 'index',
                         intersect: false,
@@ -288,11 +294,14 @@
                             }
                         },
                         datalabels: {
+                            display: function (context) {
+                                return context.dataset.label !== 'META';
+                            },
                             anchor: 'end',
                             align: 'top',
                             color: '#333',
                             font: { weight: 'bold', size: 11 },
-                            formatter: function(value) {
+                            formatter: function (value) {
                                 return value > 0 ? value.toFixed(2) + '%' : '';
                             }
                         }
@@ -300,6 +309,7 @@
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grace: '12%',
                             ticks: {
                                 font: { size: 12 },
                                 callback: function(value) {
@@ -399,7 +409,7 @@
         });
     </script>
 
-    {{-- Auto-refresh cada 15 segundos (pausado mientras el modal está abierto) --}}
+    {{-- Auto-refresh cada 40 segundos (pausado mientras el modal está abierto) --}}
     <script>
         (function() {
             window._pausarAutoRefresh = false;
@@ -407,7 +417,7 @@
                 if (!window._pausarAutoRefresh) {
                     window.location.reload();
                 }
-            }, 15000);
+            }, 40000);
         })();
     </script>
 </x-app-layout>

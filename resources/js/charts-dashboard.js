@@ -17,9 +17,16 @@ export function initDashboardCharts(chartData) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 18,
+                        right: 6,
+                    },
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grace: '12%',
                         ticks: {
                             font: { size: 12 },
                             callback: function(value) {
@@ -46,7 +53,9 @@ export function initDashboardCharts(chartData) {
                         }
                     },
                     datalabels: {
-                        display: true,
+                        display: function (context) {
+                            return context.dataset.label !== 'META';
+                        },
                         color: '#333',
                         font: {
                             size: 11,
@@ -55,7 +64,7 @@ export function initDashboardCharts(chartData) {
                         anchor: 'end',
                         align: 'top',
                         offset: 4,
-                        formatter: function(value) {
+                        formatter: function (value) {
                             if (value === null) return '';
                             return Number(value).toFixed(2) + '%';
                         }

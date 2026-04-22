@@ -317,6 +317,7 @@
         <!-- Script unificado para sidebar toggle -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                const STORAGE_KEY = 'liberacion_canales_sidebar_desktop_open';
                 const sidebar = document.getElementById('sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
                 const mainContent = document.getElementById('mainContent');
@@ -325,6 +326,13 @@
                 let abierto = true;
 
                 function esMobil() { return window.innerWidth < 768; }
+
+                function persistirPreferenciaEscritorio() {
+                    if (esMobil()) return;
+                    try {
+                        localStorage.setItem(STORAGE_KEY, abierto ? '1' : '0');
+                    } catch (e) { /* ignorar */ }
+                }
 
                 function actualizarUI() {
                     openBtn.style.display = abierto ? 'none' : 'block';
@@ -347,11 +355,20 @@
                     }
                 }
 
-                // En móvil empieza cerrado
+                // En móvil empieza cerrado (sin leer localStorage)
                 if (esMobil()) {
                     abierto = false;
                     sidebar.classList.remove('translate-x-0');
                     sidebar.classList.add('-translate-x-full');
+                } else {
+                    // Escritorio: restaurar tras recarga / auto-refresh (p. ej. dashboard mensual)
+                    try {
+                        if (localStorage.getItem(STORAGE_KEY) === '0') {
+                            abierto = false;
+                            sidebar.classList.remove('translate-x-0');
+                            sidebar.classList.add('-translate-x-full');
+                        }
+                    } catch (e) { /* ignorar */ }
                 }
                 actualizarUI();
 
@@ -360,6 +377,7 @@
                     sidebar.classList.add('translate-x-0');
                     sidebar.classList.remove('-translate-x-full');
                     actualizarUI();
+                    persistirPreferenciaEscritorio();
                 }
 
                 function cerrar() {
@@ -367,6 +385,7 @@
                     sidebar.classList.remove('translate-x-0');
                     sidebar.classList.add('-translate-x-full');
                     actualizarUI();
+                    persistirPreferenciaEscritorio();
                 }
 
                 openBtn.addEventListener('click', abrir);
