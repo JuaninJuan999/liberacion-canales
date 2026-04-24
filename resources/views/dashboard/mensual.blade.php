@@ -271,8 +271,9 @@
                     maintainAspectRatio: false,
                     layout: {
                         padding: {
-                            top: 18,
-                            right: 6,
+                            top: 48,
+                            right: 8,
+                            left: 4,
                         },
                     },
                     interaction: {
@@ -295,15 +296,27 @@
                         },
                         datalabels: {
                             display: function (context) {
-                                return context.dataset.label !== 'META';
+                                if (context.dataset.label === 'META') {
+                                    return false;
+                                }
+                                return context.parsed.y > 0;
                             },
-                            anchor: 'end',
+                            anchor: 'center',
                             align: 'top',
-                            color: '#333',
-                            font: { weight: 'bold', size: 11 },
+                            offset: function (context) {
+                                return 8 + context.datasetIndex * 15;
+                            },
+                            color: '#1f2937',
+                            backgroundColor: 'rgba(255,255,255,0.92)',
+                            borderColor: 'rgba(0,0,0,0.06)',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            padding: { top: 2, right: 4, bottom: 2, left: 4 },
+                            font: { weight: '600', size: 9 },
                             formatter: function (value) {
-                                return value > 0 ? value.toFixed(2) + '%' : '';
-                            }
+                                return value > 0 ? Number(value).toFixed(2) + '%' : '';
+                            },
+                            clip: false,
                         }
                     },
                     scales: {
@@ -321,7 +334,9 @@
                             ticks: {
                                 font: { size: 12 },
                                 maxRotation: 45,
-                                minRotation: 0
+                                minRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 14,
                             }
                         }
                     }
