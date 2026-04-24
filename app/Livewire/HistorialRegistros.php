@@ -5,11 +5,11 @@ namespace App\Livewire;
 use App\Models\Lado;
 use App\Models\Producto;
 use App\Models\RegistroHallazgo;
+use App\Models\RegistroHallazgoEliminado;
 use App\Models\TipoHallazgo;
 use App\Models\Ubicacion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -86,6 +86,9 @@ class HistorialRegistros extends Component
     /** @var array<int, array<string, mixed>> */
     public $historialEdicionesVista = [];
 
+    /** Modal listado de registros eliminados (archivo / papelera) */
+    public $mostrarModalEliminados = false;
+
     // Estadísticas del filtro
     public $totalRegistros = 0;
 
@@ -120,13 +123,6 @@ class HistorialRegistros extends Component
         $this->ladosLista = Lado::orderBy('nombre')->get();
     }
 
-    public function usuarioEsAdministrador(): bool
-    {
-        $u = auth()->user();
-
-        return $u && $u->rol && $u->rol->nombre === 'ADMINISTRADOR';
-    }
-
     /** Administrador o Calidad: editar y ver trazabilidad de ediciones. */
     public function usuarioPuedeEditarOHistorialHallazgos(): bool
     {
@@ -136,6 +132,33 @@ class HistorialRegistros extends Component
         }
 
         return in_array($u->rol->nombre, ['ADMINISTRADOR', 'CALIDAD'], true);
+    }
+
+    /** Administrador o Calidad: eliminar del historial (queda copia en archivo). */
+    public function usuarioPuedeEliminarHallazgos(): bool
+    {
+        $u = auth()->user();
+        if (! $u || ! $u->rol) {
+            return false;
+        }
+
+        return in_array($u->rol->nombre, ['ADMINISTRADOR', 'CALIDAD'], true);
+    }
+
+    public function abrirEliminados(): void
+    {
+        if (! $this->usuarioPuedeEliminarHallazgos()) {
+            session()->flash('error', 'No tienes permiso para ver el archivo de eliminados.');
+
+            return;
+        }
+
+        $this->mostrarModalEliminados = true;
+    }
+
+    public function cerrarEliminados(): void
+    {
+        $this->mostrarModalEliminados = false;
     }
 
     public function abrirEditar(int $id): void
@@ -427,20 +450,60 @@ class HistorialRegistros extends Component
         ];
     }
 
+    /**
+     * Ruta web pública de la evidencia (misma lógica que en la tabla principal).
+     */
+    public static function urlPublicaEvidencia(?string $path): ?string
+    {
+        if ($path === null || trim($path) === '') {
+            return null;
+        }
+
+        $ruta = ltrim(str_replace('\\', '/', $path), '/');
+        if (str_starts_with($ruta, 'storage/')) {
+            $ruta = substr($ruta, strlen('storage/'));
+        }
+        if ($ruta === '' || str_contains($ruta, '..')) {
+            return null;
+        }
+        if (! str_contains($ruta, 'hallazgos/')) {
+            $ruta = 'hallazgos/'.$ruta;
+        }
+
+        return '/storage/'.$ruta;
+    }
+
     public function mostrarEvidencia($registroId)
     {
         $registro = RegistroHallazgo::findOrFail($registroId);
         if ($registro->evidencia_path) {
-            $ruta = $registro->evidencia_path;
-
-            // Si la ruta no contiene "hallazgos/", agregarla
-            if (! str_contains($ruta, 'hallazgos/')) {
-                $ruta = 'hallazgos/'.$ruta;
+            $url = self::urlPublicaEvidencia($registro->evidencia_path);
+            if ($url) {
+                $this->evidenciaMostradaUrl = $url;
+                $this->mostrarModalEvidencia = true;
             }
+        }
+    }
 
-            $this->evidenciaMostradaUrl = '/storage/'.$ruta;
+    /** Evidencia archivada (payload JSON) o cualquier ruta guardada. */
+    public function mostrarEvidenciaDesdePath(?string $path): void
+    {
+        $url = self::urlPublicaEvidencia($path);
+        if ($url) {
+            $this->evidenciaMostradaUrl = $url;
             $this->mostrarModalEvidencia = true;
         }
+    }
+
+    public function mostrarEvidenciaArchivoEliminado(int $registroHallazgoEliminadoId): void
+    {
+        if (! $this->usuarioPuedeEliminarHallazgos()) {
+            return;
+        }
+
+        $row = RegistroHallazgoEliminado::query()->findOrFail($registroHallazgoEliminadoId);
+        $path = $row->payload['evidencia_path'] ?? null;
+        $this->mostrarEvidenciaDesdePath(is_string($path) ? $path : null);
     }
 
     public function cerrarModalEvidencia()
@@ -635,29 +698,64 @@ class HistorialRegistros extends Component
         return 'Aun no se ha ingresado operario a la fecha de hoy';
     }
 
+    /**
+     * Copia legible del registro para conservarla al eliminar (auditoría).
+     *
+     * @return array<string, mixed>
+     */
+    protected function snapshotParaEliminacion(RegistroHallazgo $r): array
+    {
+        $r->loadMissing(['producto', 'tipoHallazgo', 'ubicacion', 'lado', 'usuario', 'operario', 'puestoTrabajo']);
+
+        return [
+            'registro_hallazgo_id' => $r->id,
+            'created_at' => $r->created_at?->toIso8601String(),
+            'fecha_operacion' => $r->fecha_operacion?->format('Y-m-d'),
+            'codigo' => $r->codigo,
+            'cantidad' => $r->cantidad,
+            'observacion' => $r->observacion,
+            'evidencia_path' => $r->evidencia_path,
+            'producto' => $r->producto?->nombre,
+            'tipo_hallazgo' => $r->tipoHallazgo?->nombre,
+            'es_critico' => (bool) ($r->tipoHallazgo?->es_critico),
+            'ubicacion' => $r->ubicacion?->nombre,
+            'lado' => $r->lado?->nombre,
+            'usuario_registro_id' => $r->usuario_id,
+            'usuario_registro_nombre' => $r->usuario?->name,
+            'operario_id' => $r->operario_id,
+            'operario_nombre' => $r->operario?->nombre,
+            'puesto_trabajo_id' => $r->puesto_trabajo_id,
+            'ediciones_historial' => $r->ediciones_historial,
+        ];
+    }
+
     public function eliminarRegistro($id): void
     {
-        if (! $this->usuarioEsAdministrador()) {
+        if (! $this->usuarioPuedeEliminarHallazgos()) {
             session()->flash('error', 'No tienes permiso para eliminar registros.');
 
             return;
         }
 
         try {
-            $registro = RegistroHallazgo::findOrFail($id);
-            $ruta = $registro->evidencia_path;
-            if ($ruta) {
-                $rel = ltrim(str_replace('\\', '/', (string) $ruta), '/');
-                if (str_starts_with($rel, 'storage/')) {
-                    $rel = substr($rel, strlen('storage/'));
-                }
-                if ($rel !== '' && ! str_contains($rel, '..') && Storage::disk('public')->exists($rel)) {
-                    Storage::disk('public')->delete($rel);
-                }
-            }
-            $registro->delete();
+            DB::transaction(function () use ($id) {
+                $registro = RegistroHallazgo::query()
+                    ->with(['producto', 'tipoHallazgo', 'ubicacion', 'lado', 'usuario', 'operario', 'puestoTrabajo'])
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-            session()->flash('message', 'Registro eliminado correctamente');
+                $u = auth()->user();
+                RegistroHallazgoEliminado::create([
+                    'registro_hallazgo_id' => $registro->id,
+                    'payload' => $this->snapshotParaEliminacion($registro),
+                    'eliminado_por_user_id' => $u?->id,
+                    'eliminado_por_nombre' => $u?->name ?? '—',
+                ]);
+
+                $registro->delete();
+            });
+
+            session()->flash('message', 'Registro eliminado del historial. Quedó guardado en el archivo de eliminados (datos y evidencia en servidor) con tu usuario como responsable.');
 
             $this->calcularEstadisticas();
         } catch (\Exception $e) {
@@ -683,8 +781,16 @@ class HistorialRegistros extends Component
             ->orderBy('registros_hallazgos.created_at', 'desc')
             ->paginate($this->perPage);
 
+        $registrosEliminados = null;
+        if ($this->mostrarModalEliminados && $this->usuarioPuedeEliminarHallazgos()) {
+            $registrosEliminados = RegistroHallazgoEliminado::query()
+                ->orderByDesc('created_at')
+                ->paginate(12, ['*'], 'eliminados');
+        }
+
         return view('livewire.historial-registros', [
             'registros' => $registros,
+            'registrosEliminados' => $registrosEliminados,
         ])->layout('layouts.app');
     }
 }

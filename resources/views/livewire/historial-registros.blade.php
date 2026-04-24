@@ -1,8 +1,17 @@
 <div class="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
     {{-- Encabezado --}}
-    <div class="mb-6">
-        <h2 class="text-3xl font-bold text-gray-900">Consulta y filtra los registros de hallazgos</h2>
-        <p class="mt-1 text-sm text-gray-600">Historial de Registros</p>
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900">Consulta y filtra los registros de hallazgos</h2>
+            <p class="mt-1 text-sm text-gray-600">Historial de Registros</p>
+        </div>
+        @if($this->usuarioPuedeEliminarHallazgos())
+            <button type="button"
+                    wire:click="abrirEliminados"
+                    class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-gray-800 bg-white hover:bg-gray-50 text-sm font-medium shadow-sm">
+                📂 Registros eliminados (archivo)
+            </button>
+        @endif
     </div>
 
     {{-- Mensajes --}}
@@ -170,10 +179,10 @@
                                                     title="Ver historial de cambios (antes / después)"
                                                     class="text-xl leading-none p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500">📜</button>
                                         @endif
-                                        @if($this->usuarioEsAdministrador())
+                                        @if($this->usuarioPuedeEliminarHallazgos())
                                             <button type="button"
                                                     wire:click="eliminarRegistro({{ $registro->id }})"
-                                                    wire:confirm="¿Eliminar este registro de hallazgo? Esta acción no se puede deshacer."
+                                                    wire:confirm="¿Eliminar este registro del historial? Se guardará una copia (incluida la evidencia) en el archivo de eliminados con tu usuario como responsable."
                                                     title="Eliminar"
                                                     class="text-xl leading-none p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500">🗑️</button>
                                         @endif
@@ -334,8 +343,93 @@
         </div>
     @endif
 
+    @if($mostrarModalEliminados && $registrosEliminados)
+        <div class="fixed inset-0 z-[55] flex items-center justify-center bg-black/50 p-3 sm:p-4 overflow-y-auto" wire:click="cerrarEliminados">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-[min(100vw-1.5rem,80rem)] max-h-[min(92vh,56rem)] my-auto overflow-hidden flex flex-col" @click="$event.stopPropagation()">
+                <div class="p-4 sm:p-5 border-b border-gray-200 shrink-0 bg-gray-50 flex flex-col sm:flex-row sm:items-start gap-3 sm:justify-between">
+                    <div class="flex-1 min-w-0 pr-2">
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900 break-words">Registros eliminados (archivo)</h3>
+                        <p class="text-sm text-gray-600 mt-2 leading-relaxed break-words max-w-3xl">
+                            Aquí queda la copia de respaldo al borrar del historial: datos del hallazgo, evidencia conservada en servidor y el usuario que eliminó el registro.
+                        </p>
+                        <p class="text-xs text-gray-500 mt-2">Si hay muchas columnas, usa el desplazamiento horizontal debajo de la tabla.</p>
+                    </div>
+                    <button type="button" wire:click="cerrarEliminados" class="shrink-0 self-end sm:self-start text-gray-500 hover:text-gray-800 text-2xl leading-none p-1 rounded hover:bg-gray-200/60" title="Cerrar">&times;</button>
+                </div>
+                <div class="overflow-y-auto flex-1 min-h-0 p-3 sm:p-4">
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-inner bg-white">
+                        <table class="min-w-[68rem] w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-100 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th scope="col" class="sticky left-0 z-20 bg-gray-100 px-3 py-2.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wide border-r border-gray-200 whitespace-nowrap">Eliminado el</th>
+                                    <th scope="col" class="px-3 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wide whitespace-nowrap">Eliminó</th>
+                                    <th scope="col" class="px-3 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wide whitespace-nowrap">Registro (fecha)</th>
+                                    <th scope="col" class="px-3 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wide whitespace-nowrap">Código</th>
+                                    <th scope="col" class="px-3 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wide min-w-[8rem]">Producto</th>
+                                    <th scope="col" class="px-3 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wide min-w-[7rem]">Tipo</th>
+                                    <th scope="col" class="px-3 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wide min-w-[7rem]">Registró</th>
+                                    <th scope="col" class="px-3 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wide whitespace-nowrap">Evidencia</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($registrosEliminados as $arch)
+                                    @php
+                                        $p = $arch->payload ?? [];
+                                        $evUrl = \App\Livewire\HistorialRegistros::urlPublicaEvidencia($p['evidencia_path'] ?? null);
+                                    @endphp
+                                    <tr class="hover:bg-gray-50/80">
+                                        <td class="sticky left-0 z-10 bg-white px-3 py-2.5 whitespace-nowrap text-gray-900 border-r border-gray-100 font-medium shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">{{ $arch->created_at->format('d/m/Y H:i') }}</td>
+                                        <td class="px-3 py-2.5 text-gray-900 font-medium break-words max-w-[12rem]">{{ $arch->eliminado_por_nombre }}</td>
+                                        <td class="px-3 py-2.5 whitespace-nowrap text-gray-700">
+                                            @if(!empty($p['created_at']))
+                                                {{ \Carbon\Carbon::parse($p['created_at'])->format('d/m/Y H:i') }}
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td class="px-3 py-2.5 font-medium text-gray-900 whitespace-nowrap">{{ $p['codigo'] ?? '—' }}</td>
+                                        <td class="px-3 py-2.5 text-gray-700 break-words max-w-[14rem]">{{ $p['producto'] ?? '—' }}</td>
+                                        <td class="px-3 py-2.5">
+                                            @if(!empty($p['tipo_hallazgo']))
+                                                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ !empty($p['es_critico']) ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' }}">{{ $p['tipo_hallazgo'] }}</span>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td class="px-3 py-2.5 text-gray-700 break-words max-w-[12rem]">{{ $p['usuario_registro_nombre'] ?? '—' }}</td>
+                                        <td class="px-3 py-2.5 whitespace-nowrap">
+                                            @if($evUrl)
+                                                <button type="button"
+                                                        wire:click="mostrarEvidenciaArchivoEliminado({{ $arch->id }})"
+                                                        class="hover:opacity-80 transition-opacity rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                                                        title="Ver evidencia">
+                                                    <img src="{{ $evUrl }}" alt="Evidencia" class="h-12 w-12 object-cover rounded border border-gray-200" loading="lazy">
+                                                </button>
+                                            @else
+                                                <span class="text-gray-400">N/A</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="px-3 py-10 text-center text-gray-500">No hay registros eliminados archivados.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @if($registrosEliminados->hasPages())
+                    <div class="px-4 py-3 border-t border-gray-200 bg-gray-50 shrink-0">
+                        {{ $registrosEliminados->links() }}
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
     @if($mostrarModalEvidencia)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" wire:click="cerrarModalEvidencia">
+        <div class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50" wire:click="cerrarModalEvidencia">
             <div class="bg-white rounded-lg shadow-xl p-6 max-w-3xl max-h-[90vh] overflow-auto" @click="$event.stopPropagation()">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold">Evidencia</h3>
