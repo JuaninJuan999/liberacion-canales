@@ -280,6 +280,30 @@
                         <textarea wire:model="edit_observacion" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500" placeholder="Opcional"></textarea>
                         @error('edit_observacion') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                     </div>
+                    <div class="border-t border-gray-100 pt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Evidencia (foto)</label>
+                        <p class="text-xs text-gray-500 mb-2">Puedes sustituir la imagen o, si aplica, quitar la evidencia del registro.</p>
+                        @if($edit_evidencia_path_actual)
+                            <div class="mb-3 flex items-start gap-3">
+                                <img src="{{ asset('storage/' . $edit_evidencia_path_actual) }}" alt="Evidencia actual" class="h-20 w-20 object-cover rounded-md border border-gray-200 shrink-0" loading="lazy">
+                                <span class="text-xs text-gray-600 self-center">Imagen actual</span>
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-500 mb-2">No hay imagen asociada aún. Puedes agregar una.</p>
+                        @endif
+                        <input type="file" wire:model="edit_evidencia" accept="image/jpeg,image/png,image/gif,image/webp" class="block w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-red-50 file:text-red-800 hover:file:bg-red-100">
+                        <div wire:loading wire:target="edit_evidencia" class="text-xs text-gray-500 mt-1">Procesando imagen…</div>
+                        @if($edit_evidencia)
+                            <p class="text-sm text-gray-700 mt-2">Nueva imagen: <span class="font-medium">{{ $edit_evidencia->getClientOriginalName() }}</span></p>
+                        @endif
+                        @if($edit_evidencia_path_actual)
+                            <label class="mt-3 flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                <input type="checkbox" wire:model.live="edit_quitar_evidencia" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                Quitar evidencia (sin reemplazar por otra imagen)
+                            </label>
+                        @endif
+                        @error('edit_evidencia') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
                 </div>
                 <div class="p-6 border-t border-gray-200 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
                     <button type="button" wire:click="cerrarEditar" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">Cancelar</button>

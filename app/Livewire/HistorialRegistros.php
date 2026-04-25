@@ -10,11 +10,14 @@ use App\Models\TipoHallazgo;
 use App\Models\Ubicacion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class HistorialRegistros extends Component
 {
+    use WithFileUploads;
     use WithPagination;
 
     // Filtros
@@ -59,6 +62,14 @@ class HistorialRegistros extends Component
     public $edit_fecha_operacion;
 
     public $edit_observacion = '';
+
+    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    public $edit_evidencia;
+
+    /** Ruta almacenada (preview en modal) al abrir edición; no es el archivo nuevo. */
+    public $edit_evidencia_path_actual = '';
+
+    public $edit_quitar_evidencia = false;
 
     public $mostrarUbicacionEdit = false;
 
@@ -179,6 +190,9 @@ class HistorialRegistros extends Component
         $this->edit_cantidad = max(1, (int) $r->cantidad);
         $this->edit_fecha_operacion = $r->fecha_operacion?->format('Y-m-d');
         $this->edit_observacion = (string) ($r->observacion ?? '');
+        $this->edit_evidencia = null;
+        $this->edit_evidencia_path_actual = (string) ($r->evidencia_path ?? '');
+        $this->edit_quitar_evidencia = false;
 
         $this->sincronizarFlagsEdicionSinResetearValores();
         $this->mostrarModalEditar = true;
@@ -190,9 +204,24 @@ class HistorialRegistros extends Component
         $this->reset([
             'edit_id', 'edit_codigo', 'edit_producto_id', 'edit_tipo_hallazgo_id',
             'edit_ubicacion_id', 'edit_lado_id', 'edit_cantidad', 'edit_fecha_operacion',
-            'edit_observacion', 'mostrarUbicacionEdit', 'mostrarLadoEdit', 'editUbicacionesFiltradas',
+            'edit_observacion', 'edit_evidencia', 'edit_evidencia_path_actual', 'edit_quitar_evidencia',
+            'mostrarUbicacionEdit', 'mostrarLadoEdit', 'editUbicacionesFiltradas',
             'nombreHallazgoEditSeleccionado', 'nombreUbicacionEditSeleccionada',
         ]);
+    }
+
+    public function updatedEditEvidencia(): void
+    {
+        if ($this->edit_evidencia) {
+            $this->edit_quitar_evidencia = false;
+        }
+    }
+
+    public function updatedEditQuitarEvidencia($value): void
+    {
+        if ($value) {
+            $this->edit_evidencia = null;
+        }
     }
 
     public function updatedEditTipoHallazgoId($value): void
@@ -309,7 +338,10 @@ class HistorialRegistros extends Component
             $rules['edit_lado_id'] = 'nullable|exists:lados,id';
         }
 
-        $this->validate($rules, [
+        $this->validate(array_merge($rules, [
+            'edit_evidencia' => 'nullable|image|max:10240',
+            'edit_quitar_evidencia' => 'boolean',
+        ]), [
             'edit_producto_id.required' => 'Debe seleccionar un producto.',
             'edit_tipo_hallazgo_id.required' => 'Debe seleccionar el tipo de hallazgo.',
             'edit_codigo.required' => 'Debe ingresar el código del canal.',
@@ -317,12 +349,18 @@ class HistorialRegistros extends Component
             'edit_lado_id.required' => 'Debe indicar si es par o impar.',
         ]);
 
+        if ($this->edit_quitar_evidencia && $this->edit_evidencia) {
+            $this->addError('edit_evidencia', 'No puedes subir una imagen y marcar quitar evidencia a la vez.');
+
+            return;
+        }
+
         $r = RegistroHallazgo::query()
             ->with(['producto', 'tipoHallazgo', 'ubicacion', 'lado'])
             ->findOrFail($this->edit_id);
 
         $antes = $this->snapshotLegible($r);
-        $despues = $this->snapshotDesdeFormulario();
+        $despues = $this->snapshotDesdeFormulario($r);
 
         if ($antes === $despues) {
             session()->flash('message', 'No se detectaron cambios en el registro.');
@@ -344,6 +382,26 @@ class HistorialRegistros extends Component
             'despues' => $despues,
         ];
 
+        $nuevaEvidenciaPath = $r->evidencia_path;
+        if ($this->edit_quitar_evidencia) {
+            if ($r->evidencia_path) {
+                Storage::disk('public')->delete($r->evidencia_path);
+            }
+            $nuevaEvidenciaPath = null;
+        } elseif ($this->edit_evidencia) {
+            $nombreFoto = 'foto_'.time().'_'.uniqid().'.'.$this->edit_evidencia->getClientOriginalExtension();
+            $guardada = $this->edit_evidencia->storeAs('hallazgos', $nombreFoto, 'public');
+            if (! $guardada) {
+                session()->flash('error', 'No se pudo guardar la nueva evidencia en el servidor.');
+
+                return;
+            }
+            if ($r->evidencia_path) {
+                Storage::disk('public')->delete($r->evidencia_path);
+            }
+            $nuevaEvidenciaPath = $guardada;
+        }
+
         $r->update([
             'codigo' => $this->edit_codigo,
             'producto_id' => $this->edit_producto_id,
@@ -353,6 +411,7 @@ class HistorialRegistros extends Component
             'cantidad' => $this->edit_cantidad,
             'fecha_operacion' => $this->edit_fecha_operacion,
             'observacion' => $this->edit_observacion !== '' ? $this->edit_observacion : null,
+            'evidencia_path' => $nuevaEvidenciaPath,
             'ediciones_historial' => $historial,
         ]);
 
@@ -401,13 +460,14 @@ class HistorialRegistros extends Component
             'lado' => $r->lado?->nombre ?? '—',
             'cantidad' => (string) (int) $r->cantidad,
             'observacion' => trim((string) ($r->observacion ?? '')) !== '' ? trim((string) $r->observacion) : '—',
+            'evidencia' => $this->evidenciaLegible($r->evidencia_path),
         ];
     }
 
     /**
      * @return array<string, string>
      */
-    protected function snapshotDesdeFormulario(): array
+    protected function snapshotDesdeFormulario(RegistroHallazgo $registro): array
     {
         $ubicacionNombre = '—';
         if ($this->mostrarUbicacionEdit && $this->edit_ubicacion_id) {
@@ -430,7 +490,34 @@ class HistorialRegistros extends Component
             'lado' => $ladoNombre,
             'cantidad' => (string) (int) $this->edit_cantidad,
             'observacion' => $obs !== '' ? $obs : '—',
+            'evidencia' => $this->evidenciaEnFormularioComparar($registro),
         ];
+    }
+
+    protected function evidenciaLegible(?string $path): string
+    {
+        if ($path === null || trim((string) $path) === '') {
+            return '—';
+        }
+
+        $normalizado = str_replace('\\', '/', $path);
+        $base = basename($normalizado);
+
+        return $base !== '' ? $base : '—';
+    }
+
+    protected function evidenciaEnFormularioComparar(RegistroHallazgo $registro): string
+    {
+        if ($this->edit_quitar_evidencia) {
+            return '—';
+        }
+        if ($this->edit_evidencia) {
+            $name = $this->edit_evidencia->getClientOriginalName() ?: 'nueva imagen';
+
+            return 'Nueva: '.$name;
+        }
+
+        return $this->evidenciaLegible($registro->evidencia_path);
     }
 
     /**
@@ -447,6 +534,7 @@ class HistorialRegistros extends Component
             'lado' => 'Lado',
             'cantidad' => 'Cantidad',
             'observacion' => 'Observación',
+            'evidencia' => 'Evidencia (imagen)',
         ];
     }
 
