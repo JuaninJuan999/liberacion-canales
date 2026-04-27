@@ -177,7 +177,7 @@
             {{-- Gráfica seguimiento (porcentajes en tarjetas superiores) --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
                 <div class="px-4 sm:px-6 py-4 border-b border-indigo-100 bg-gradient-to-r from-indigo-50 to-slate-50">
-                    <h2 class="text-lg font-bold text-gray-900">Seguimiento semanal</h2>
+                    <h2 class="text-lg font-bold text-gray-900">Seguimiento Mensual</h2>
                 </div>
                 <div class="p-4 sm:px-6 sm:pt-2 sm:pb-6">
                     <div class="h-80 max-w-4xl">

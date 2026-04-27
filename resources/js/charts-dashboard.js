@@ -3,29 +3,25 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 Chart.register(ChartDataLabels);
 
-/** Evita amontonar etiquetas en tramos planos (mismo % varios días seguidos). */
-function shouldShowLinePointLabel(context) {
-    if (context.dataset.label === 'META') {
+/**
+ * Gerencia: solo mostrar etiqueta de % en días donde el indicador cumple o supera la META.
+ * El trazado de la línea sigue viéndose todos los días (esto solo afecta a las cajitas de texto).
+ */
+function shouldShowLabelWhenMeetsOrExceedsMeta(chart, dataset, dataIndex) {
+    if (dataset.label === 'META') {
         return false;
     }
-    const raw = context.dataset.data;
-    const n = raw.length;
-    const i = context.dataIndex;
-    if (n <= 1) {
-        return true;
+    const metaDs = chart.data.datasets.find((d) => d.label === 'META');
+    if (!metaDs || !Array.isArray(metaDs.data)) {
+        return false;
     }
-    const v = Number(raw[i]);
-    if (i === 0 || i === n - 1) {
-        return true;
+    const y = Number(dataset.data[dataIndex]);
+    const goal = Number(metaDs.data[dataIndex]);
+    if (Number.isNaN(y) || Number.isNaN(goal)) {
+        return false;
     }
-    const prev = Number(raw[i - 1]);
-    const next = Number(raw[i + 1]);
-    const epsilon = 0.01;
-    if (Math.abs(v - prev) > epsilon || Math.abs(v - next) > epsilon) {
-        return true;
-    }
-    const step = Math.max(2, Math.floor(n / 10));
-    return i % step === 0;
+    const eps = 1e-9;
+    return y + eps >= goal;
 }
 
 function hexToRgba(color, alpha) {
@@ -81,7 +77,7 @@ const percentageCalloutPlugin = {
                 if (!el || el.skip) {
                     continue;
                 }
-                if (!shouldShowLinePointLabel({ dataset, datasetIndex, dataIndex: i })) {
+                if (!shouldShowLabelWhenMeetsOrExceedsMeta(chart, dataset, i)) {
                     continue;
                 }
                 const v = raw[i];
