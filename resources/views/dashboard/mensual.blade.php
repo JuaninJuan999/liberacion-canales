@@ -19,33 +19,107 @@
                 </div>
             </div>
             
-            {{-- Selector de Mes/Año --}}
+            {{-- Selector de Mes/Año + descarga Excel --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-4">
-                <form method="GET" action="{{ route('dashboard.mensual') }}" class="flex items-center gap-4">
-                    <label class="text-sm font-medium text-gray-700">Mes:</label>
-                    <select name="mes" 
-                            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            onchange="this.form.submit()">
-                        @for($m = 1; $m <= 12; $m++)
-                            <option value="{{ $m }}" {{ $m == $mes ? 'selected' : '' }}>
-                                {{ \Carbon\Carbon::create()->month($m)->locale('es')->isoFormat('MMMM') }}
-                            </option>
-                        @endfor
-                    </select>
-                    
-                    <label class="text-sm font-medium text-gray-700">Año:</label>
-                    <select name="anio" 
-                            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            onchange="this.form.submit()">
-                        @for($a = now()->year - 2; $a <= now()->year + 1; $a++)
-                            <option value="{{ $a }}" {{ $a == $anio ? 'selected' : '' }}>{{ $a }}</option>
-                        @endfor
-                    </select>
-                </form>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <form method="GET" action="{{ route('dashboard.mensual') }}" class="flex flex-wrap items-center gap-3 sm:gap-4">
+                        <label class="text-sm font-medium text-gray-700">Mes:</label>
+                        <select name="mes"
+                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                onchange="this.form.submit()">
+                            @for($m = 1; $m <= 12; $m++)
+                                <option value="{{ $m }}" {{ $m == $mes ? 'selected' : '' }}>
+                                    {{ \Carbon\Carbon::create()->month($m)->locale('es')->isoFormat('MMMM') }}
+                                </option>
+                            @endfor
+                        </select>
+
+                        <label class="text-sm font-medium text-gray-700">Año:</label>
+                        <select name="anio"
+                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                onchange="this.form.submit()">
+                            @for($a = now()->year - 2; $a <= now()->year + 1; $a++)
+                                <option value="{{ $a }}" {{ $a == $anio ? 'selected' : '' }}>{{ $a }}</option>
+                            @endfor
+                        </select>
+                    </form>
+                    <button type="button" onclick="abrirModalDescarga()"
+                            class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition w-full sm:w-auto shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 3v12m0 0l3.5-3.5M12 15L8.5 11.5M12 3h4a2 2 0 012 2v1"/>
+                        </svg>
+                        Descargar gráficas (Excel)
+                    </button>
+                </div>
             </div>
 
+            {{-- Modal: exportar datos de gráficas a Excel (mismo mes/año del filtro) --}}
+            <form id="formGraficasExcel" method="GET" action="{{ route('dashboard.mensual.graficas-excel') }}"
+                  onsubmit="return validarHojasExcel(event)">
+                <input type="hidden" name="mes" value="{{ $mes }}">
+                <input type="hidden" name="anio" value="{{ $anio }}">
+                <div id="modalDescarga" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" onclick="event.stopPropagation()">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Descargar en Excel</h3>
+                        <p class="text-sm text-gray-500 mb-4">Hojas con los datos de las gráficas del mes <span class="font-medium text-gray-700">{{ \Carbon\Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM YYYY') }}</span></p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-center gap-3">
+                                <input type="checkbox" id="hoja_resumen" name="hojas[]" value="resumen" checked
+                                       class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                                <label for="hoja_resumen" class="text-sm text-gray-700 cursor-pointer">Resumen (KPIs del mes)</label>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <input type="checkbox" id="hoja_sobrebarriga" name="hojas[]" value="sobrebarriga" checked
+                                       class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                                <label for="hoja_sobrebarriga" class="text-sm text-gray-700 cursor-pointer">Sobrebarriga rotas (tendencia diaria)</label>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <input type="checkbox" id="hoja_hematomas" name="hojas[]" value="hematomas" checked
+                                       class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                                <label for="hoja_hematomas" class="text-sm text-gray-700 cursor-pointer">Hematomas</label>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <input type="checkbox" id="hoja_cortes" name="hojas[]" value="cortes_piernas" checked
+                                       class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                                <label for="hoja_cortes" class="text-sm text-gray-700 cursor-pointer">Corte en piernas</label>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <input type="checkbox" id="hoja_cobertura" name="hojas[]" value="cobertura_grasa" checked
+                                       class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                                <label for="hoja_cobertura" class="text-sm text-gray-700 cursor-pointer">Cobertura grasa</label>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <input type="checkbox" id="hoja_hallazgos_tc" name="hojas[]" value="hallazgos_tc" checked
+                                       class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                                <label for="hoja_hallazgos_tc" class="text-sm text-gray-700 cursor-pointer">Hallazgos TC por tipo</label>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <input type="checkbox" id="hoja_seguimiento" name="hojas[]" value="seguimiento" checked
+                                       class="w-4 h-4 accent-emerald-600 cursor-pointer">
+                                <label for="hoja_seguimiento" class="text-sm text-gray-700 cursor-pointer">Seguimiento (suma del mes / combo)</label>
+                            </li>
+                        </ul>
+                        <div class="flex gap-3 justify-end">
+                            <button type="button" onclick="cerrarModalDescarga()"
+                                    class="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                                Cancelar
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition">
+                                Descargar .xlsx
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            @php
+                $sSeg = $seguimientoSemanal ?? [];
+                $pc = $sSeg['por_clave'] ?? [];
+                $pPct = fn (string $k): string => \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($pc[$k]['pct_media'] ?? 0));
+            @endphp
             {{-- Tarjetas Resumen del Mes --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
                     <p class="text-sm text-gray-500 uppercase">Días Operados</p>
                     <p class="text-3xl font-bold text-blue-600">{{ $totales['dias_operados'] }}</p>
@@ -54,6 +128,11 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
                     <p class="text-sm text-gray-500 uppercase">Total Animales</p>
                     <p class="text-3xl font-bold text-green-600">{{ number_format($totales['animales'], 0, ',', '.') }}</p>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
+                    <p class="text-sm text-gray-500 uppercase">Total Medias Canales</p>
+                    <p class="text-3xl font-bold text-teal-600">{{ number_format($totales['medias_canales'], 0, ',', '.') }}</p>
                 </div>
                 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
@@ -64,81 +143,49 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
                     <p class="text-sm text-gray-500 uppercase">Sobrebarriga Rotas</p>
                     <p class="text-3xl font-bold text-orange-600">{{ number_format($totales['sobrebarriga_rotas'], 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('sobrebarriga_rota') }}</span></p>
                 </div>
                 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
                     <p class="text-sm text-gray-500 uppercase">Hematomas</p>
                     <p class="text-3xl font-bold text-purple-600">{{ number_format($totales['hematomas'], 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('hematomas') }}</span></p>
                 </div>
                 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
                     <p class="text-sm text-gray-500 uppercase">Cobertura Grasa</p>
                     <p class="text-3xl font-bold text-yellow-600">{{ number_format($totales['cobertura'], 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('cobertura_grasa') }}</span></p>
                 </div>
 
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
                     <p class="text-sm text-gray-500 uppercase">Cortes Piernas</p>
                     <p class="text-3xl font-bold text-pink-600">{{ number_format($totales['cortes_piernas'], 0, ',', '.') }}</p>
+                    <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('cortes_piernas') }}</span></p>
+                </div>
+
+                <div class="bg-amber-50/90 overflow-hidden shadow-sm sm:rounded-lg p-6 text-center border border-amber-200/80">
+                    <p class="text-sm text-amber-900/80 uppercase">Acumulado del mes</p>
+                    <p class="text-3xl font-bold text-amber-800 tabular-nums">{{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($sSeg['acumulado_pct_media'] ?? 0)) }}</p>
                 </div>
             </div>
 
             {{-- Gráficos de Tendencia --}}
             @if($indicadores->count() > 0)
 
-            {{-- Botón Descargar Gráficas --}}
-            <div class="flex justify-end mb-2">
-                <button onclick="abrirModalDescarga()"
-                        class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/>
-                    </svg>
-                    Descargar gráficas
-                </button>
-            </div>
-
-            {{-- Modal de selección --}}
-            <div id="modalDescarga" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">Seleccionar gráficas a descargar</h3>
-                    <ul class="space-y-3 mb-6">
-                        <li class="flex items-center gap-3">
-                            <input type="checkbox" id="chk_sobrebarriga" value="chartSobrebarriga" checked
-                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
-                            <label for="chk_sobrebarriga" class="text-sm text-gray-700 cursor-pointer">Sobrebarriga rotas</label>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <input type="checkbox" id="chk_hematomas" value="chartHematomas" checked
-                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
-                            <label for="chk_hematomas" class="text-sm text-gray-700 cursor-pointer">Hematomas</label>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <input type="checkbox" id="chk_cortes" value="chartCortePiernas" checked
-                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
-                            <label for="chk_cortes" class="text-sm text-gray-700 cursor-pointer">Corte en piernas</label>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <input type="checkbox" id="chk_cobertura" value="chartCoberturaGrasa" checked
-                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
-                            <label for="chk_cobertura" class="text-sm text-gray-700 cursor-pointer">Cobertura grasa</label>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <input type="checkbox" id="chk_hallazgos" value="chartHallazgosNuevos" checked
-                                   class="w-4 h-4 accent-indigo-600 cursor-pointer">
-                            <label for="chk_hallazgos" class="text-sm text-gray-700 cursor-pointer">Hallazgos TC por tipo</label>
-                        </li>
-                    </ul>
-                    <div class="flex gap-3 justify-end">
-                        <button onclick="cerrarModalDescarga()"
-                                class="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                            Cancelar
-                        </button>
-                        <button onclick="descargarGraficasSeleccionadas()"
-                                class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition">
-                            Descargar
-                        </button>
+            @isset($seguimientoSemanal)
+            {{-- Gráfica seguimiento (porcentajes en tarjetas superiores) --}}
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                <div class="px-4 sm:px-6 py-4 border-b border-indigo-100 bg-gradient-to-r from-indigo-50 to-slate-50">
+                    <h2 class="text-lg font-bold text-gray-900">Seguimiento semanal</h2>
+                </div>
+                <div class="p-4 sm:px-6 sm:pt-2 sm:pb-6">
+                    <div class="h-80 max-w-4xl">
+                        <canvas id="chartSeguimientoSemanal" style="min-height: 16rem;"></canvas>
                     </div>
                 </div>
             </div>
+            @endisset
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -192,6 +239,118 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+                Chart.register(ChartDataLabels);
+            }
+
+            @isset($seguimientoSemanal['chart_combo'])
+            (function () {
+                const combo = @json($seguimientoSemanal['chart_combo']);
+                const el = document.getElementById('chartSeguimientoSemanal');
+                if (!el || !combo) {
+                    return;
+                }
+                const ac = Number(combo.acumulado_bar) || 0;
+                const res = combo.resultado_bars || [];
+                const meta = combo.meta_line || [];
+                const barAcum = [ac, null, null, null, null];
+                const barRes = [null, res[0] ?? 0, res[1] ?? 0, res[2] ?? 0, res[3] ?? 0];
+                new Chart(el, {
+                    data: {
+                        labels: combo.labels,
+                        datasets: [
+                            {
+                                type: 'bar',
+                                label: 'Σ acumulado',
+                                data: barAcum,
+                                backgroundColor: 'rgba(220, 38, 38, 0.9)',
+                                borderColor: '#B91C1C',
+                                borderWidth: 1,
+                                order: 2,
+                            },
+                            {
+                                type: 'bar',
+                                label: 'Resultado',
+                                data: barRes,
+                                backgroundColor: 'rgba(22, 163, 74, 0.9)',
+                                borderColor: '#15803D',
+                                borderWidth: 1,
+                                order: 2,
+                            },
+                            {
+                                type: 'line',
+                                label: 'META',
+                                data: meta,
+                                borderColor: '#2563EB',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                fill: false,
+                                tension: 0.1,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#2563EB',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
+                                order: 0,
+                            },
+                        ],
+                    },
+                    type: 'bar',
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: { top: 20 } },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: combo.titulo || '',
+                                font: { size: 15, weight: '600' },
+                            },
+                            legend: { position: 'bottom' },
+                            datalabels: {
+                                color: '#1f2937',
+                                font: { weight: '600', size: 10 },
+                                anchor: 'end',
+                                align: 'end',
+                                offset: 2,
+                                formatter: function (value) {
+                                    if (value === null || value === undefined || (typeof value === 'number' && isNaN(value))) {
+                                        return '';
+                                    }
+                                    return Number(value).toFixed(2) + '%';
+                                },
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        const y = ctx.parsed.y;
+                                        if (y === null || (typeof y === 'number' && isNaN(y))) {
+                                            return '';
+                                        }
+                                        return (ctx.dataset.label || '') + ': ' + Number(y).toFixed(2) + '%';
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 4.5,
+                                title: { display: true, text: '%' },
+                                ticks: {
+                                    stepSize: 0.5,
+                                    callback: function (v) {
+                                        return Number(v).toFixed(2) + '%';
+                                    },
+                                },
+                            },
+                            x: { ticks: { maxRotation: 40, minRotation: 0, font: { size: 10 } } },
+                        },
+                    },
+                });
+            })();
+            @endisset
+
             @if(isset($chartData) && $indicadores->count() > 0)
             const chartData = @json($chartData);
             const hallazgosNuevos = @json($hallazgosNuevos);
@@ -201,7 +360,6 @@
             }
 
             // Gráfico de Hallazgos Nuevos
-            Chart.register(ChartDataLabels);
             
             // Crear array de meta con el mismo largo que las fechas
             const metaArray = Array(hallazgosNuevos.fechas.length).fill(hallazgosNuevos.meta);
@@ -348,80 +506,37 @@
     @endpush
 
     <script>
-        const chartTitulos = {
-            chartSobrebarriga:    'Indicador de Sobrebarriga Rotas',
-            chartHematomas:       'Indicador de Hematomas',
-            chartCortePiernas:    'Indicador de Corte en Piernas',
-            chartCoberturaGrasa:  'Indicador de Cobertura Grasa',
-            chartHallazgosNuevos: 'Hallazgos TC por Tipo',
-        };
-        const chartNombresArchivo = {
-            chartSobrebarriga:    'sobrebarriga-rotas',
-            chartHematomas:       'hematomas',
-            chartCortePiernas:    'corte-piernas',
-            chartCoberturaGrasa:  'cobertura-grasa',
-            chartHallazgosNuevos: 'hallazgos-tc',
-        };
-
         function abrirModalDescarga() {
             window._pausarAutoRefresh = true;
-            document.getElementById('modalDescarga').classList.remove('hidden');
+            const el = document.getElementById('modalDescarga');
+            if (el) el.classList.remove('hidden');
         }
 
         function cerrarModalDescarga() {
             window._pausarAutoRefresh = false;
-            document.getElementById('modalDescarga').classList.add('hidden');
+            const el = document.getElementById('modalDescarga');
+            if (el) el.classList.add('hidden');
         }
 
-        function descargarGraficasSeleccionadas() {
-            const checkboxes = document.querySelectorAll('#modalDescarga input[type=checkbox]:checked');
-
-            if (checkboxes.length === 0) {
-                alert('Selecciona al menos una gráfica.');
-                return;
+        function validarHojasExcel(e) {
+            const n = document.querySelectorAll('#formGraficasExcel input[name="hojas[]"]:checked').length;
+            if (n === 0) {
+                if (e && e.preventDefault) e.preventDefault();
+                alert('Selecciona al menos una hoja para exportar.');
+                return false;
             }
-
-            const TITULO_H   = 40;  // altura reservada para el título
-            const PADDING    = 16;
-
-            checkboxes.forEach(function(chk) {
-                const canvas = document.getElementById(chk.value);
-                if (!canvas) return;
-
-                const titulo = chartTitulos[chk.value] || chk.value;
-
-                // Canvas temporal con espacio extra para el título
-                const tmpCanvas = document.createElement('canvas');
-                tmpCanvas.width  = canvas.width;
-                tmpCanvas.height = canvas.height + TITULO_H;
-                const ctx = tmpCanvas.getContext('2d');
-
-                // Fondo blanco
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-
-                // Título
-                ctx.fillStyle = '#1f2937';
-                ctx.font = 'bold 16px sans-serif';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(titulo, PADDING, TITULO_H / 2);
-
-                // Gráfica
-                ctx.drawImage(canvas, 0, TITULO_H);
-
-                const link = document.createElement('a');
-                link.href = tmpCanvas.toDataURL('image/png');
-                link.download = (chartNombresArchivo[chk.value] || chk.value) + '.png';
-                link.click();
-            });
-
             cerrarModalDescarga();
+            return true;
         }
 
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('modalDescarga').addEventListener('click', function(e) {
-            if (e.target === this) cerrarModalDescarga();
-        });
+        (function () {
+            const m = document.getElementById('modalDescarga');
+            if (m) {
+                m.addEventListener('click', function (e) {
+                    if (e.target === this) cerrarModalDescarga();
+                });
+            }
+        })();
     </script>
 
     {{-- Auto-refresh cada 40 segundos (pausado mientras el modal está abierto) --}}

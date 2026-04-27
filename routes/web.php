@@ -42,7 +42,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     // Dashboard mensual
-    Route::get('/dashboard/mensual', DashboardMensualController::class)->name('dashboard.mensual');
+    Route::get('/dashboard/mensual', [DashboardMensualController::class, '__invoke'])->name('dashboard.mensual');
+    Route::get('/dashboard/mensual/graficas-excel', [DashboardMensualController::class, 'exportGraficasExcel'])->name('dashboard.mensual.graficas-excel');
 
     // Gestión de Operarios
     Route::get('/operarios/dia', GestionOperariosDia::class)->name('operarios-dia.index');
