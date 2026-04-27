@@ -6,14 +6,17 @@ use App\Exports\Support\DashboardExcelGraphics;
 use App\Support\PorcentajeVista;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCharts;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Chart\Chart;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class DashboardGraficasMensualesExport implements WithMultipleSheets
+class DashboardGraficasMensualesExport implements WithCharts, WithMultipleSheets
 {
     public const ALL_HOJAS = [
         'resumen',
@@ -33,6 +36,17 @@ class DashboardGraficasMensualesExport implements WithMultipleSheets
         private array $data,
         private array $hojas,
     ) {}
+
+    /**
+     * Activar escritura de gráficos en el .xlsx (WriterFactory hace setIncludeCharts(true) si WithCharts).
+     * Los gráficos reales se añaden con addChart() en AfterSheet de cada hoja.
+     *
+     * @return array<int, Chart>
+     */
+    public function charts(): array
+    {
+        return [];
+    }
 
     public function sheets(): array
     {
@@ -65,7 +79,7 @@ class DashboardGraficasMensualesExport implements WithMultipleSheets
     }
 }
 
-class DashboardGraficaSheetResumen implements FromArray, ShouldAutoSize, WithEvents, WithStyles, WithTitle
+class DashboardGraficaSheetResumen implements FromArray, ShouldAutoSize, WithEvents, WithStrictNullComparison, WithStyles, WithTitle
 {
     /**
      * @param  array<string, mixed>  $data
@@ -128,7 +142,7 @@ class DashboardGraficaSheetResumen implements FromArray, ShouldAutoSize, WithEve
     }
 }
 
-class DashboardGraficaSheetTendencia implements FromArray, ShouldAutoSize, WithEvents, WithStyles, WithTitle
+class DashboardGraficaSheetTendencia implements FromArray, ShouldAutoSize, WithEvents, WithStrictNullComparison, WithStyles, WithTitle
 {
     public int $excelDataStartRow = 0;
 
@@ -162,8 +176,8 @@ class DashboardGraficaSheetTendencia implements FromArray, ShouldAutoSize, WithE
         for ($i = 0; $i < $n; $i++) {
             $rows[] = [
                 $labels[$i] ?? '',
-                $serie[$i] ?? '',
-                $meta[$i] ?? '',
+                $serie[$i] ?? 0,
+                $meta[$i] ?? 0,
             ];
         }
 
@@ -215,7 +229,7 @@ class DashboardGraficaSheetTendencia implements FromArray, ShouldAutoSize, WithE
     }
 }
 
-class DashboardGraficaSheetHallazgosTc implements FromArray, ShouldAutoSize, WithEvents, WithStyles, WithTitle
+class DashboardGraficaSheetHallazgosTc implements FromArray, ShouldAutoSize, WithEvents, WithStrictNullComparison, WithStyles, WithTitle
 {
     public int $excelDataStartRow = 0;
 
@@ -250,9 +264,9 @@ class DashboardGraficaSheetHallazgosTc implements FromArray, ShouldAutoSize, Wit
         for ($i = 0; $i < $n; $i++) {
             $rows[] = [
                 $fechas[$i] ?? '',
-                $hn['MATERIA FECAL'][$i] ?? '',
-                $hn['CONTENIDO RUMINAL'][$i] ?? '',
-                $hn['LECHE VISIBLE'][$i] ?? '',
+                $hn['MATERIA FECAL'][$i] ?? 0,
+                $hn['CONTENIDO RUMINAL'][$i] ?? 0,
+                $hn['LECHE VISIBLE'][$i] ?? 0,
                 $m,
             ];
         }
@@ -298,7 +312,7 @@ class DashboardGraficaSheetHallazgosTc implements FromArray, ShouldAutoSize, Wit
     }
 }
 
-class DashboardGraficaSheetSeguimiento implements FromArray, ShouldAutoSize, WithEvents, WithStyles, WithTitle
+class DashboardGraficaSheetSeguimiento implements FromArray, ShouldAutoSize, WithEvents, WithStrictNullComparison, WithStyles, WithTitle
 {
     public int $excelComboDataStart = 0;
 

@@ -30,11 +30,12 @@ final class DashboardExcelGraphics
      */
     public static function institutionalHeaderBlock(): array
     {
+        // Columna A: logo; B: separación; C–H: texto (se fusiona en applyInstitutionalHeader)
         return [
-            ['', '', '', '', ''],
-            ['', '', '', '', ''],
-            ['', '', '', '', ''],
-            ['', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
         ];
     }
 
@@ -45,28 +46,30 @@ final class DashboardExcelGraphics
 
     public static function applyInstitutionalHeader(Worksheet $sheet, string $mesTitulo): void
     {
-        $sheet->mergeCells('B1:F3');
-        $sheet->setCellValue('B1', "Liberación de canales\nDashboard mensual — ".mb_strtoupper($mesTitulo));
-        $sheet->getStyle('B1')->getAlignment()
+        $sheet->getColumnDimension('A')->setWidth(18);
+        $sheet->getColumnDimension('B')->setWidth(2.5);
+        $sheet->getColumnDimension('C')->setAutoSize(true);
+
+        $sheet->mergeCells('C1:H3');
+        $sheet->setCellValue('C1', "Liberación de canales\nDashboard mensual — ".mb_strtoupper($mesTitulo));
+        $sheet->getStyle('C1')->getAlignment()
             ->setWrapText(true)
             ->setVertical('center')
             ->setHorizontal('left');
-        $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(12);
-        $sheet->getRowDimension(1)->setRowHeight(20);
-        $sheet->getRowDimension(2)->setRowHeight(20);
-        $sheet->getRowDimension(3)->setRowHeight(20);
-        $sheet->getColumnDimension('A')->setWidth(12);
-        $sheet->getColumnDimension('B')->setWidth(14);
+        $sheet->getStyle('C1')->getFont()->setBold(true)->setSize(12);
+        $sheet->getRowDimension(1)->setRowHeight(22);
+        $sheet->getRowDimension(2)->setRowHeight(22);
+        $sheet->getRowDimension(3)->setRowHeight(22);
 
         $logo = public_path('logo.png');
         if (is_file($logo)) {
             $drawing = new Drawing;
             $drawing->setName('Logo');
             $drawing->setPath($logo);
-            $drawing->setHeight(56);
+            $drawing->setHeight(48);
             $drawing->setCoordinates('A1');
-            $drawing->setOffsetX(4);
-            $drawing->setOffsetY(2);
+            $drawing->setOffsetX(6);
+            $drawing->setOffsetY(4);
             $drawing->setWorksheet($sheet);
         }
     }
