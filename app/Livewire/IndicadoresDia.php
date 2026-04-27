@@ -66,7 +66,7 @@ class IndicadoresDia extends Component
         $mesStr = str_pad((string) $this->mes, 2, '0', STR_PAD_LEFT);
         $registros = IndicadorDiario::where('mes', $mesStr)
             ->where('año', $this->anio)
-            ->orderBy('fecha_operacion')
+            ->orderBy('fecha_operacion', 'desc')
             ->get();
 
         $this->historial = [];
@@ -94,6 +94,8 @@ class IndicadoresDia extends Component
     {
         $this->fecha = $nuevaFecha;
         $this->cargarIndicadores();
+        $idSuf = str_replace('-', '_', Carbon::parse($nuevaFecha)->format('Y-m-d'));
+        $this->js("setTimeout(function(){ var el = document.getElementById('lib-detalle-{$idSuf}'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 80);");
     }
 
     public function cambiarMesAnio()
@@ -237,6 +239,9 @@ class IndicadoresDia extends Component
         foreach ($this->resumenToleranciaZero as $fila) {
             if ($fila['fecha_operacion'] === $fechaDia) {
                 $this->detalleTCDia = $fila;
+                $suf = str_replace('-', '_', $fechaDia);
+                $this->js("setTimeout(function(){ var el = document.getElementById('tc-detalle-{$suf}'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 80);");
+
                 return;
             }
         }
