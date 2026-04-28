@@ -22,8 +22,14 @@
         </div>
     @endif
 
-    {{-- Form --}}
-    <form wire:submit.prevent="registrar" class="bg-white shadow-md rounded-lg p-6">
+    {{-- Form: no usar disabled en el botón (Livewire/Alpine lo dejaban pegado). Bloqueo de envío solo si hay preview local y el servidor aún no tiene foto. --}}
+    <form x-data="fotoCompressor()"
+          x-on:submit.prevent="
+              const servidorTieneFoto = $wire.foto != null && $wire.foto !== '';
+              if (previewInstantanea && !servidorTieneFoto) return;
+              $wire.registrar();
+          "
+          class="bg-white shadow-md rounded-lg p-6">
         <div class="space-y-6">
             
             {{-- Código (Número de Canal) --}}
@@ -119,13 +125,13 @@
             @endif
 
             {{-- Evidencia (Foto) con Compresión --}}
-            <div x-data="fotoCompressor()">
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
                     📷 Evidencia
                 </label>
                 <div wire:loading wire:target="foto" class="mb-3 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm flex items-center gap-2">
                     <div class="animate-spin rounded-full h-4 w-4 border-2 border-blue-700 border-t-transparent"></div>
-                    ⏳ Comprimiendo y cargando imagen...
+                    ⏳ Subiendo evidencia...
                 </div>
                 
                 <div class="space-y-4">
@@ -143,14 +149,29 @@
                            class="hidden"
                            accept="image/*"
                            capture="environment">
-                    
-                    {{-- Estado de compresión --}}
-                    <div x-show="comprimiendo" class="mb-3 p-3 bg-amber-50 text-amber-700 rounded-lg text-sm">
-                        <p x-text="`Comprimiendo: ${porcentajeCompresion}%`"></p>
-                    </div>
 
                     {{-- Galería / cámara solo hasta elegir foto; al tener evidencia solo vista previa + Cambiar foto --}}
                     @if (!$foto)
+                        {{-- Vista previa instantánea (blob local) mientras Livewire comprime/sube --}}
+                        <div x-show="previewInstantanea" x-cloak class="relative mb-4">
+                            <div class="bg-white rounded-lg border-2 border-green-400 p-4 shadow-lg">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="text-sm font-semibold text-green-700">✅ Evidencia seleccionada</span>
+                                </div>
+                                <img class="w-full h-48 object-cover rounded-lg border border-gray-300" x-bind:src="previewInstantanea" alt="Previsualización de evidencia">
+                                <button type="button"
+                                        @click="cancelarPreviewLocal()"
+                                        class="mt-3 w-full px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-sm font-semibold transition">
+                                    🗑️ Cambiar Foto
+                                </button>
+                            </div>
+                        </div>
+                        <div x-show="!previewInstantanea">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <label for="foto-galeria" class="block cursor-pointer">
                                 <div class="relative group h-full">
@@ -176,7 +197,8 @@
                                 </div>
                             </label>
                         </div>
-                        <p class="text-xs text-gray-500 text-center py-2">💡 Elige galería o cámara; la imagen se comprimirá antes de subirla</p>
+                        <p class="text-xs text-gray-500 text-center py-2">💡 Fotos JPG/PNG/WebP ≤ ~520 KB se suben tal cual (rápido); si pesan más, se comprimen antes de enviar.</p>
+                        </div>
                     @endif
 
                     @if ($foto)
@@ -193,7 +215,7 @@
                                 <img class="w-full h-48 object-cover rounded-lg border border-gray-300" src="{{ $foto->temporaryUrl() }}" alt="Previsualización de evidencia">
                                 <button type="button"
                                         wire:click="$set('foto', null)"
-                                        @click="document.getElementById('foto-galeria').value=''; document.getElementById('foto-camara').value='';"
+                                        @click="revocarPreview(); document.getElementById('foto-galeria').value=''; document.getElementById('foto-camara').value='';"
                                         class="mt-3 w-full px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-sm font-semibold transition">
                                     🗑️ Cambiar Foto
                                 </button>
@@ -208,40 +230,78 @@
             <script>
                 function fotoCompressor() {
                     return {
-                        comprimiendo: false,
-                        porcentajeCompresion: 0,
+                        /** Vista previa local (blob:) al elegir archivo; hasta que Livewire confirme `foto`. */
+                        previewInstantanea: null,
+
+                        init() {
+                            if (this.previewInstantanea === undefined) {
+                                this.previewInstantanea = null;
+                            }
+                            const self = this;
+                            const alTerminarSubida = function () {
+                                self.revocarPreview();
+                            };
+                            window.addEventListener('livewire-upload-finish', alTerminarSubida);
+                            window.addEventListener('livewire-upload-error', alTerminarSubida);
+                            window.addEventListener('livewire-upload-cancel', alTerminarSubida);
+                        },
+
+                        revocarPreview() {
+                            if (this.previewInstantanea) {
+                                try { URL.revokeObjectURL(this.previewInstantanea); } catch (e) {}
+                                this.previewInstantanea = null;
+                            }
+                        },
+
+                        cancelarPreviewLocal() {
+                            this.revocarPreview();
+                            document.getElementById('foto-galeria').value = '';
+                            document.getElementById('foto-camara').value = '';
+                        },
 
                         /** Máximo lado en px (evidencia; bajar = menos trabajo en el celular). */
                         MAX_LADO: 1024,
                         /** Tope Laravel: max:2048 (KB); dejamos margen en bytes. */
                         MAX_BYTES: 2 * 1024 * 1024,
-                        /** Por debajo de esto no reencodamos (subida directa, mucho más rápido). */
+                        /** Por debajo de esto no reencodamos (subida directa Livewire, lo más rápido en campo). */
                         UMBRAL_SIN_COMPRIMIR: 520 * 1024,
+
+                        /** MIME estándar + image/jpg (algunos Android). Si type viene vacío, usamos extensión del nombre. */
+                        esJpegPngWebp(archivo) {
+                            const t = (archivo.type || '').trim().toLowerCase();
+                            if (/^image\/(jpeg|jpg|png|webp)$/i.test(t)) return true;
+                            const n = (archivo.name || '').toLowerCase();
+                            return /\.(jpe?g|png|webp)$/i.test(n);
+                        },
 
                         async comprimirYCargar(event) {
                             const inputOrigen = event.target;
                             const archivo = inputOrigen.files[0];
                             if (!archivo) return;
 
-                            // Fotos ya livianas: sin canvas/toBlob (ahorra el mayor tiempo en campo)
+                            this.revocarPreview();
+                            this.previewInstantanea = URL.createObjectURL(archivo);
+
+                            // Fotos ya livianas: sin canvas/toBlob (evidencia intacta para validación / menos trabajo en celular)
                             if (
                                 archivo.size <= this.UMBRAL_SIN_COMPRIMIR &&
-                                /^image\/(jpeg|jpg|png|webp)$/i.test(archivo.type || '')
+                                this.esJpegPngWebp(archivo)
                             ) {
-                                this.comprimiendo = true;
                                 try {
-                                    @this.upload('foto', archivo, false, null, null, () => {
-                                        this.comprimiendo = false;
-                                    });
+                                    // Livewire 3: upload(name, file, onFinish, onError, onProgress) — no usar firma antigua con false/null
+                                    @this.upload(
+                                        'foto',
+                                        archivo,
+                                        () => { this.revocarPreview(); },
+                                        () => { this.revocarPreview(); },
+                                        () => {}
+                                    );
                                 } catch (e) {
                                     console.error(e);
-                                    this.comprimiendo = false;
+                                    this.revocarPreview();
                                 }
                                 return;
                             }
-
-                            this.comprimiendo = true;
-                            this.porcentajeCompresion = 0;
 
                             let objectUrl = null;
                             try {
@@ -285,10 +345,6 @@
                                     comprimido = await this.canvasToBlob(canvas, 'image/jpeg', 0.52);
                                 }
 
-                                this.porcentajeCompresion = archivo.size > 0
-                                    ? Math.min(99, Math.round((1 - comprimido.size / archivo.size) * 100))
-                                    : 0;
-
                                 const archivoComprimido = new File(
                                     [comprimido],
                                     'foto_' + Date.now() + '.jpg',
@@ -299,12 +355,16 @@
                                 dataTransfer.items.add(archivoComprimido);
                                 inputOrigen.files = dataTransfer.files;
 
-                                @this.upload('foto', archivoComprimido, false, null, null, () => {
-                                    this.comprimiendo = false;
-                                });
+                                @this.upload(
+                                    'foto',
+                                    archivoComprimido,
+                                    () => { this.revocarPreview(); },
+                                    () => { this.revocarPreview(); },
+                                    () => {}
+                                );
                             } catch (error) {
                                 console.error('Error al comprimir:', error);
-                                this.comprimiendo = false;
+                                this.revocarPreview();
                             } finally {
                                 if (objectUrl) {
                                     try { URL.revokeObjectURL(objectUrl); } catch (e) {}
@@ -337,11 +397,12 @@
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Cancelar
             </a>
-            <button type="submit" 
+            <button type="submit"
                     class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    wire:loading.attr="disabled"
-                    wire:loading.class="bg-blue-400">
-                <span wire:loading.remove wire:target="registrar">Guardar</span>
+                    wire:loading.class="opacity-70 cursor-wait"
+                    wire:target="registrar,foto">
+                <span wire:loading.remove wire:target="registrar,foto">Guardar</span>
+                <span wire:loading wire:target="foto">Esperando foto…</span>
                 <span wire:loading wire:target="registrar">Guardando...</span>
             </button>
         </div>
