@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\AuthorizaPorMenuModulo;
 use Livewire\Component;
 use App\Models\HallazgoToleranciaZero;
 use App\Models\TipoHallazgo;
@@ -13,11 +14,7 @@ use Illuminate\Support\Str;
 
 class RegistroHallazgoToleranciaZero extends Component
 {
-    private function normalizarRol(?string $rol): string
-    {
-        $rolNormalizado = strtoupper(trim((string) $rol));
-        return $rolNormalizado === 'ADMIN' ? 'ADMINISTRADOR' : $rolNormalizado;
-    }
+    use AuthorizaPorMenuModulo;
 
     // Form Data
     public $producto_id;
@@ -67,18 +64,7 @@ class RegistroHallazgoToleranciaZero extends Component
 
     public function mount()
     {
-        // Verificar que solo Admin y Operaciones pueden acceder
-        if (!auth()->check()) {
-            abort(401, 'Debes estar autenticado.');
-        }
-
-        $usuario = auth()->user();
-        $rolesPermitidos = ['ADMINISTRADOR', 'OPERACIONES'];
-
-        $rolUsuario = $this->normalizarRol($usuario->rol?->nombre);
-        if (!$usuario->rol || !in_array($rolUsuario, $rolesPermitidos, true)) {
-            abort(403, 'No tienes permiso para acceder a este módulo. Se requiere rol ADMINISTRADOR u OPERACIONES.');
-        }
+        $this->autorizarVistaMenu('tolerancia-cero.registrar');
 
         // Ajustar fecha según turno de trabajo (si es madrugada 00:00-06:59, usar fecha anterior)
         $ahora = Carbon::now();

@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\AuthorizaPorMenuModulo;
 use Livewire\Component;
 use App\Models\SesionUsuario;
 use App\Models\User;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class TiempoUsabilidad extends Component
 {
+    use AuthorizaPorMenuModulo;
+
     public string $periodo = 'semana'; // semana | mes | personalizado
     public string $fechaInicio = '';
     public string $fechaFin = '';
@@ -22,9 +25,7 @@ class TiempoUsabilidad extends Component
 
     public function mount()
     {
-        if (!auth()->check() || !in_array(strtoupper(auth()->user()->rol->nombre ?? ''), ['ADMINISTRADOR'])) {
-            return redirect()->route('dashboard');
-        }
+        $this->autorizarVistaMenu('tiempo-usabilidad');
 
         $this->fechaFin = Carbon::now()->format('Y-m-d');
         $this->fechaInicio = Carbon::now()->subDays(6)->format('Y-m-d');

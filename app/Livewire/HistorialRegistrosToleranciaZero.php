@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\AuthorizaPorMenuModulo;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\HallazgoToleranciaZero;
@@ -12,14 +13,9 @@ use Illuminate\Support\Facades\DB;
 
 class HistorialRegistrosToleranciaZero extends Component
 {
+    use AuthorizaPorMenuModulo;
     use WithPagination;
 
-    private function normalizarRol(?string $rol): string
-    {
-        $rolNormalizado = strtoupper(trim((string) $rol));
-        return $rolNormalizado === 'ADMIN' ? 'ADMINISTRADOR' : $rolNormalizado;
-    }
-    
     // Filtros
     public $fecha_inicio;
     public $fecha_fin;
@@ -49,18 +45,7 @@ class HistorialRegistrosToleranciaZero extends Component
     
     public function mount()
     {
-        // Verificar que solo Admin, Operaciones, Calidad y Gerencia pueden acceder
-        if (!auth()->check()) {
-            abort(401, 'Debes estar autenticado.');
-        }
-
-        $usuario = auth()->user();
-        $rolesPermitidos = ['ADMINISTRADOR', 'OPERACIONES', 'CALIDAD', 'GERENCIA'];
-
-        $rolUsuario = $this->normalizarRol($usuario->rol?->nombre);
-        if (!$usuario->rol || !in_array($rolUsuario, $rolesPermitidos, true)) {
-            abort(403, 'No tienes permiso para acceder a este módulo. Se requiere rol ADMINISTRADOR, OPERACIONES, CALIDAD o GERENCIA.');
-        }
+        $this->autorizarVistaMenu('tolerancia-cero.historial');
 
         // Establecer fechas por defecto (hoy)
         $this->fecha_inicio = $this->fecha_inicio ?: Carbon::now()->format('Y-m-d');

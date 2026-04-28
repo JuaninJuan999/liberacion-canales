@@ -80,6 +80,27 @@ class MenuModuloSeeder extends Seeder
                 'orden' => 10,
                 'roles' => ['ADMINISTRADOR', 'OPERACIONES', 'CALIDAD', 'GERENCIA'],
             ],
+            [
+                'nombre' => 'Animales Procesados',
+                'vista' => 'animales.index',
+                'icono' => 'document-stack',
+                'orden' => 11,
+                'roles' => ['OPERACIONES', 'CALIDAD', 'ADMINISTRADOR', 'GERENCIA'],
+            ],
+            [
+                'nombre' => 'Catálogo de Operarios',
+                'vista' => 'operarios.index',
+                'icono' => 'users-circle',
+                'orden' => 12,
+                'roles' => ['OPERACIONES', 'ADMINISTRADOR'],
+            ],
+            [
+                'nombre' => 'Tiempo de Usabilidad',
+                'vista' => 'tiempo-usabilidad',
+                'icono' => 'stopwatch',
+                'orden' => 13,
+                'roles' => ['ADMINISTRADOR'],
+            ],
         ];
 
         foreach ($modulos as $modulo) {
