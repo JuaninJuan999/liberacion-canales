@@ -209,17 +209,10 @@
             </div>
 
             @isset($seguimientoAnual)
-            <div id="seguimiento-anual" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 scroll-mt-4">
+            <div id="seguimiento-anual" class="mensual-chart-card-inst scroll-mt-4">
+                <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
                 <div class="px-4 sm:px-6 py-4 border-b border-violet-100 bg-gradient-to-r from-violet-50 to-slate-50">
                     <h2 class="text-lg font-bold text-gray-900">Seguimiento anual</h2>
-                    <p class="text-xs sm:text-sm text-gray-600 mt-1 max-w-4xl">
-                        Cada punto es el total de hallazgos del tipo en el mes dividido entre el total de <strong>medias canales</strong> de ese mes. Año <strong>{{ $seguimientoAnual['anio'] }}</strong>.
-                        @if((int) $seguimientoAnual['anio'] === (int) now()->year)
-                            El eje muestra solo <strong>desde enero hasta {{ now()->locale('es')->isoFormat('MMMM') }}</strong>.
-                        @else
-                            Se muestran los doce meses del año seleccionado.
-                        @endif
-                    </p>
                 </div>
                 <div class="p-4 sm:px-6 sm:pb-6">
                     @if(count($seguimientoAnual['labels'] ?? []) > 0)
@@ -238,12 +231,14 @@
 
             @isset($seguimientoSemanal)
             {{-- Gráfica seguimiento (porcentajes en tarjetas superiores) --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+            <div class="mensual-chart-card-inst">
+                <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
                 <div class="px-4 sm:px-6 py-4 border-b border-indigo-100 bg-gradient-to-r from-indigo-50 to-slate-50">
                     <h2 class="text-lg font-bold text-gray-900">Seguimiento Mensual</h2>
                 </div>
                 <div class="p-4 sm:px-6 sm:pt-2 sm:pb-6">
-                    <div class="h-80 max-w-4xl">
+                    {{-- Ancho completo de la tarjeta (antes max-w-4xl dejaba banda vacía a la derecha en pantallas anchas) --}}
+                    <div class="h-80 w-full min-w-0">
                         <canvas id="chartSeguimientoSemanal" style="min-height: 16rem;"></canvas>
                     </div>
                 </div>
@@ -251,7 +246,8 @@
             @endisset
 
             @isset($seguimientoSemanalLinea)
-            <div id="seguimiento-semanal-linea" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 scroll-mt-4">
+            <div id="seguimiento-semanal-linea" class="mensual-chart-card-inst scroll-mt-4">
+                <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
                 <div class="px-4 sm:px-6 py-4 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-slate-50">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <h2 class="text-lg font-bold text-gray-900">Seguimiento semanal</h2>
@@ -288,7 +284,8 @@
                             {{ number_format((float) ($seguimientoSemanalLinea['total_acumulado_promedios'] ?? 0), 2, ',', '.') }}&nbsp;%
                         </span>
                     </div>
-                    <div class="h-80 max-w-5xl">
+                    {{-- Sin max-w-*: si no, queda banda vacía a la derecha en pantallas anchas --}}
+                    <div class="h-80 w-full min-w-0">
                         <canvas id="chartSeguimientoSemanalLinea" style="min-height: 18rem;"></canvas>
                     </div>
                 </div>
@@ -296,40 +293,55 @@
             @endisset
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="mensual-chart-card-inst">
+                    <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
+                    <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Sobrebarriga rotas</h3>
                     <div class="h-64">
                         <canvas id="chartSobrebarriga"></canvas>
                     </div>
+                    </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="mensual-chart-card-inst mensual-chart-card-inst--accent-green">
+                    <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
+                    <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Hematomas</h3>
                     <div class="h-64">
                         <canvas id="chartHematomas"></canvas>
                     </div>
+                    </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="mensual-chart-card-inst">
+                    <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
+                    <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Corte en Piernas</h3>
                     <div class="h-64">
                         <canvas id="chartCortePiernas"></canvas>
                     </div>
+                    </div>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="mensual-chart-card-inst mensual-chart-card-inst--accent-green">
+                    <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
+                    <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Cobertura Grasa</h3>
                     <div class="h-64">
                         <canvas id="chartCoberturaGrasa"></canvas>
+                    </div>
                     </div>
                 </div>
             </div>
 
             {{-- Gráfico de Hallazgos Nuevos --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="mensual-chart-card-inst">
+                <div class="mensual-chart-inst-stripe" aria-hidden="true"></div>
+                <div class="p-6">
                 <h3 class="text-lg font-semibold mb-4 text-gray-800">Hallazgos TC por Tipo</h3>
                 <div class="h-64">
                     <canvas id="chartHallazgosNuevos"></canvas>
+                </div>
                 </div>
             </div>
             @else
@@ -610,11 +622,15 @@
                         },
                     };
 
-                    new Chart(el, {
+                    // Guardar data para exportación hi-res sin afectar la vista
+                    window.__mensualSeguimientoAnual = sa;
+
+                    const chartSeguimientoAnual = new Chart(el, {
                         type: 'line',
                         data: { labels: sa.labels, datasets: ds },
                         plugins: [seguimientoAnualPorcentajes],
                         options: {
+                        // Importante: NO forzar devicePixelRatio aquí para no “dañar” la estética en pantalla.
                             responsive: true,
                             maintainAspectRatio: false,
                             layout: { padding: { top: 64, right: 14, left: 10, bottom: 12 } },
@@ -673,6 +689,7 @@
                             },
                         },
                     });
+                    window.__chartSeguimientoAnual = chartSeguimientoAnual;
                 } catch (e) {
                     if (typeof console !== 'undefined' && console.error) {
                         console.error('chartSeguimientoAnual', e);
@@ -684,6 +701,7 @@
             @isset($seguimientoSemanal['chart_combo'])
             (function () {
                 const combo = @json($seguimientoSemanal['chart_combo']);
+                try { window.__mensualSeguimientoCombo = combo; } catch (e) {}
                 const el = document.getElementById('chartSeguimientoSemanal');
                 if (!el || !combo) {
                     return;
@@ -792,6 +810,7 @@
             @isset($seguimientoSemanalLinea)
             (function () {
                 const sl = @json($seguimientoSemanalLinea);
+                try { window.__mensualSeguimientoSemanalLinea = sl; } catch (e) {}
                 const el = document.getElementById('chartSeguimientoSemanalLinea');
                 if (!el || !sl || !sl.labels) {
                     return;
@@ -1003,6 +1022,8 @@
             @if(isset($chartData) && $indicadores->count() > 0)
             const chartData = @json($chartData);
             const hallazgosNuevos = @json($hallazgosNuevos);
+            try { window.__mensualChartData = chartData; } catch (e) {}
+            try { window.__mensualHallazgosNuevos = hallazgosNuevos; } catch (e) {}
             
             if (typeof window.initDashboardCharts === 'function') {
                 window.initDashboardCharts(chartData);
@@ -1225,8 +1246,738 @@
                 alert('No se pudo leer la gráfica.');
                 return;
             }
+
+            var __cleanupTempChart = null;
+
+            // Asegurar plugin datalabels para render temporal
+            try {
+                if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+                    Chart.register(ChartDataLabels);
+                }
+            } catch (e) {}
+
+            // Para el anual: re-render en alta resolución solo para exportar (sin tocar la vista).
+            // Chart.js renderiza según devicePixelRatio; al clonar a un canvas temporal logramos más nitidez.
+            try {
+                if (sourceCanvas.id === 'chartSeguimientoAnual' && window.__mensualSeguimientoAnual) {
+                    const sa = window.__mensualSeguimientoAnual;
+                    const parent = sourceCanvas.parentElement;
+                    const cssW = (parent && parent.clientWidth) ? parent.clientWidth : sourceCanvas.clientWidth;
+                    const cssH = (parent && parent.clientHeight) ? parent.clientHeight : sourceCanvas.clientHeight;
+                    const dpr = 3; // hi-res para PNG
+
+                    const temp = document.createElement('canvas');
+                    // Chart.js ya escala internamente por devicePixelRatio.
+                    // Si además multiplicamos el tamaño del canvas, luego al exportar se “encogen” las fuentes.
+                    temp.width = Math.max(300, Math.floor(cssW));
+                    temp.height = Math.max(240, Math.floor(cssH));
+
+                    const tmpDs = (sa.datasets || []).map(function (d) {
+                        return {
+                            label: d.label,
+                            data: d.data,
+                            borderColor: d.borderColor,
+                            backgroundColor: 'transparent',
+                            borderWidth: d.borderWidth != null ? d.borderWidth : 2.5,
+                            borderDash: [],
+                            pointRadius: d.pointRadius != null ? d.pointRadius : 5,
+                            pointHoverRadius: d.pointHoverRadius != null ? d.pointHoverRadius : 6,
+                            pointBackgroundColor: d.pointBackgroundColor || '#ffffff',
+                            pointBorderColor: d.pointBorderColor || d.borderColor,
+                            pointBorderWidth: d.pointBorderWidth != null ? d.pointBorderWidth : 2,
+                            tension: d.tension != null ? d.tension : 0.15,
+                            spanGaps: false,
+                            fill: false,
+                        };
+                    });
+
+                    // Plugin de porcentajes + L (definido aquí para evitar problemas de alcance del JS)
+                    function tmpRoundRectPath(ctx, x, y, w, h, r) {
+                        const rr = Math.min(r, w / 2, h / 2);
+                        ctx.beginPath();
+                        ctx.moveTo(x + rr, y);
+                        ctx.arcTo(x + w, y, x + w, y + h, rr);
+                        ctx.arcTo(x + w, y + h, x, y + h, rr);
+                        ctx.arcTo(x, y + h, x, y, rr);
+                        ctx.arcTo(x, y, x + w, y, rr);
+                        ctx.closePath();
+                    }
+                    const tmpSeguimientoAnualPorcentajes = {
+                        id: 'tmpSeguimientoAnualPorcentajes',
+                        afterDatasetsDraw: function (chart) {
+                            const ctx = chart.ctx;
+                            const chartArea = chart.chartArea;
+                            if (!chartArea) return;
+
+                            const nSeries = chart.data.datasets.length;
+                            const centerOff = nSeries > 1 ? (nSeries - 1) / 2 : 0;
+                            const spreadPx = 8;
+                            const baseLift = 18;
+                            const padX = 5;
+                            const textH = 18;
+                            const stackStep = textH + 7;
+                            const minHorizGap = 6;
+
+                            const items = [];
+                            ctx.save();
+                            ctx.font = '700 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+
+                            chart.data.datasets.forEach(function (dataset, datasetIndex) {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                if (meta.hidden === true) return;
+                                const seriesColor = dataset.borderColor || '#374151';
+                                const raw = dataset.data || [];
+                                for (let i = 0; i < raw.length; i++) {
+                                    const v = raw[i];
+                                    if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) continue;
+                                    const pt = meta.data[i];
+                                    if (!pt || pt.skip) continue;
+                                    const p = pt.getProps(['x', 'y'], true);
+                                    const text = String(Number(v).toFixed(2)).replace('.', ',') + '%';
+                                    const textW = ctx.measureText(text).width + padX * 2;
+                                    let xLabel = p.x + (datasetIndex - centerOff) * spreadPx;
+                                    xLabel = Math.max(chartArea.left + textW / 2 + 2, Math.min(chartArea.right - textW / 2 - 2, xLabel));
+                                    let cy = p.y - baseLift - textH / 2;
+                                    if (cy - textH / 2 < chartArea.top + 2) cy = chartArea.top + 2 + textH / 2;
+                                    items.push({ x: p.x, y: p.y, xLabel, cy, text, w: textW, h: textH, color: seriesColor });
+                                }
+                            });
+
+                            items.sort(function (a, b) {
+                                if (a.xLabel !== b.xLabel) return a.xLabel - b.xLabel;
+                                return a.y - b.y;
+                            });
+
+                            const placed = [];
+                            function overlaps(a, b) {
+                                const horizOverlap = !(a.right + minHorizGap < b.left || a.left - minHorizGap > b.right);
+                                const vertOverlap = !(a.bottom < b.top || a.top > b.bottom);
+                                return horizOverlap && vertOverlap;
+                            }
+                            for (const it of items) {
+                                let attempts = 0;
+                                while (attempts < 18) {
+                                    const box = { left: it.xLabel - it.w / 2, right: it.xLabel + it.w / 2, top: it.cy - it.h / 2, bottom: it.cy + it.h / 2 };
+                                    let clash = false;
+                                    for (const p of placed) {
+                                        if (overlaps(box, p)) { clash = true; break; }
+                                    }
+                                    if (!clash) { placed.push(box); break; }
+                                    it.cy -= stackStep;
+                                    if (it.cy - it.h / 2 < chartArea.top + 2) {
+                                        it.cy = chartArea.top + 2 + it.h / 2;
+                                        placed.push({ left: it.xLabel - it.w / 2, right: it.xLabel + it.w / 2, top: it.cy - it.h / 2, bottom: it.cy + it.h / 2 });
+                                        break;
+                                    }
+                                    attempts++;
+                                }
+                            }
+
+                            ctx.lineCap = 'round';
+                            ctx.lineJoin = 'round';
+                            items.forEach(function (it) {
+                                const boxBottom = it.cy + it.h / 2;
+                                ctx.strokeStyle = it.color;
+                                ctx.globalAlpha = 0.65;
+                                ctx.lineWidth = 1.05;
+                                ctx.beginPath();
+                                ctx.moveTo(it.x, it.y);
+                                ctx.lineTo(it.xLabel, it.y);
+                                ctx.lineTo(it.xLabel, boxBottom);
+                                ctx.stroke();
+                                ctx.globalAlpha = 1;
+                            });
+                            items.forEach(function (it) {
+                                const boxLeft = it.xLabel - it.w / 2;
+                                const boxTop = it.cy - it.h / 2;
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.97)';
+                                ctx.strokeStyle = it.color;
+                                ctx.lineWidth = 1;
+                                tmpRoundRectPath(ctx, boxLeft, boxTop, it.w, it.h, 6);
+                                ctx.fill();
+                                ctx.stroke();
+                                ctx.fillStyle = '#111827';
+                                ctx.fillText(it.text, it.xLabel, it.cy);
+                            });
+                            ctx.restore();
+                        },
+                    };
+                    const plugins = [tmpSeguimientoAnualPorcentajes];
+
+                    // Render sin animación (instantáneo) + DPR alto
+                    const tmpChart = new Chart(temp.getContext('2d'), {
+                        type: 'line',
+                        data: { labels: sa.labels, datasets: tmpDs },
+                        plugins: plugins,
+                        options: {
+                            devicePixelRatio: dpr,
+                            responsive: false,
+                            animation: false,
+                            maintainAspectRatio: false,
+                            layout: { padding: { top: 64, right: 14, left: 10, bottom: 12 } },
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: sa.titulo_grafico || '',
+                                    font: { size: 16, weight: '700' },
+                                    color: '#111827',
+                                    padding: { bottom: 14 },
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        padding: 16,
+                                        font: { size: 12, weight: '600' },
+                                    },
+                                },
+                                datalabels: { display: false },
+                            },
+                            scales: {
+                                y: {
+                                    min: 0,
+                                    max: typeof sa.y_max === 'number' ? sa.y_max : 0.8,
+                                    ticks: {
+                                        callback: function (v) {
+                                            return String(Number(v).toFixed(2)).replace('.', ',') + '%';
+                                        },
+                                    },
+                                    grid: {
+                                        color: 'rgba(15, 23, 42, 0.08)',
+                                        drawBorder: false,
+                                    },
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { size: 12, weight: '500' } },
+                                },
+                            },
+                        },
+                    });
+
+                    // Swap canvas para componer el PNG
+                    sourceCanvas = temp;
+                    // IMPORTANTE: no destruir aún (Chart.js limpia el canvas al destruir).
+                    // Limpiamos después de generar el PNG.
+                    try {
+                        tmpChart.update();
+                    } catch (e) {}
+                    __cleanupTempChart = function () {
+                        try {
+                            tmpChart.destroy();
+                        } catch (e) {}
+                    };
+                }
+            } catch (e) {
+                // Si falla la ruta hi-res, seguimos con el canvas actual
+            }
+
+            // Para el resto de gráficas: re-render hi-res según datos guardados en window (sin afectar la vista).
+            try {
+                if (typeof Chart !== 'undefined' && !__cleanupTempChart && sourceCanvas && sourceCanvas.id) {
+                    const id = String(sourceCanvas.id || '');
+                    const parent = sourceCanvas.parentElement;
+                    const cssW = (parent && parent.clientWidth) ? parent.clientWidth : sourceCanvas.clientWidth;
+                    const cssH = (parent && parent.clientHeight) ? parent.clientHeight : sourceCanvas.clientHeight;
+                    const dpr = 3;
+
+                    function makeTempCanvas() {
+                        const temp = document.createElement('canvas');
+                        temp.width = Math.max(320, Math.floor(cssW || 900));
+                        temp.height = Math.max(240, Math.floor(cssH || 420));
+                        return temp;
+                    }
+
+                    // Callouts estilo “vista” (muestra % solo cuando cumple/supera META)
+                    function tmpShouldShowWhenMeetsMeta(chart, dataset, dataIndex) {
+                        try {
+                            const lbl = dataset && dataset.label ? String(dataset.label) : '';
+                            if (lbl.toUpperCase() === 'META') {
+                                return false;
+                            }
+                            const metaDs = (chart.data && chart.data.datasets || []).find((d) => String(d.label || '').toUpperCase() === 'META');
+                            if (!metaDs || !Array.isArray(metaDs.data)) {
+                                return true; // si no hay META, mostramos
+                            }
+                            const y = Number(dataset.data[dataIndex]);
+                            const goal = Number(metaDs.data[dataIndex]);
+                            if (Number.isNaN(y) || Number.isNaN(goal)) {
+                                return false;
+                            }
+                            return y + 1e-9 >= goal;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                    function tmpHexToRgba(color, alpha) {
+                        if (!color || typeof color !== 'string' || color[0] !== '#') {
+                            return 'rgba(100, 100, 100, ' + alpha + ')';
+                        }
+                        const h = color.slice(1);
+                        if (h.length !== 6) {
+                            return 'rgba(100, 100, 100, ' + alpha + ')';
+                        }
+                        const r = parseInt(h.slice(0, 2), 16);
+                        const g = parseInt(h.slice(2, 4), 16);
+                        const b = parseInt(h.slice(4, 6), 16);
+                        return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+                    }
+                    function tmpRoundRect(ctx, x, y, w, h, r) {
+                        const rr = Math.min(r, w / 2, h / 2);
+                        ctx.beginPath();
+                        ctx.moveTo(x + rr, y);
+                        ctx.arcTo(x + w, y, x + w, y + h, rr);
+                        ctx.arcTo(x + w, y + h, x, y + h, rr);
+                        ctx.arcTo(x, y + h, x, y, rr);
+                        ctx.arcTo(x, y, x + w, y, rr);
+                        ctx.closePath();
+                    }
+                    const tmpPercentageCallouts = {
+                        id: 'tmpPercentageCallouts',
+                        afterDatasetsDraw: function (chart) {
+                            const ctx = chart.ctx;
+                            const chartArea = chart.chartArea;
+                            if (!chartArea) return;
+                            const items = [];
+                            chart.data.datasets.forEach(function (dataset, datasetIndex) {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                if (meta.hidden === true) return;
+                                const lbl = dataset && dataset.label ? String(dataset.label) : '';
+                                if (lbl.toUpperCase() === 'META') return;
+                                const raw = dataset.data || [];
+                                for (let i = 0; i < raw.length; i++) {
+                                    const el = meta.data[i];
+                                    if (!el || el.skip) continue;
+                                    if (!tmpShouldShowWhenMeetsMeta(chart, dataset, i)) continue;
+                                    const v = raw[i];
+                                    if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) continue;
+                                    const p = el.getProps(['x', 'y'], true);
+                                    items.push({
+                                        x: p.x,
+                                        y: p.y,
+                                        text: String(Number(v).toFixed(2)).replace('.', ',') + '%',
+                                        color: dataset.borderColor || '#6b7280',
+                                    });
+                                }
+                            });
+                            if (!items.length) return;
+                            items.sort((a, b) => a.x - b.x);
+                            ctx.save();
+                            ctx.font = '700 10px system-ui, -apple-system, "Segoe UI", sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            const padX = 6, padY = 3, lineH = 14;
+                            const boxH = lineH + padY * 2;
+                            const baseLift = 18, stackStep = 16, minGap = 6;
+                            const placed = [];
+                            items.forEach(function (it) {
+                                const w = ctx.measureText(it.text).width + padX * 2;
+                                it.w = w; it.h = boxH;
+                                let cy = it.y - baseLift - boxH / 2;
+                                let tries = 0;
+                                while (tries < 14) {
+                                    const box = { left: it.x - w / 2, right: it.x + w / 2, top: cy - boxH / 2, bottom: cy + boxH / 2 };
+                                    const clash = placed.some(p => !(box.right + minGap < p.left || box.left - minGap > p.right) && !(box.bottom < p.top || box.top > p.bottom));
+                                    if (!clash) { placed.push(box); break; }
+                                    cy -= stackStep; tries++;
+                                    if (cy - boxH / 2 < chartArea.top + 2) { cy = chartArea.top + 2 + boxH / 2; break; }
+                                }
+                                it.cy = cy;
+                            });
+                            items.forEach(function (it) {
+                                const boxLeft = it.x - it.w / 2;
+                                const boxTop = it.cy - it.h / 2;
+                                const boxBottom = it.cy + it.h / 2;
+                                ctx.strokeStyle = tmpHexToRgba(it.color, 0.45);
+                                ctx.lineWidth = 0.9;
+                                ctx.beginPath();
+                                ctx.moveTo(it.x, it.y);
+                                ctx.lineTo(it.x, Math.min(it.y, boxBottom) - 1);
+                                ctx.stroke();
+                                ctx.fillStyle = 'rgba(255,255,255,0.97)';
+                                ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+                                ctx.lineWidth = 1;
+                                tmpRoundRect(ctx, boxLeft, boxTop, it.w, it.h, 5);
+                                ctx.fill();
+                                ctx.stroke();
+                                ctx.fillStyle = '#111827';
+                                ctx.fillText(it.text, it.x, it.cy);
+                            });
+                            ctx.restore();
+                        },
+                    };
+
+                    function makeHiResChart(tempCanvas, config) {
+                        const cfg = config || {};
+                        cfg.options = cfg.options || {};
+                        cfg.options.devicePixelRatio = dpr;
+                        cfg.options.responsive = false;
+                        cfg.options.animation = false;
+                        const ch = new Chart(tempCanvas.getContext('2d'), cfg);
+                        try { ch.update(); } catch (e) {}
+                        __cleanupTempChart = function () {
+                            try { ch.destroy(); } catch (e) {}
+                        };
+                        sourceCanvas = tempCanvas;
+                    }
+
+                    // Etiquetas con caja + trazo en L para "seguimiento semanal" (todas las series, como en vista)
+                    const tmpSeguimientoSemanalLineaCallouts = {
+                        id: 'tmpSeguimientoSemanalLineaCallouts',
+                        afterDatasetsDraw: function (chart) {
+                            const ctx = chart.ctx;
+                            const chartArea = chart.chartArea;
+                            if (!chartArea) return;
+                            const nDatasets = chart.data.datasets.length;
+                            const centerOff = nDatasets > 1 ? (nDatasets - 1) / 2 : 0;
+                            const spread = nDatasets >= 2 ? 38 : 0;
+
+                            const toDraw = [];
+                            chart.data.datasets.forEach(function (dataset, datasetIndex) {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                if (meta.hidden === true) return;
+                                const lbl = dataset && dataset.label ? String(dataset.label) : '';
+                                if (lbl.toUpperCase() === 'META') return;
+                                const raw = dataset.data || [];
+                                for (let i = 0; i < raw.length; i++) {
+                                    const v = raw[i];
+                                    if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) continue;
+                                    const point = meta.data[i];
+                                    if (!point || point.skip) continue;
+                                    const p = point.getProps(['x', 'y'], true);
+                                    toDraw.push({
+                                        x: p.x,
+                                        y: p.y,
+                                        text: String(Number(v).toFixed(2)).replace('.', ',') + '%',
+                                        color: dataset.borderColor || '#6b7280',
+                                        datasetIndex: datasetIndex,
+                                    });
+                                }
+                            });
+                            if (!toDraw.length) return;
+
+                            ctx.save();
+                            ctx.font = '700 11px system-ui, -apple-system, "Segoe UI", sans-serif';
+                            const padX = 7, padY = 3, lineHeight = 14;
+                            const boxH = lineHeight + padY * 2;
+                            const baseLift = 22;
+
+                            // Precalcular posiciones (abanico horizontal por serie)
+                            const items = toDraw.map(function (it) {
+                                const w = ctx.measureText(it.text).width + padX * 2;
+                                const offsetX = (it.datasetIndex - centerOff) * spread;
+                                let xLabel = it.x + offsetX;
+                                xLabel = Math.max(chartArea.left + w / 2 + 2, Math.min(chartArea.right - w / 2 - 2, xLabel));
+                                let labelCy = it.y - baseLift - boxH / 2;
+                                if (labelCy - boxH / 2 < chartArea.top + 2) labelCy = chartArea.top + 2 + boxH / 2;
+                                return { x: it.x, y: it.y, xLabel, labelCy, text: it.text, color: it.color, w: w, h: boxH };
+                            });
+
+                            // Trazos en L
+                            items.forEach(function (it) {
+                                const boxBottom = it.labelCy + it.h / 2;
+                                ctx.strokeStyle = tmpHexToRgba(it.color, 0.7);
+                                ctx.lineWidth = 1.15;
+                                ctx.setLineDash([]);
+                                ctx.lineCap = 'round';
+                                ctx.lineJoin = 'round';
+                                ctx.beginPath();
+                                ctx.moveTo(it.x, it.y);
+                                ctx.lineTo(it.xLabel, it.y);
+                                ctx.lineTo(it.xLabel, boxBottom);
+                                ctx.stroke();
+                            });
+
+                            // Cajas
+                            items.forEach(function (it) {
+                                const boxTop = it.labelCy - it.h / 2;
+                                const boxLeft = it.xLabel - it.w / 2;
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.98)';
+                                ctx.strokeStyle = it.color;
+                                ctx.lineWidth = 1.5;
+                                tmpRoundRect(ctx, boxLeft, boxTop, it.w, it.h, 6);
+                                ctx.fill();
+                                ctx.stroke();
+                                ctx.fillStyle = it.color;
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(it.text, it.xLabel, it.labelCy);
+                            });
+                            ctx.restore();
+                        },
+                    };
+
+                    // Etiquetas para seguimiento mensual (combo): cajas arriba de barras / puntos
+                    const tmpComboValueLabels = {
+                        id: 'tmpComboValueLabels',
+                        afterDatasetsDraw: function (chart) {
+                            const ctx = chart.ctx;
+                            const chartArea = chart.chartArea;
+                            if (!chartArea) return;
+                            ctx.save();
+                            ctx.font = '700 11px system-ui, -apple-system, "Segoe UI", sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            chart.data.datasets.forEach(function (dataset, datasetIndex) {
+                                const lbl = dataset && dataset.label ? String(dataset.label) : '';
+                                if (lbl.toUpperCase() === 'META') return;
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                if (!meta || meta.hidden === true) return;
+                                const raw = dataset.data || [];
+                                for (let i = 0; i < raw.length; i++) {
+                                    const v = raw[i];
+                                    if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) continue;
+                                    const el = meta.data[i];
+                                    if (!el || el.skip) continue;
+                                    const p = el.getProps(['x', 'y'], true);
+                                    const text = String(Number(v).toFixed(2)).replace('.', ',') + '%';
+                                    const padX = 6;
+                                    const w = ctx.measureText(text).width + padX * 2;
+                                    const h = 18;
+                                    let cx = p.x;
+                                    let cy = p.y - 14 - datasetIndex * 8;
+                                    if (cy - h / 2 < chartArea.top + 2) cy = chartArea.top + 2 + h / 2;
+                                    const boxLeft = cx - w / 2;
+                                    const boxTop = cy - h / 2;
+                                    ctx.fillStyle = 'rgba(255,255,255,0.97)';
+                                    ctx.strokeStyle = dataset.borderColor || 'rgba(0,0,0,0.1)';
+                                    ctx.lineWidth = 1;
+                                    tmpRoundRect(ctx, boxLeft, boxTop, w, h, 6);
+                                    ctx.fill();
+                                    ctx.stroke();
+                                    ctx.fillStyle = '#111827';
+                                    ctx.fillText(text, cx, cy);
+                                }
+                            });
+                            ctx.restore();
+                        },
+                    };
+
+                    function datalabelsPctConfig(opts) {
+                        const o = opts || {};
+                        const hideMeta = o.hideMeta === true;
+                        const onlyPositive = o.onlyPositive === true;
+                        return {
+                            display: function (ctx) {
+                                try {
+                                    if (!ctx || !ctx.parsed) return false;
+                                    const label = ctx.dataset && ctx.dataset.label ? String(ctx.dataset.label) : '';
+                                    if (hideMeta && label.toUpperCase() === 'META') return false;
+                                    const v = ctx.parsed.y;
+                                    if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) return false;
+                                    if (onlyPositive && Number(v) <= 0) return false;
+                                    return true;
+                                } catch (e) { return false; }
+                            },
+                            align: 'top',
+                            anchor: 'center',
+                            offset: function (ctx) { return 8 + (ctx.datasetIndex || 0) * 16; },
+                            clip: false,
+                            color: '#111827',
+                            backgroundColor: 'rgba(255,255,255,0.95)',
+                            borderColor: function (ctx) {
+                                const d = ctx && ctx.dataset;
+                                return (d && d.borderColor) ? d.borderColor : 'rgba(148,163,184,0.9)';
+                            },
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            padding: { top: 3, right: 5, bottom: 3, left: 5 },
+                            font: { weight: '700', size: 11 },
+                            formatter: function (value) {
+                                if (value === null || value === undefined || (typeof value === 'number' && isNaN(value))) return '';
+                                return String(Number(value).toFixed(2)).replace('.', ',') + '%';
+                            },
+                        };
+                    }
+
+                    // 1) Gráficos diarios (4 pequeños): usan window.__mensualChartData
+                    if ((id === 'chartSobrebarriga' || id === 'chartHematomas' || id === 'chartCortePiernas' || id === 'chartCoberturaGrasa') && window.__mensualChartData) {
+                        const cd = window.__mensualChartData;
+                        const dsKey = id === 'chartSobrebarriga'
+                            ? 'sobrebarriga'
+                            : (id === 'chartHematomas'
+                                ? 'hematomas'
+                                : (id === 'chartCortePiernas' ? 'cortes_piernas' : 'cobertura_grasa'));
+                        const datasets = (cd.datasets && cd.datasets[dsKey]) ? cd.datasets[dsKey] : [];
+                        const temp = makeTempCanvas();
+                        makeHiResChart(temp, {
+                            type: 'line',
+                            data: { labels: cd.labels || [], datasets: datasets },
+                            plugins: [tmpPercentageCallouts],
+                            options: {
+                                maintainAspectRatio: false,
+                                layout: { padding: { top: 56, right: 10, left: 6, bottom: 8 } },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grace: '12%',
+                                        ticks: {
+                                            callback: function (v) { return String(Number(v).toFixed(2)).replace('.', ',') + '%'; },
+                                        },
+                                    },
+                                    x: {
+                                        ticks: { maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 14 },
+                                    },
+                                },
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    datalabels: { display: false },
+                                },
+                            },
+                        });
+                    }
+
+                    // 2) Seguimiento mensual (combo barras + meta)
+                    if (id === 'chartSeguimientoSemanal' && window.__mensualSeguimientoCombo) {
+                        const combo = window.__mensualSeguimientoCombo;
+                        const ac = Number(combo.acumulado_bar) || 0;
+                        const res = combo.resultado_bars || [];
+                        const meta = combo.meta_line || [];
+                        const barAcum = [ac, null, null, null, null];
+                        const barRes = [null, res[0] ?? 0, res[1] ?? 0, res[2] ?? 0, res[3] ?? 0];
+                        const temp = makeTempCanvas();
+                        makeHiResChart(temp, {
+                            type: 'bar',
+                            data: {
+                                labels: combo.labels || [],
+                                datasets: [
+                                    { type: 'bar', label: 'Σ acumulado', data: barAcum, backgroundColor: 'rgba(220, 38, 38, 0.9)', borderColor: '#B91C1C', borderWidth: 1, order: 2 },
+                                    { type: 'bar', label: 'Resultado', data: barRes, backgroundColor: 'rgba(22, 163, 74, 0.9)', borderColor: '#15803D', borderWidth: 1, order: 2 },
+                                    { type: 'line', label: 'META', data: meta, borderColor: '#2563EB', backgroundColor: 'transparent', borderWidth: 2, fill: false, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#2563EB', pointBorderColor: '#fff', pointBorderWidth: 1, order: 0 },
+                                ],
+                            },
+                            plugins: [tmpComboValueLabels],
+                            options: {
+                                maintainAspectRatio: false,
+                                layout: { padding: { top: 20, right: 12, left: 12, bottom: 8 } },
+                                interaction: { mode: 'index', intersect: false },
+                                plugins: {
+                                    title: { display: true, text: combo.titulo || '', font: { size: 15, weight: '600' } },
+                                    legend: { position: 'bottom' },
+                                    datalabels: { display: false },
+                                },
+                                scales: {
+                                    y: {
+                                        min: 0,
+                                        max: 4.5,
+                                        ticks: { stepSize: 0.5, callback: function (v) { return String(Number(v).toFixed(2)).replace('.', ',') + '%'; } },
+                                    },
+                                },
+                            },
+                        });
+                    }
+
+                    // 3) Seguimiento semanal (líneas) – export nítido sin callouts
+                    if (id === 'chartSeguimientoSemanalLinea' && window.__mensualSeguimientoSemanalLinea) {
+                        const sl = window.__mensualSeguimientoSemanalLinea;
+                        const datasets = (sl.datasets || []).map(function (ds) {
+                            const c = ds.borderColor || '#6b7280';
+                            return {
+                                label: ds.label,
+                                data: ds.data,
+                                borderColor: c,
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                borderDash: [5, 4],
+                                pointRadius: 3.5,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: c,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1.5,
+                                tension: 0.12,
+                                spanGaps: false,
+                            };
+                        });
+                        const temp = makeTempCanvas();
+                        makeHiResChart(temp, {
+                            type: 'line',
+                            data: { labels: sl.labels || [], datasets: datasets },
+                            plugins: [tmpSeguimientoSemanalLineaCallouts],
+                            options: {
+                                maintainAspectRatio: false,
+                                layout: { padding: { top: 72, right: 28, left: 28, bottom: 8 } },
+                                interaction: { mode: 'index', intersect: false },
+                                plugins: {
+                                    title: { display: true, text: sl.titulo || '', font: { size: 15, weight: '600' } },
+                                    legend: { position: 'bottom' },
+                                    datalabels: { display: false },
+                                },
+                                scales: {
+                                    y: { beginAtZero: true, grace: '10%', ticks: { callback: function (v) { return String(Number(v).toFixed(2)).replace('.', ',') + '%'; } } },
+                                    x: { ticks: { maxRotation: 0, minRotation: 0, font: { size: 11 } } },
+                                },
+                            },
+                        });
+                    }
+
+                    // 4) Hallazgos TC por tipo
+                    if (id === 'chartHallazgosNuevos' && window.__mensualHallazgosNuevos) {
+                        const hn = window.__mensualHallazgosNuevos;
+                        const metaArray = Array((hn.fechas || []).length).fill(hn.meta);
+                        const temp = makeTempCanvas();
+                        makeHiResChart(temp, {
+                            type: 'line',
+                            data: {
+                                labels: hn.fechas || [],
+                                datasets: [
+                                    { label: 'Materia Fecal', data: hn['MATERIA FECAL'] || [], borderColor: '#FCD34D', backgroundColor: 'rgba(252, 211, 77, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#FCD34D', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7 },
+                                    { label: 'Contenido Ruminal', data: hn['CONTENIDO RUMINAL'] || [], borderColor: '#F97316', backgroundColor: 'rgba(249, 115, 22, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#F97316', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7 },
+                                    { label: 'Leche Visible', data: hn['LECHE VISIBLE'] || [], borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#3B82F6', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7 },
+                                    { label: 'META', data: metaArray, borderColor: '#EF4444', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0, pointRadius: 0, pointHoverRadius: 0 },
+                                ],
+                            },
+                            options: {
+                                maintainAspectRatio: false,
+                                layout: { padding: { top: 48, right: 8, left: 4, bottom: 8 } },
+                                interaction: { mode: 'index', intersect: false },
+                                plugins: {
+                                    legend: { display: true, position: 'bottom' },
+                                    // Igual a la vista: centrado + offset por dataset
+                                    datalabels: {
+                                        display: function (context) {
+                                            if (context.dataset && String(context.dataset.label || '').toUpperCase() === 'META') {
+                                                return false;
+                                            }
+                                            return context.parsed && typeof context.parsed.y === 'number' && context.parsed.y > 0;
+                                        },
+                                        anchor: 'center',
+                                        align: 'top',
+                                        offset: function (context) {
+                                            return 8 + (context.datasetIndex || 0) * 15;
+                                        },
+                                        color: '#1f2937',
+                                        backgroundColor: 'rgba(255,255,255,0.92)',
+                                        borderColor: 'rgba(0,0,0,0.06)',
+                                        borderWidth: 1,
+                                        borderRadius: 4,
+                                        padding: { top: 2, right: 4, bottom: 2, left: 4 },
+                                        font: { weight: '600', size: 9 },
+                                        formatter: function (value) {
+                                            return value > 0 ? String(Number(value).toFixed(2)).replace('.', ',') + '%' : '';
+                                        },
+                                        clip: false,
+                                        textAlign: 'center',
+                                    },
+                                },
+                                scales: {
+                                    y: { beginAtZero: true, grace: '12%', ticks: { callback: function (v) { return String(Number(v).toFixed(2)).replace('.', ',') + '%'; } } },
+                                    x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
+                                },
+                            },
+                        });
+                    }
+                }
+            } catch (e) {
+                // si algo falla, seguimos exportando con el canvas original
+            }
+
             var meta = window.__mensualPngContext || {};
-            var scale = typeof window.devicePixelRatio === 'number' && window.devicePixelRatio >= 2 ? 2 : 1.65;
+            // Escalado alto para PNG nítido (informes/impresión)
+            var scale = 3;
             var W = 1180;
             var padX = 36;
             var subCount = (lineaExtra ? 1 : 0) + (lineaPromedioSemanal ? 1 : 0);
@@ -1328,6 +2079,10 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+
+            if (typeof __cleanupTempChart === 'function') {
+                __cleanupTempChart();
+            }
         }
 
         function construirListaPngModal() {

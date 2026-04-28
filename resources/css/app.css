@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dashboard mensual: tarjetas de gráficas — rojo institucional #E00202 + verde #7ce8ad.
+   Está en CSS compilado para que no dependa de purged JIT ni de rebuild puntual de vistas. */
+@layer components {
+    .mensual-chart-card-inst {
+        overflow: hidden;
+        border-radius: 0.75rem;
+        border: 1px solid rgb(226 232 240 / 0.85);
+        background: #fff;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        border-left: 4px solid #E00202;
+    }
+
+    .mensual-chart-card-inst--accent-green {
+        border-left-color: #7ce8ad;
+    }
+
+    .mensual-chart-inst-stripe {
+        height: 6px;
+        width: 100%;
+        flex-shrink: 0;
+        background: linear-gradient(90deg, #E00202 0%, #7ce8ad 100%);
+        border-radius: 0.75rem 0.75rem 0 0;
+    }
+}
+
 /* Alpine.js: evita parpadeo de elementos con x-show/x-cloak antes de hidratar */
 [x-cloak] {
     display: none !important;
