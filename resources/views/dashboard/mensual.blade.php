@@ -427,7 +427,7 @@
                     if (!el || !sa || !sa.labels || sa.labels.length === 0) {
                         return;
                     }
-                    const yMax = typeof sa.y_max === 'number' ? sa.y_max : 0.8;
+                    const yMax = typeof sa.y_max === 'number' ? sa.y_max : 1.5;
                     const tickStep = yMax <= 0.8 ? 0.1 : (yMax <= 1.6 ? 0.2 : 0.5);
                     const titulo = sa.titulo_grafico || 'CONSOLIDADO LIBERACION CANALES POR VARIABLE';
                     const ds = (sa.datasets || []).map(function (d) {
@@ -1291,6 +1291,9 @@
                         };
                     });
 
+                    const saYm = typeof sa.y_max === 'number' ? sa.y_max : 1.5;
+                    const saTickStep = saYm <= 0.8 ? 0.1 : (saYm <= 1.6 ? 0.2 : 0.5);
+
                     // Plugin de porcentajes + L (definido aquí para evitar problemas de alcance del JS)
                     function tmpRoundRectPath(ctx, x, y, w, h, r) {
                         const rr = Math.min(r, w / 2, h / 2);
@@ -1440,8 +1443,9 @@
                             scales: {
                                 y: {
                                     min: 0,
-                                    max: typeof sa.y_max === 'number' ? sa.y_max : 0.8,
+                                    max: saYm,
                                     ticks: {
+                                        stepSize: saTickStep,
                                         callback: function (v) {
                                             return String(Number(v).toFixed(2)).replace('.', ',') + '%';
                                         },

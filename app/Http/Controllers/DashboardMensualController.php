@@ -187,7 +187,6 @@ class DashboardMensualController extends Controller
         $sob = [];
         $cor = [];
         $hem = [];
-        $maxObserved = 0.0;
 
         $baseLine = [
             'borderWidth' => 2.5,
@@ -205,7 +204,7 @@ class DashboardMensualController extends Controller
                 'anio' => $anio,
                 'titulo_grafico' => 'CONSOLIDADO LIBERACION CANALES POR VARIABLE',
                 'labels' => [],
-                'y_max' => 0.8,
+                'y_max' => 1.5,
                 'datasets' => [
                     array_merge($baseLine, [
                         'label' => 'Cobertura grasa - 1,5%',
@@ -270,20 +269,14 @@ class DashboardMensualController extends Controller
             $sob[] = $ps;
             $cor[] = $pr;
             $hem[] = $ph;
-
-            $maxObserved = max($maxObserved, $pc, $ps, $pr, $ph);
-        }
-
-        $yMax = 0.8;
-        if ($maxObserved > 0.8) {
-            $yMax = min(5.0, ceil($maxObserved * 10) / 10);
         }
 
         return [
             'anio' => $anio,
             'titulo_grafico' => 'CONSOLIDADO LIBERACION CANALES POR VARIABLE',
             'labels' => $labels,
-            'y_max' => $yMax,
+            /** Escala fija alrededor de la meta de referencia (p. ej. cobertura grasa 1,5%). */
+            'y_max' => 1.5,
             'datasets' => [
                 array_merge($baseLine, [
                     'label' => 'Cobertura grasa - 1,5%',
