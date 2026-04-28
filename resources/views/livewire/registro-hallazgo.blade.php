@@ -149,34 +149,36 @@
                         <p x-text="`Comprimiendo: ${porcentajeCompresion}%`"></p>
                     </div>
 
-                    {{-- Dos opciones: galería o cámara --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label for="foto-galeria" class="block cursor-pointer">
-                            <div class="relative group h-full">
-                                <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-400 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 h-full flex flex-col items-center justify-center min-h-[140px]">
-                                    <svg class="w-10 h-10 text-slate-600 mx-auto mb-2 group-hover:scale-105 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                    <p class="font-semibold text-gray-800">Elegir de galería</p>
-                                    <p class="text-xs text-gray-600 mt-1">Fotos ya guardadas en el dispositivo</p>
+                    {{-- Galería / cámara solo hasta elegir foto; al tener evidencia solo vista previa + Cambiar foto --}}
+                    @if (!$foto)
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label for="foto-galeria" class="block cursor-pointer">
+                                <div class="relative group h-full">
+                                    <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-400 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 h-full flex flex-col items-center justify-center min-h-[140px]">
+                                        <svg class="w-10 h-10 text-slate-600 mx-auto mb-2 group-hover:scale-105 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                        <p class="font-semibold text-gray-800">Elegir de galería</p>
+                                        <p class="text-xs text-gray-600 mt-1">Fotos ya guardadas en el dispositivo</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </label>
-                        <label for="foto-camara" class="block cursor-pointer">
-                            <div class="relative group h-full">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-dashed border-blue-400 rounded-lg p-6 text-center hover:border-blue-600 hover:bg-blue-200 transition-all duration-300 h-full flex flex-col items-center justify-center min-h-[140px]">
-                                    <svg class="w-10 h-10 text-blue-600 mx-auto mb-2 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
-                                        <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-                                    </svg>
-                                    <p class="font-semibold text-gray-800">Tomar foto</p>
-                                    <p class="text-xs text-gray-600 mt-1">Abre la cámara para capturar ahora</p>
+                            </label>
+                            <label for="foto-camara" class="block cursor-pointer">
+                                <div class="relative group h-full">
+                                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-dashed border-blue-400 rounded-lg p-6 text-center hover:border-blue-600 hover:bg-blue-200 transition-all duration-300 h-full flex flex-col items-center justify-center min-h-[140px]">
+                                        <svg class="w-10 h-10 text-blue-600 mx-auto mb-2 group-hover:scale-105 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"/>
+                                            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                                        </svg>
+                                        <p class="font-semibold text-gray-800">Tomar foto</p>
+                                        <p class="text-xs text-gray-600 mt-1">Abre la cámara para capturar ahora</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </label>
-                    </div>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 text-center py-2">💡 Elige galería o cámara; la imagen se comprimirá antes de subirla</p>
+                    @endif
 
-                    {{-- Vista previa de la foto --}}
                     @if ($foto)
                         <div class="relative">
                             <div class="bg-white rounded-lg border-2 border-green-400 p-4 shadow-lg">
@@ -189,7 +191,7 @@
                                     <span class="text-sm font-semibold text-green-700">✅ Imagen lista</span>
                                 </div>
                                 <img class="w-full h-48 object-cover rounded-lg border border-gray-300" src="{{ $foto->temporaryUrl() }}" alt="Previsualización de evidencia">
-                                <button type="button" 
+                                <button type="button"
                                         wire:click="$set('foto', null)"
                                         @click="document.getElementById('foto-galeria').value=''; document.getElementById('foto-camara').value='';"
                                         class="mt-3 w-full px-3 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-sm font-semibold transition">
@@ -197,99 +199,132 @@
                                 </button>
                             </div>
                         </div>
-                    @else
-                        <p class="text-xs text-gray-500 text-center py-2">💡 Elige galería o cámara; la imagen se comprimirá antes de subirla</p>
                     @endif
                 </div>
                 @error('foto') <span class="text-red-500 text-xs mt-2 block">{{ $message }}</span> @enderror
             </div>
 
-            {{-- Script de compresión --}}
+            {{-- Script de compresión: objectURL (evita base64), menos px, menos pasadas toBlob --}}
             <script>
                 function fotoCompressor() {
                     return {
                         comprimiendo: false,
                         porcentajeCompresion: 0,
-                        
+
+                        /** Máximo lado en px (evidencia; bajar = menos trabajo en el celular). */
+                        MAX_LADO: 1024,
+                        /** Tope Laravel: max:2048 (KB); dejamos margen en bytes. */
+                        MAX_BYTES: 2 * 1024 * 1024,
+                        /** Por debajo de esto no reencodamos (subida directa, mucho más rápido). */
+                        UMBRAL_SIN_COMPRIMIR: 520 * 1024,
+
                         async comprimirYCargar(event) {
                             const inputOrigen = event.target;
                             const archivo = inputOrigen.files[0];
                             if (!archivo) return;
 
+                            // Fotos ya livianas: sin canvas/toBlob (ahorra el mayor tiempo en campo)
+                            if (
+                                archivo.size <= this.UMBRAL_SIN_COMPRIMIR &&
+                                /^image\/(jpeg|jpg|png|webp)$/i.test(archivo.type || '')
+                            ) {
+                                this.comprimiendo = true;
+                                try {
+                                    @this.upload('foto', archivo, false, null, null, () => {
+                                        this.comprimiendo = false;
+                                    });
+                                } catch (e) {
+                                    console.error(e);
+                                    this.comprimiendo = false;
+                                }
+                                return;
+                            }
+
                             this.comprimiendo = true;
                             this.porcentajeCompresion = 0;
 
+                            let objectUrl = null;
                             try {
-                                // Crear reader para leer la imagen
-                                const reader = new FileReader();
-                                reader.onload = async (e) => {
-                                    const img = new Image();
-                                    img.onload = async () => {
-                                        // Crear con compresión
-                                        const canvas = document.createElement('canvas');
-                                        let { width, height } = img;
-                                        
-                                        // Escalar si es muy grande (máximo 1280px)
-                                        const maxWidth = 1280;
-                                        const maxHeight = 1280;
-                                        
-                                        if (width > maxWidth || height > maxHeight) {
-                                            const ratio = Math.min(maxWidth / width, maxHeight / height);
-                                            width = Math.round(width * ratio);
-                                            height = Math.round(height * ratio);
-                                        }
-                                        
-                                        canvas.width = width;
-                                        canvas.height = height;
-                                        
-                                        const ctx = canvas.getContext('2d');
-                                        ctx.drawImage(img, 0, 0, width, height);
-                                        
-                                        // Comprimir JPEG con calidad progresiva
-                                        let quality = 0.9;
-                                        let comprimido = null;
-                                        
-                                        for (let i = 0; i < 3; i++) {
-                                            comprimido = await this.canvasToBlob(canvas, 'image/jpeg', quality);
-                                            
-                                            // Si archivo es menor a 2MB, usar
-                                            if (comprimido.size < 2097152) break;
-                                            
-                                            quality -= 0.2;
-                                            this.porcentajeCompresion = Math.round((1 - (comprimido.size / archivo.size)) * 100);
-                                        }
-                                        
-                                        // Convertir a File
-                                        const archivoComprimido = new File(
-                                            [comprimido],
-                                            `foto_${Date.now()}.jpg`,
-                                            { type: 'image/jpeg' }
-                                        );
-                                        
-                                        const dataTransfer = new DataTransfer();
-                                        dataTransfer.items.add(archivoComprimido);
-                                        inputOrigen.files = dataTransfer.files;
-                                        
-                                        // Trigger Livewire update
-                                        @this.upload('foto', archivoComprimido, false, null, null, () => {
-                                            this.comprimiendo = false;
-                                        });
-                                    };
-                                    img.src = e.target.result;
-                                };
-                                reader.readAsDataURL(archivo);
+                                objectUrl = URL.createObjectURL(archivo);
+                                const img = new Image();
+                                img.src = objectUrl;
+                                if (typeof img.decode === 'function') {
+                                    await img.decode();
+                                } else {
+                                    await new Promise(function (resolve, reject) {
+                                        img.onload = resolve;
+                                        img.onerror = reject;
+                                    });
+                                }
+
+                                let w = img.naturalWidth || img.width;
+                                let h = img.naturalHeight || img.height;
+                                const maxLado = this.MAX_LADO;
+                                if (w > maxLado || h > maxLado) {
+                                    const ratio = Math.min(maxLado / w, maxLado / h);
+                                    w = Math.round(w * ratio);
+                                    h = Math.round(h * ratio);
+                                }
+
+                                const canvas = document.createElement('canvas');
+                                canvas.width = w;
+                                canvas.height = h;
+                                const ctx = canvas.getContext('2d');
+                                if (ctx && ctx.imageSmoothingEnabled !== undefined) {
+                                    ctx.imageSmoothingQuality = 'medium';
+                                }
+                                ctx.drawImage(img, 0, 0, w, h);
+
+                                // Una pasada según tamaño original; segunda solo si sigue pasando el límite
+                                let q = archivo.size > 5 * 1024 * 1024 ? 0.72 : 0.82;
+                                let comprimido = await this.canvasToBlob(canvas, 'image/jpeg', q);
+                                if (comprimido.size > this.MAX_BYTES) {
+                                    comprimido = await this.canvasToBlob(canvas, 'image/jpeg', 0.62);
+                                }
+                                if (comprimido.size > this.MAX_BYTES) {
+                                    comprimido = await this.canvasToBlob(canvas, 'image/jpeg', 0.52);
+                                }
+
+                                this.porcentajeCompresion = archivo.size > 0
+                                    ? Math.min(99, Math.round((1 - comprimido.size / archivo.size) * 100))
+                                    : 0;
+
+                                const archivoComprimido = new File(
+                                    [comprimido],
+                                    'foto_' + Date.now() + '.jpg',
+                                    { type: 'image/jpeg' }
+                                );
+
+                                const dataTransfer = new DataTransfer();
+                                dataTransfer.items.add(archivoComprimido);
+                                inputOrigen.files = dataTransfer.files;
+
+                                @this.upload('foto', archivoComprimido, false, null, null, () => {
+                                    this.comprimiendo = false;
+                                });
                             } catch (error) {
                                 console.error('Error al comprimir:', error);
                                 this.comprimiendo = false;
+                            } finally {
+                                if (objectUrl) {
+                                    try { URL.revokeObjectURL(objectUrl); } catch (e) {}
+                                }
                             }
                         },
 
                         canvasToBlob(canvas, type, quality) {
-                            return new Promise((resolve) => {
-                                canvas.toBlob(resolve, type, quality);
+                            return new Promise(function (resolve, reject) {
+                                try {
+                                    canvas.toBlob(function (blob) {
+                                        if (blob) resolve(blob);
+                                        else reject(new Error('toBlob vacío'));
+                                    }, type, quality);
+                                } catch (e) {
+                                    reject(e);
+                                }
                             });
                         }
-                    }
+                    };
                 }
             </script>
 
