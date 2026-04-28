@@ -192,7 +192,7 @@
                 <div class="px-4 sm:px-6 py-4 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-slate-50">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <h2 class="text-lg font-bold text-gray-900">Seguimiento semanal</h2>
-                        <form id="form-semana-iso" method="GET" action="{{ route('dashboard.mensual') }}" class="flex flex-wrap items-center gap-2 text-sm">
+                        <form id="form-semana-iso" method="GET" action="{{ route('dashboard.mensual') }}" class="flex flex-wrap items-center gap-3 text-sm">
                             <input type="hidden" name="mes" value="{{ $mes }}">
                             <input type="hidden" name="anio" value="{{ $anio }}">
                             <label for="semana_iso" class="text-gray-600 font-medium">Semana ISO</label>
@@ -205,11 +205,26 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <label class="inline-flex items-center gap-2 cursor-pointer text-gray-700 select-none whitespace-nowrap">
+                                <input type="checkbox"
+                                       id="incluir_domingo"
+                                       name="incluir_domingo"
+                                       value="1"
+                                       class="rounded border-gray-300 text-sky-600 shadow-sm focus:ring-sky-500"
+                                       @checked(!empty($seguimientoSemanalLinea['incluir_domingo']))
+                                       onchange="try { sessionStorage.setItem('liberacion_mensual_semana_scroll', String(window.scrollY || 0)); } catch(e) {} this.form.submit();">
+                                <span>Incluir domingo</span>
+                            </label>
                         </form>
                     </div>
                 </div>
                 <div class="p-4 sm:px-6 sm:pt-2 sm:pb-6">
-                    <p class="text-xs text-gray-500 mb-2">Por día: hallazgos del tipo ÷ medias canales del día. PROMEDIO: media de esos % del lunes al domingo (como PROMEDIO en Excel; omitimos días futuros).</p>
+                    <div class="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span class="text-sm font-semibold text-gray-700">Promedio Total de la Semana:</span>
+                        <span class="text-xl font-bold text-sky-800 tabular-nums tracking-tight">
+                            {{ number_format((float) ($seguimientoSemanalLinea['total_acumulado_promedios'] ?? 0), 2, ',', '.') }}&nbsp;%
+                        </span>
+                    </div>
                     <div class="h-80 max-w-5xl">
                         <canvas id="chartSeguimientoSemanalLinea" style="min-height: 18rem;"></canvas>
                     </div>

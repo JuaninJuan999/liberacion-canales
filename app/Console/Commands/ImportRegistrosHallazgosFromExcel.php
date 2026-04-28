@@ -22,7 +22,8 @@ class ImportRegistrosHallazgosFromExcel extends Command
                             {--user-id= : ID de usuario (users) para registros cuyo Usuario del Excel no exista en la BD}
                             {--dry-run : Solo valida y cuenta filas, no inserta}
                             {--limit=0 : Máximo de filas de datos a importar (0 = sin límite)}
-                            {--chunk=400 : Tamaño del lote para inserción}';
+                            {--chunk=400 : Tamaño del lote para inserción}
+                            {--omitir-duplicados : No inserta si ya existe igual en BD (huella como en registros-hallazgos:dedupe)}';
 
     protected $description = 'Importa hallazgos desde la hoja "Registros" de un Excel (p. ej. exportado de AppSheet).';
 
@@ -59,6 +60,12 @@ class ImportRegistrosHallazgosFromExcel extends Command
 
     /** @var array<string, true> */
     private array $operariosNoEncontrados = [];
+
+    /** Huellas ya existentes en BD (solo con --omitir-duplicados) */
+    /** @var array<string, true> */
+    private array $huellasExistentes = [];
+
+    private int $omitidosYaExistentes = 0;
 
     public function handle(): int
     {
@@ -110,8 +117,13 @@ class ImportRegistrosHallazgosFromExcel extends Command
 
         $highestRow = (int) $registros->getHighestDataRow();
         $dryRun = (bool) $this->option('dry-run');
+        $omitirDuplicados = (bool) $this->option('omitir-duplicados');
         $limit = max(0, (int) $this->option('limit'));
         $chunkSize = max(50, (int) $this->option('chunk'));
+
+        if ($omitirDuplicados) {
+            $this->warmupHuellasExistentes($registros, $highestRow);
+        }
 
         $insertados = 0;
         $omitidos = 0;
@@ -133,6 +145,16 @@ class ImportRegistrosHallazgosFromExcel extends Command
 
             if ($limit > 0 && $insertados >= $limit) {
                 break;
+            }
+
+            $huella = self::claveHuellaDesdePayload($payload);
+            if ($omitirDuplicados) {
+                if (isset($this->huellasExistentes[$huella])) {
+                    $this->omitidosYaExistentes++;
+
+                    continue;
+                }
+                $this->huellasExistentes[$huella] = true;
             }
 
             if ($dryRun) {
@@ -171,6 +193,7 @@ class ImportRegistrosHallazgosFromExcel extends Command
             [
                 ['Filas insertadas (o válidas en dry-run)', (string) $insertados],
                 ['Filas omitidas (datos incompletos o catálogo)', (string) $omitidos],
+                ['Omitidas (ya existían en BD, --omitir-duplicados)', (string) $this->omitidosYaExistentes],
                 ['Fechas operación afectadas', (string) count($fechasAfectadas)],
             ]
         );
@@ -483,6 +506,83 @@ class ImportRegistrosHallazgosFromExcel extends Command
         RegistroHallazgo::withoutEvents(function () use ($rows) {
             DB::table('registros_hallazgos')->insert($rows);
         });
+    }
+
+    /**
+     * Lee columna J (fecha operación) y precarga huellas en BD solo para esas fechas (evitar duplicados al reimportar).
+     */
+    private function warmupHuellasExistentes(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $registros, int $highestRow): void
+    {
+        $fechasUnique = [];
+        for ($row = 2; $row <= $highestRow; $row++) {
+            try {
+                $j = $registros->getCell("J{$row}")->getValue();
+                if ($j === null || $j === '') {
+                    continue;
+                }
+                $fechaOperacion = $this->excelADateTime($j)->format('Y-m-d');
+                $fechasUnique[$fechaOperacion] = true;
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        foreach (array_keys($fechasUnique) as $f) {
+            RegistroHallazgo::query()
+                ->where('fecha_operacion', $f)
+                ->get([
+                    'fecha_operacion',
+                    'codigo',
+                    'tipo_hallazgo_id',
+                    'producto_id',
+                    'ubicacion_id',
+                    'lado_id',
+                    'cantidad',
+                    'evidencia_path',
+                ])
+                ->each(function (RegistroHallazgo $r): void {
+                    $p = [
+                        'fecha_operacion' => $r->fecha_operacion instanceof \DateTimeInterface
+                            ? $r->fecha_operacion->format('Y-m-d')
+                            : (string) $r->fecha_operacion,
+                        'codigo' => $r->codigo,
+                        'tipo_hallazgo_id' => $r->tipo_hallazgo_id,
+                        'producto_id' => $r->producto_id,
+                        'ubicacion_id' => $r->ubicacion_id,
+                        'lado_id' => $r->lado_id,
+                        'cantidad' => $r->cantidad,
+                        'evidencia_path' => $r->evidencia_path,
+                    ];
+                    $this->huellasExistentes[self::claveHuellaDesdePayload($p)] = true;
+                });
+        }
+    }
+
+    /**
+     * Igual dedupe comando `registros-hallazgos:dedupe`.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private static function claveHuellaDesdePayload(array $payload): string
+    {
+        $fecha = isset($payload['fecha_operacion']) && is_object($payload['fecha_operacion']) && method_exists($payload['fecha_operacion'], 'format')
+            ? $payload['fecha_operacion']->format('Y-m-d')
+            : (string) $payload['fecha_operacion'];
+
+        $evid = isset($payload['evidencia_path']) && $payload['evidencia_path'] !== null && $payload['evidencia_path'] !== ''
+            ? (string) $payload['evidencia_path']
+            : '';
+
+        return implode("\t", [
+            $fecha,
+            (string) $payload['codigo'],
+            (string) $payload['tipo_hallazgo_id'],
+            (string) $payload['producto_id'],
+            (string) (($payload['ubicacion_id'] !== null ? $payload['ubicacion_id'] : '')),
+            (string) (($payload['lado_id'] !== null ? $payload['lado_id'] : '')),
+            (string) $payload['cantidad'],
+            $evid,
+        ]);
     }
 
     private function imprimirAdvertencias(): void

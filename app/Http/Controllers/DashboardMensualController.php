@@ -18,8 +18,9 @@ class DashboardMensualController extends Controller
         $mes = (int) $request->get('mes', now()->month);
         $anio = (int) $request->get('anio', now()->year);
         $semanaIso = $request->get('semana_iso') ? (string) $request->get('semana_iso') : null;
+        $incluirDomingoSemanal = $request->boolean('incluir_domingo');
 
-        return view('dashboard.mensual', $this->loadMensualData($mes, $anio, $semanaIso));
+        return view('dashboard.mensual', $this->loadMensualData($mes, $anio, $semanaIso, $incluirDomingoSemanal));
     }
 
     public function exportGraficasExcel(Request $request)
@@ -37,7 +38,7 @@ class DashboardMensualController extends Controller
             $hojas = array_values(array_unique($hojas));
         }
 
-        $data = $this->loadMensualData($mes, $anio, null);
+        $data = $this->loadMensualData($mes, $anio, null, false);
         $filename = 'dashboard-mensual-graficas-'.Str::slug(
             Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM').'-'.$anio
         ).'.xlsx';
@@ -48,7 +49,7 @@ class DashboardMensualController extends Controller
     /**
      * @return array{mes: int, anio: int, indicadores: \Illuminate\Support\Collection, totales: array, chartData: array, hallazgosNuevos: array, seguimientoSemanal: array, seguimientoSemanalLinea: array}
      */
-    private function loadMensualData(int $mes, int $anio, ?string $semanaIso = null): array
+    private function loadMensualData(int $mes, int $anio, ?string $semanaIso = null, bool $incluirDomingoSemanal = false): array
     {
         $mesStr = str_pad((string) $mes, 2, '0', STR_PAD_LEFT);
 
@@ -147,7 +148,7 @@ class DashboardMensualController extends Controller
         $hallazgosNuevos['meta'] = 1.0;
 
         $seguimientoSemanal = $this->buildSeguimientoSemanalMensual($indicadores, $totales, $mes, $anio);
-        $seguimientoSemanalLinea = $this->buildSeguimientoSemanalLinea($inicio, $fin, $semanaIso);
+        $seguimientoSemanalLinea = $this->buildSeguimientoSemanalLinea($inicio, $fin, $semanaIso, $incluirDomingoSemanal);
 
         return [
             'mes' => $mes,
@@ -164,8 +165,9 @@ class DashboardMensualController extends Controller
     /**
      * Gráfica de líneas por semana ISO: % hallazgo / medias canales por día.
      * Columna PROMEDIO = igual que Excel PROMEDIO: media aritmética de los % diarios visibles en la línea (días futuros omitidos).
+     * Por defecto el domingo no se muestra ni entra en el promedio; con $incluirDomingoSemanal = true sí.
      */
-    private function buildSeguimientoSemanalLinea(Carbon $vistaInicio, Carbon $vistaFin, ?string $semanaIsoSolicitada): array
+    private function buildSeguimientoSemanalLinea(Carbon $vistaInicio, Carbon $vistaFin, ?string $semanaIsoSolicitada, bool $incluirDomingoSemanal = false): array
     {
         $opciones = $this->listarSemanasIsoEnRango($vistaInicio, $vistaFin);
         if ($opciones === []) {
@@ -208,6 +210,10 @@ class DashboardMensualController extends Controller
 
         for ($i = 0; $i < 7; $i++) {
             $d = $weekStart->copy()->addDays($i);
+            if ($d->isSunday() && ! $incluirDomingoSemanal) {
+                continue;
+            }
+
             $labels[] = (string) $d->day;
             $k = $d->format('Y-m-d');
             if ($d->gt($hoyDia)) {
@@ -244,12 +250,22 @@ class DashboardMensualController extends Controller
         $hemD[] = $this->promedioTipoExcelPorcentajesDiarios($hemD);
         $labels[] = 'PROMEDIO';
 
+        $last = count($cobD) - 1;
+        $totalAcumuladoPromediosSemana = round(
+            (float) ($cobD[$last] ?? 0)
+            + (float) ($sobD[$last] ?? 0)
+            + (float) ($corD[$last] ?? 0)
+            + (float) ($hemD[$last] ?? 0),
+            2
+        );
+
         $titulo = 'ACUMULADO SEMANA '.$numSemana;
 
         return [
             'semana_iso' => $semanaElegida,
             'semanas_opciones' => $opciones,
             'titulo' => strtoupper($titulo),
+            'total_acumulado_promedios' => $totalAcumuladoPromediosSemana,
             'labels' => $labels,
             'datasets' => [
                 [
@@ -277,6 +293,7 @@ class DashboardMensualController extends Controller
                     'meta_pct' => 0.5,
                 ],
             ],
+            'incluir_domingo' => $incluirDomingoSemanal,
         ];
     }
 
