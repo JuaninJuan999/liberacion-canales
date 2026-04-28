@@ -43,13 +43,23 @@
                             @endfor
                         </select>
                     </form>
-                    <button type="button" onclick="abrirModalDescarga()"
-                            class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition w-full sm:w-auto shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 3v12m0 0l3.5-3.5M12 15L8.5 11.5M12 3h4a2 2 0 012 2v1"/>
-                        </svg>
-                        Descargar gráficas (Excel)
-                    </button>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+                        <button type="button" onclick="abrirModalDescarga()"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 3v12m0 0l3.5-3.5M12 15L8.5 11.5M12 3h4a2 2 0 012 2v1"/>
+                            </svg>
+                            Excel
+                        </button>
+                        <button type="button" onclick="abrirModalDescargaPng()"
+                                class="mensual-btn-png inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow transition hover:brightness-110 active:brightness-95"
+                                style="background-color:#2563eb;color:#fff;border:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>PNG</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -112,6 +122,34 @@
                     </div>
                 </div>
             </form>
+
+            {{-- Modal: exportar gráficas como PNG (marco estético) --}}
+            <div id="modalDescargaPng" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-5 border border-gray-200" onclick="event.stopPropagation()">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow-md"
+                              style="background:linear-gradient(135deg,#2563eb 0%,#4f46e5 100%);color:#fff;">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#fff;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </span>
+                        <h3 class="text-lg font-bold text-gray-900">Descargar gráficas en PNG</h3>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-4 pl-11">Imagen lista para informes: cabecera, periodo y marca. Elige una o varias.</p>
+                    <ul id="listaChecksPng" class="space-y-2.5 mb-5 max-h-[50vh] overflow-y-auto pr-1">
+                        {{-- Opciones rellenadas por JS según canvas presente en el DOM --}}
+                    </ul>
+                    <div class="flex flex-wrap gap-2 justify-end">
+                        <button type="button" onclick="cerrarModalDescargaPng()"
+                                class="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            Cancelar
+                        </button>
+                        <button type="button" onclick="descargarPngSeleccionadas()"
+                                class="px-4 py-2 text-sm font-semibold rounded-lg shadow transition hover:brightness-110 active:brightness-95"
+                                style="background-color:#2563eb;color:#fff;border:none;">
+                            Descargar selección
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             @php
                 $sSeg = $seguimientoSemanal ?? [];
@@ -816,7 +854,19 @@
     </script>
     @endpush
 
+    @php
+        $mensualPeriodoLabel = \Carbon\Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM YYYY');
+        $mensualTituloSemanalLineaPng = isset($seguimientoSemanalLinea)
+            ? (string) ($seguimientoSemanalLinea['titulo'] ?? '')
+            : '';
+    @endphp
     <script>
+        window.__mensualPngContext = {
+            periodo: @json($mensualPeriodoLabel),
+            anio: {{ (int) $anio }},
+            mes: {{ (int) $mes }},
+        };
+
         function abrirModalDescarga() {
             window._pausarAutoRefresh = true;
             const el = document.getElementById('modalDescarga');
@@ -845,6 +895,208 @@
             if (m) {
                 m.addEventListener('click', function (e) {
                     if (e.target === this) cerrarModalDescarga();
+                });
+            }
+        })();
+
+        function mensualPngRoundRect(ctx, x, y, w, h, r) {
+            const rr = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + rr, y);
+            ctx.arcTo(x + w, y, x + w, y + h, rr);
+            ctx.arcTo(x + w, y + h, x, y + h, rr);
+            ctx.arcTo(x, y + h, x, y, rr);
+            ctx.arcTo(x, y, x + w, y, rr);
+            ctx.closePath();
+        }
+
+        /**
+         * Componer PNG con cabecera degradada, tarjeta y pie (listo para informes).
+         */
+        function exportarGraficaMensualComoPNG(sourceCanvas, titulo, nombreArchivoBase, lineaExtra) {
+            if (!sourceCanvas || !sourceCanvas.width) {
+                alert('No se pudo leer la gráfica.');
+                return;
+            }
+            var meta = window.__mensualPngContext || {};
+            var scale = typeof window.devicePixelRatio === 'number' && window.devicePixelRatio >= 2 ? 2 : 1.65;
+            var W = 1180;
+            var padX = 36;
+            var headerH = lineaExtra ? 108 : 92;
+            var footerH = 48;
+            var cardPad = 20;
+            var innerW = W - padX * 2;
+            var cw = sourceCanvas.width;
+            var ch = sourceCanvas.height;
+            var chartDrawW = innerW - cardPad * 2;
+            var chartDrawH = Math.max(300, Math.round((ch / cw) * chartDrawW));
+            var H = headerH + chartDrawH + cardPad * 2 + footerH + 20;
+
+            var out = document.createElement('canvas');
+            out.width = Math.floor(W * scale);
+            out.height = Math.floor(H * scale);
+            var ctx = out.getContext('2d');
+            ctx.scale(scale, scale);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            var bg = ctx.createLinearGradient(0, 0, W, H);
+            bg.addColorStop(0, '#f8fafc');
+            bg.addColorStop(0.5, '#eef2ff');
+            bg.addColorStop(1, '#e0e7ff');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, W, H);
+
+            var hdrGrad = ctx.createLinearGradient(padX, 0, W - padX, 0);
+            hdrGrad.addColorStop(0, '#3730a3');
+            hdrGrad.addColorStop(0.5, '#4f46e5');
+            hdrGrad.addColorStop(1, '#6366f1');
+            ctx.fillStyle = hdrGrad;
+            mensualPngRoundRect(ctx, padX, 18, W - padX * 2, headerH - 6, 14);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 24px system-ui, -apple-system, "Segoe UI", sans-serif';
+            ctx.textBaseline = 'top';
+            var tx = padX + 26;
+            var ty = 34;
+            ctx.fillText(titulo, tx, ty);
+            ctx.font = '400 14px system-ui, -apple-system, "Segoe UI", sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fillText('Periodo: ' + (meta.periodo || ''), tx, ty + 34);
+            if (lineaExtra) {
+                ctx.font = 'italic 13px system-ui, -apple-system, "Segoe UI", sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.82)';
+                ctx.fillText(lineaExtra, tx, ty + 54);
+            }
+
+            var cardTop = headerH + 12;
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
+            ctx.shadowBlur = 28;
+            ctx.shadowOffsetY = 10;
+            mensualPngRoundRect(ctx, padX, cardTop, innerW, chartDrawH + cardPad * 2, 16);
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            ctx.strokeStyle = 'rgba(99, 102, 241, 0.22)';
+            ctx.lineWidth = 1.25;
+            mensualPngRoundRect(ctx, padX, cardTop, innerW, chartDrawH + cardPad * 2, 16);
+            ctx.stroke();
+
+            ctx.drawImage(sourceCanvas, padX + cardPad, cardTop + cardPad, chartDrawW, chartDrawH);
+
+            var footY = cardTop + chartDrawH + cardPad * 2 + footerH / 2 + 4;
+            ctx.fillStyle = '#475569';
+            ctx.font = '500 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
+            ctx.fillText('Liberación de Canales · Colbeef', padX + 24, footY);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(new Date().toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' }), W - padX - 24, footY);
+
+            var slug = (nombreArchivoBase || 'grafica').replace(/[^a-z0-9_-]+/gi, '_').replace(/^_|_$/g, '').toLowerCase();
+            var fname = 'mensual_' + slug + '_' + meta.anio + '_' + String(meta.mes).padStart(2, '0') + '.png';
+
+            var a = document.createElement('a');
+            a.download = fname;
+            a.href = out.toDataURL('image/png', 1);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function construirListaPngModal() {
+            var ul = document.getElementById('listaChecksPng');
+            if (!ul) return;
+            var defs = [
+                { id: 'chartSeguimientoSemanal', label: 'Seguimiento mensual', slug: 'seguimiento_mensual', extra: null },
+                { id: 'chartSeguimientoSemanalLinea', label: 'Seguimiento semanal (líneas)', slug: 'seguimiento_semanal',
+                  extra: @json($mensualTituloSemanalLineaPng) || null },
+                { id: 'chartSobrebarriga', label: 'Sobrebarriga rotas', slug: 'sobrebarriga' },
+                { id: 'chartHematomas', label: 'Hematomas', slug: 'hematomas' },
+                { id: 'chartCortePiernas', label: 'Corte en piernas', slug: 'cortes_piernas' },
+                { id: 'chartCoberturaGrasa', label: 'Cobertura grasa', slug: 'cobertura_grasa' },
+                { id: 'chartHallazgosNuevos', label: 'Hallazgos TC por tipo', slug: 'hallazgos_tc' },
+            ];
+            ul.innerHTML = '';
+            defs.forEach(function (d, i) {
+                var canvas = document.getElementById(d.id);
+                if (!canvas) return;
+                var li = document.createElement('li');
+                li.className = 'flex items-start gap-3';
+                var lid = 'png_chk_' + i + '_' + d.id;
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.id = lid;
+                cb.className = 'w-4 h-4 mt-0.5 accent-indigo-600 cursor-pointer rounded border-gray-300 shrink-0';
+                cb.checked = true;
+                cb.dataset.canvasId = d.id;
+                cb.dataset.slug = d.slug;
+                cb.dataset.title = d.label;
+                if (d.extra) cb.dataset.extra = d.extra;
+                var lb = document.createElement('label');
+                lb.htmlFor = lid;
+                lb.className = 'text-sm text-gray-700 cursor-pointer leading-snug';
+                lb.textContent = d.label;
+                li.appendChild(cb);
+                li.appendChild(lb);
+                ul.appendChild(li);
+            });
+            if (!ul.children.length) {
+                var empty = document.createElement('li');
+                empty.className = 'text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2';
+                empty.textContent = 'No hay gráficas visibles en esta vista (sin datos del mes o aún cargando).';
+                ul.appendChild(empty);
+            }
+        }
+
+        function abrirModalDescargaPng() {
+            window._pausarAutoRefresh = true;
+            construirListaPngModal();
+            var el = document.getElementById('modalDescargaPng');
+            if (el) el.classList.remove('hidden');
+        }
+
+        function cerrarModalDescargaPng() {
+            window._pausarAutoRefresh = false;
+            var el = document.getElementById('modalDescargaPng');
+            if (el) el.classList.add('hidden');
+        }
+
+        function descargarPngSeleccionadas() {
+            var ul = document.getElementById('listaChecksPng');
+            if (!ul) return;
+            var boxes = ul.querySelectorAll('input[type="checkbox"][data-canvas-id]:checked');
+            if (!boxes.length) {
+                alert('No hay gráficas seleccionadas o no hay datos para exportar.');
+                return;
+            }
+            cerrarModalDescargaPng();
+            var delay = 0;
+            boxes.forEach(function (cb) {
+                var id = cb.dataset.canvasId;
+                var titulo = cb.dataset.title || 'Gráfica';
+                var slug = cb.dataset.slug || id;
+                var lineaExtra = cb.dataset.extra || null;
+                setTimeout(function () {
+                    var canvas = document.getElementById(id);
+                    if (canvas) {
+                        exportarGraficaMensualComoPNG(canvas, titulo, slug, lineaExtra);
+                    }
+                }, delay);
+                delay += 420;
+            });
+        }
+
+        (function () {
+            var m = document.getElementById('modalDescargaPng');
+            if (m) {
+                m.addEventListener('click', function (e) {
+                    if (e.target === this) cerrarModalDescargaPng();
                 });
             }
         })();
