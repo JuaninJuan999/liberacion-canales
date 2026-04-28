@@ -208,6 +208,31 @@
                 </div>
             </div>
 
+            @isset($seguimientoAnual)
+            <div id="seguimiento-anual" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 scroll-mt-4">
+                <div class="px-4 sm:px-6 py-4 border-b border-violet-100 bg-gradient-to-r from-violet-50 to-slate-50">
+                    <h2 class="text-lg font-bold text-gray-900">Seguimiento anual</h2>
+                    <p class="text-xs sm:text-sm text-gray-600 mt-1 max-w-4xl">
+                        Cada punto es el total de hallazgos del tipo en el mes dividido entre el total de <strong>medias canales</strong> de ese mes. Año <strong>{{ $seguimientoAnual['anio'] }}</strong>.
+                        @if((int) $seguimientoAnual['anio'] === (int) now()->year)
+                            El eje muestra solo <strong>desde enero hasta {{ now()->locale('es')->isoFormat('MMMM') }}</strong>.
+                        @else
+                            Se muestran los doce meses del año seleccionado.
+                        @endif
+                    </p>
+                </div>
+                <div class="p-4 sm:px-6 sm:pb-6">
+                    @if(count($seguimientoAnual['labels'] ?? []) > 0)
+                        <div class="h-[26rem] max-w-6xl">
+                            <canvas id="chartSeguimientoAnual"></canvas>
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-500 py-10 text-center">No hay período que mostrar para este año.</p>
+                    @endif
+                </div>
+            </div>
+            @endisset
+
             {{-- Gráficos de Tendencia --}}
             @if($indicadores->count() > 0)
 
@@ -373,13 +398,288 @@
             }
         })();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    {{-- Versiones fijas: Chart.js 4.x desde "latest" rompe chartjs-plugin-datalabels y deja todos los canvas en blanco --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
                 Chart.register(ChartDataLabels);
             }
+
+            @isset($seguimientoAnual)
+            (function () {
+                try {
+                    const sa = @json($seguimientoAnual);
+                    const el = document.getElementById('chartSeguimientoAnual');
+                    if (!el || !sa || !sa.labels || sa.labels.length === 0) {
+                        return;
+                    }
+                    const yMax = typeof sa.y_max === 'number' ? sa.y_max : 0.8;
+                    const tickStep = yMax <= 0.8 ? 0.1 : (yMax <= 1.6 ? 0.2 : 0.5);
+                    const titulo = sa.titulo_grafico || 'CONSOLIDADO LIBERACION CANALES POR VARIABLE';
+                    const ds = (sa.datasets || []).map(function (d) {
+                        return {
+                            label: d.label,
+                            data: d.data,
+                            borderColor: d.borderColor,
+                            backgroundColor: 'transparent',
+                            borderWidth: d.borderWidth != null ? d.borderWidth : 2.5,
+                            borderDash: [],
+                            pointRadius: d.pointRadius != null ? d.pointRadius : 5,
+                            pointHoverRadius: d.pointHoverRadius != null ? d.pointHoverRadius : 6,
+                            pointBackgroundColor: d.pointBackgroundColor || '#ffffff',
+                            pointBorderColor: d.pointBorderColor || d.borderColor,
+                            pointBorderWidth: d.pointBorderWidth != null ? d.pointBorderWidth : 2,
+                            tension: d.tension != null ? d.tension : 0.15,
+                            spanGaps: false,
+                            fill: false,
+                        };
+                    });
+
+                    function annualRoundRectPath(ctx, x, y, w, h, r) {
+                        const rr = Math.min(r, w / 2, h / 2);
+                        ctx.beginPath();
+                        ctx.moveTo(x + rr, y);
+                        ctx.arcTo(x + w, y, x + w, y + h, rr);
+                        ctx.arcTo(x + w, y + h, x, y + h, rr);
+                        ctx.arcTo(x, y + h, x, y, rr);
+                        ctx.arcTo(x, y, x + w, y, rr);
+                        ctx.closePath();
+                    }
+
+                    /** Etiquetas % + trazo en L, evitando solapes aun cuando las series se cruzan. */
+                    const seguimientoAnualPorcentajes = {
+                        id: 'seguimientoAnualPorcentajes',
+                        afterDatasetsDraw: function (chart) {
+                            const ctx = chart.ctx;
+                            const chartArea = chart.chartArea;
+                            if (!chartArea) {
+                                return;
+                            }
+
+                            const nSeries = chart.data.datasets.length;
+                            const centerOff = nSeries > 1 ? (nSeries - 1) / 2 : 0;
+                            const spreadPx = 8; // pequeño abanico horizontal por serie
+                            const baseLift = 18; // separación vertical base desde el punto
+                            const padX = 5;
+                            const textH = 16;
+                            const stackStep = textH + 7; // > textH para evitar overlay
+                            const minHorizGap = 6;
+
+                            const items = [];
+
+                            ctx.save();
+                            ctx.font = '600 9px system-ui, -apple-system, "Segoe UI", sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+
+                            chart.data.datasets.forEach(function (dataset, datasetIndex) {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                if (meta.hidden === true) {
+                                    return;
+                                }
+                                const seriesColor = dataset.borderColor || '#374151';
+                                const raw = dataset.data || [];
+                                for (let i = 0; i < raw.length; i++) {
+                                    const v = raw[i];
+                                    if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) {
+                                        continue;
+                                    }
+                                    const pt = meta.data[i];
+                                    if (!pt || pt.skip) {
+                                        continue;
+                                    }
+                                    const p = pt.getProps(['x', 'y'], true);
+                                    const text = String(Number(v).toFixed(2)).replace('.', ',') + '%';
+                                    const textW = ctx.measureText(text).width + padX * 2;
+
+                                    // punto de anclaje del label (con pequeño offset por serie)
+                                    let xLabel = p.x + (datasetIndex - centerOff) * spreadPx;
+                                    xLabel = Math.max(
+                                        chartArea.left + textW / 2 + 2,
+                                        Math.min(chartArea.right - textW / 2 - 2, xLabel)
+                                    );
+                                    let cy = p.y - baseLift - textH / 2;
+                                    if (cy - textH / 2 < chartArea.top + 2) {
+                                        cy = chartArea.top + 2 + textH / 2;
+                                    }
+
+                                    items.push({
+                                        x: p.x,
+                                        y: p.y,
+                                        xLabel,
+                                        cy,
+                                        text,
+                                        w: textW,
+                                        h: textH,
+                                        color: seriesColor,
+                                    });
+                                }
+                            });
+
+                            if (items.length === 0) {
+                                ctx.restore();
+                                return;
+                            }
+
+                            // Orden por X y luego por Y para apilar de forma estable
+                            items.sort(function (a, b) {
+                                if (a.xLabel !== b.xLabel) return a.xLabel - b.xLabel;
+                                return a.y - b.y;
+                            });
+
+                            const placed = [];
+                            function overlaps(a, b) {
+                                const horizOverlap = !(a.right + minHorizGap < b.left || a.left - minHorizGap > b.right);
+                                const vertOverlap = !(a.bottom < b.top || a.top > b.bottom);
+                                return horizOverlap && vertOverlap;
+                            }
+
+                            // Resolver colisiones (subiendo la etiqueta si choca)
+                            for (const it of items) {
+                                let attempts = 0;
+                                while (attempts < 18) {
+                                    const box = {
+                                        left: it.xLabel - it.w / 2,
+                                        right: it.xLabel + it.w / 2,
+                                        top: it.cy - it.h / 2,
+                                        bottom: it.cy + it.h / 2,
+                                    };
+                                    let clash = false;
+                                    for (const p of placed) {
+                                        if (overlaps(box, p)) {
+                                            clash = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!clash) {
+                                        placed.push(box);
+                                        break;
+                                    }
+                                    it.cy -= stackStep;
+                                    if (it.cy - it.h / 2 < chartArea.top + 2) {
+                                        it.cy = chartArea.top + 2 + it.h / 2;
+                                        // si sigue chocando arriba, dejamos y salimos
+                                        attempts = 99;
+                                        placed.push({
+                                            left: it.xLabel - it.w / 2,
+                                            right: it.xLabel + it.w / 2,
+                                            top: it.cy - it.h / 2,
+                                            bottom: it.cy + it.h / 2,
+                                        });
+                                        break;
+                                    }
+                                    attempts++;
+                                }
+                            }
+
+                            // Dibujar trazos en L
+                            ctx.lineCap = 'round';
+                            ctx.lineJoin = 'round';
+                            items.forEach(function (it) {
+                                const boxBottom = it.cy + it.h / 2;
+                                ctx.strokeStyle = it.color;
+                                ctx.globalAlpha = 0.65;
+                                ctx.lineWidth = 0.85;
+                                ctx.setLineDash([]);
+                                ctx.beginPath();
+                                ctx.moveTo(it.x, it.y);
+                                // L corto: horizontal al xLabel y vertical al borde inferior del label
+                                ctx.lineTo(it.xLabel, it.y);
+                                ctx.lineTo(it.xLabel, boxBottom);
+                                ctx.stroke();
+                                ctx.globalAlpha = 1;
+                            });
+
+                            // Dibujar cajas + texto
+                            items.forEach(function (it) {
+                                const boxLeft = it.xLabel - it.w / 2;
+                                const boxTop = it.cy - it.h / 2;
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.97)';
+                                ctx.strokeStyle = it.color;
+                                ctx.lineWidth = 1;
+                                annualRoundRectPath(ctx, boxLeft, boxTop, it.w, it.h, 4);
+                                ctx.fill();
+                                ctx.stroke();
+                                ctx.fillStyle = '#111827';
+                                ctx.fillText(it.text, it.xLabel, it.cy);
+                            });
+
+                            ctx.restore();
+                        },
+                    };
+
+                    new Chart(el, {
+                        type: 'line',
+                        data: { labels: sa.labels, datasets: ds },
+                        plugins: [seguimientoAnualPorcentajes],
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            layout: { padding: { top: 64, right: 14, left: 10, bottom: 12 } },
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: titulo,
+                                    font: { size: 15, weight: '700' },
+                                    color: '#111827',
+                                    padding: { bottom: 14 },
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        padding: 16,
+                                        font: { size: 11, weight: '500' },
+                                    },
+                                },
+                                datalabels: {
+                                    display: false,
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (ctx) {
+                                            const py = ctx.parsed && ctx.parsed.y;
+                                            if (py === null || py === undefined || (typeof py === 'number' && isNaN(py))) {
+                                                return '';
+                                            }
+                                            return (ctx.dataset.label || '') + ': ' + String(Number(py).toFixed(2)).replace('.', ',') + '%';
+                                        },
+                                    },
+                                },
+                            },
+                            scales: {
+                                y: {
+                                    min: 0,
+                                    max: yMax,
+                                    ticks: {
+                                        stepSize: tickStep,
+                                        callback: function (v) {
+                                            return String(Number(v).toFixed(2)).replace('.', ',') + '%';
+                                        },
+                                    },
+                                    grid: {
+                                        color: 'rgba(15, 23, 42, 0.08)',
+                                        drawBorder: false,
+                                    },
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { size: 12, weight: '500' } },
+                                },
+                            },
+                        },
+                    });
+                } catch (e) {
+                    if (typeof console !== 'undefined' && console.error) {
+                        console.error('chartSeguimientoAnual', e);
+                    }
+                }
+            })();
+            @endisset
 
             @isset($seguimientoSemanal['chart_combo'])
             (function () {
@@ -865,6 +1165,7 @@
                 . number_format((float) ($seguimientoSemanalLinea['total_acumulado_promedios'] ?? 0), 2, ',', '.')
                 . ' %';
         }
+        $mensualSeguimientoAnualPngExtra = 'Año ' . (int) $anio;
     @endphp
     <script>
         window.__mensualPngContext = {
@@ -1037,6 +1338,8 @@
                 { id: 'chartSeguimientoSemanalLinea', label: 'Seguimiento semanal', slug: 'seguimiento_semanal',
                   extra: @json($mensualTituloSemanalLineaPng) || null,
                   promedioSemanal: @json($mensualPromedioTotalSemanaLineaPng) || null },
+                { id: 'chartSeguimientoAnual', label: 'Seguimiento anual', slug: 'seguimiento_anual',
+                  extra: @json($mensualSeguimientoAnualPngExtra) || null },
                 { id: 'chartSobrebarriga', label: 'Sobrebarriga rotas', slug: 'sobrebarriga' },
                 { id: 'chartHematomas', label: 'Hematomas', slug: 'hematomas' },
                 { id: 'chartCortePiernas', label: 'Corte en piernas', slug: 'cortes_piernas' },

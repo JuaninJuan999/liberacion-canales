@@ -47,7 +47,7 @@ class DashboardMensualController extends Controller
     }
 
     /**
-     * @return array{mes: int, anio: int, indicadores: \Illuminate\Support\Collection, totales: array, chartData: array, hallazgosNuevos: array, seguimientoSemanal: array, seguimientoSemanalLinea: array}
+     * @return array{mes: int, anio: int, indicadores: \Illuminate\Support\Collection, totales: array, chartData: array, hallazgosNuevos: array, seguimientoSemanal: array, seguimientoSemanalLinea: array, seguimientoAnual: array}
      */
     private function loadMensualData(int $mes, int $anio, ?string $semanaIso = null, bool $incluirDomingoSemanal = false): array
     {
@@ -149,6 +149,7 @@ class DashboardMensualController extends Controller
 
         $seguimientoSemanal = $this->buildSeguimientoSemanalMensual($indicadores, $totales, $mes, $anio);
         $seguimientoSemanalLinea = $this->buildSeguimientoSemanalLinea($inicio, $fin, $semanaIso, $incluirDomingoSemanal);
+        $seguimientoAnual = $this->buildSeguimientoAnual($anio);
 
         return [
             'mes' => $mes,
@@ -159,6 +160,156 @@ class DashboardMensualController extends Controller
             'hallazgosNuevos' => $hallazgosNuevos,
             'seguimientoSemanal' => $seguimientoSemanal,
             'seguimientoSemanalLinea' => $seguimientoSemanalLinea,
+            'seguimientoAnual' => $seguimientoAnual,
+        ];
+    }
+
+    /**
+     * Por cada mes del año: (suma hallazgos del tipo / suma medias canales del mes) × 100.
+     * Solo incluye meses hasta el actual si el año es el de hoy; años pasados = 12 meses.
+     *
+     * @return array{anio: int, titulo_grafico: string, labels: list<string>, y_max: float, datasets: list{array<string, mixed>}}
+     */
+    private function buildSeguimientoAnual(int $anio): array
+    {
+        $mesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        $hoy = Carbon::today();
+
+        if ($anio > $hoy->year) {
+            $mesLimite = 0;
+        } elseif ($anio === $hoy->year) {
+            $mesLimite = $hoy->month;
+        } else {
+            $mesLimite = 12;
+        }
+
+        $cob = [];
+        $sob = [];
+        $cor = [];
+        $hem = [];
+        $maxObserved = 0.0;
+
+        $baseLine = [
+            'borderWidth' => 2.5,
+            'pointRadius' => 5,
+            'pointHoverRadius' => 6,
+            'pointBackgroundColor' => '#ffffff',
+            'pointBorderWidth' => 2,
+            'tension' => 0.15,
+            'spanGaps' => false,
+            'fill' => false,
+        ];
+
+        if ($mesLimite === 0) {
+            return [
+                'anio' => $anio,
+                'titulo_grafico' => 'CONSOLIDADO LIBERACION CANALES POR VARIABLE',
+                'labels' => [],
+                'y_max' => 0.8,
+                'datasets' => [
+                    array_merge($baseLine, [
+                        'label' => 'Cobertura grasa - 1,5%',
+                        'data' => [],
+                        'borderColor' => '#EF4444',
+                        'pointBorderColor' => '#EF4444',
+                    ]),
+                    array_merge($baseLine, [
+                        'label' => 'Sobre barrigas rotas - 1%',
+                        'data' => [],
+                        'borderColor' => '#22C55E',
+                        'pointBorderColor' => '#22C55E',
+                    ]),
+                    array_merge($baseLine, [
+                        'label' => 'Cortes en piernas - 1%',
+                        'data' => [],
+                        'borderColor' => '#3B82F6',
+                        'pointBorderColor' => '#3B82F6',
+                    ]),
+                    array_merge($baseLine, [
+                        'label' => 'Hematomas - 0,5%',
+                        'data' => [],
+                        'borderColor' => '#EC4899',
+                        'pointBorderColor' => '#EC4899',
+                    ]),
+                ],
+            ];
+        }
+
+        $labels = array_slice($mesCortos, 0, $mesLimite);
+
+        for ($m = 1; $m <= $mesLimite; $m++) {
+            $mesStr = str_pad((string) $m, 2, '0', STR_PAD_LEFT);
+            $inds = IndicadorDiario::where('mes', $mesStr)->where('año', $anio)->get();
+
+            if ($inds->isEmpty()) {
+                $cob[] = 0.0;
+                $sob[] = 0.0;
+                $cor[] = 0.0;
+                $hem[] = 0.0;
+
+                continue;
+            }
+
+            $sumMedias = (int) $inds->sum('medias_canales_total');
+            if ($sumMedias <= 0) {
+                $sumMedias = (int) max(0, $inds->sum('animales_procesados')) * 2;
+            }
+            $sumMedias = max(1, $sumMedias);
+
+            $sumCob = (int) $inds->sum('cobertura_grasa');
+            $sumSob = (int) $inds->sum('sobrebarriga_rota');
+            $sumCor = (int) $inds->sum('cortes_piernas');
+            $sumHem = (int) $inds->sum('hematomas');
+
+            $pc = round(($sumCob / $sumMedias) * 100, 2);
+            $ps = round(($sumSob / $sumMedias) * 100, 2);
+            $pr = round(($sumCor / $sumMedias) * 100, 2);
+            $ph = round(($sumHem / $sumMedias) * 100, 2);
+
+            $cob[] = $pc;
+            $sob[] = $ps;
+            $cor[] = $pr;
+            $hem[] = $ph;
+
+            $maxObserved = max($maxObserved, $pc, $ps, $pr, $ph);
+        }
+
+        $yMax = 0.8;
+        if ($maxObserved > 0.8) {
+            $yMax = min(5.0, ceil($maxObserved * 10) / 10);
+        }
+
+        return [
+            'anio' => $anio,
+            'titulo_grafico' => 'CONSOLIDADO LIBERACION CANALES POR VARIABLE',
+            'labels' => $labels,
+            'y_max' => $yMax,
+            'datasets' => [
+                array_merge($baseLine, [
+                    'label' => 'Cobertura grasa - 1,5%',
+                    'data' => $cob,
+                    'borderColor' => '#EF4444',
+                    'pointBorderColor' => '#EF4444',
+                ]),
+                array_merge($baseLine, [
+                    'label' => 'Sobre barrigas rotas - 1%',
+                    'data' => $sob,
+                    'borderColor' => '#22C55E',
+                    'pointBorderColor' => '#22C55E',
+                ]),
+                array_merge($baseLine, [
+                    'label' => 'Cortes en piernas - 1%',
+                    'data' => $cor,
+                    'borderColor' => '#3B82F6',
+                    'pointBorderColor' => '#3B82F6',
+                ]),
+                array_merge($baseLine, [
+                    'label' => 'Hematomas - 0,5%',
+                    'data' => $hem,
+                    'borderColor' => '#EC4899',
+                    'pointBorderColor' => '#EC4899',
+                ]),
+            ],
         ];
     }
 
