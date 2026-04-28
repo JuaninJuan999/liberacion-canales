@@ -17,8 +17,9 @@ class DashboardMensualController extends Controller
     {
         $mes = (int) $request->get('mes', now()->month);
         $anio = (int) $request->get('anio', now()->year);
+        $semanaIso = $request->get('semana_iso') ? (string) $request->get('semana_iso') : null;
 
-        return view('dashboard.mensual', $this->loadMensualData($mes, $anio));
+        return view('dashboard.mensual', $this->loadMensualData($mes, $anio, $semanaIso));
     }
 
     public function exportGraficasExcel(Request $request)
@@ -36,7 +37,7 @@ class DashboardMensualController extends Controller
             $hojas = array_values(array_unique($hojas));
         }
 
-        $data = $this->loadMensualData($mes, $anio);
+        $data = $this->loadMensualData($mes, $anio, null);
         $filename = 'dashboard-mensual-graficas-'.Str::slug(
             Carbon::create($anio, $mes, 1)->locale('es')->isoFormat('MMMM').'-'.$anio
         ).'.xlsx';
@@ -45,9 +46,9 @@ class DashboardMensualController extends Controller
     }
 
     /**
-     * @return array{mes: int, anio: int, indicadores: \Illuminate\Support\Collection, totales: array, chartData: array, hallazgosNuevos: array, seguimientoSemanal: array}
+     * @return array{mes: int, anio: int, indicadores: \Illuminate\Support\Collection, totales: array, chartData: array, hallazgosNuevos: array, seguimientoSemanal: array, seguimientoSemanalLinea: array}
      */
-    private function loadMensualData(int $mes, int $anio): array
+    private function loadMensualData(int $mes, int $anio, ?string $semanaIso = null): array
     {
         $mesStr = str_pad((string) $mes, 2, '0', STR_PAD_LEFT);
 
@@ -146,6 +147,7 @@ class DashboardMensualController extends Controller
         $hallazgosNuevos['meta'] = 1.0;
 
         $seguimientoSemanal = $this->buildSeguimientoSemanalMensual($indicadores, $totales, $mes, $anio);
+        $seguimientoSemanalLinea = $this->buildSeguimientoSemanalLinea($inicio, $fin, $semanaIso);
 
         return [
             'mes' => $mes,
@@ -155,7 +157,192 @@ class DashboardMensualController extends Controller
             'chartData' => $chartData,
             'hallazgosNuevos' => $hallazgosNuevos,
             'seguimientoSemanal' => $seguimientoSemanal,
+            'seguimientoSemanalLinea' => $seguimientoSemanalLinea,
         ];
+    }
+
+    /**
+     * Gráfica de líneas por semana ISO: % hallazgo / medias canales por día.
+     * Columna PROMEDIO = igual que Excel PROMEDIO: media aritmética de los % diarios visibles en la línea (días futuros omitidos).
+     */
+    private function buildSeguimientoSemanalLinea(Carbon $vistaInicio, Carbon $vistaFin, ?string $semanaIsoSolicitada): array
+    {
+        $opciones = $this->listarSemanasIsoEnRango($vistaInicio, $vistaFin);
+        if ($opciones === []) {
+            $ref = $vistaInicio->copy();
+            $opciones[] = $this->opcionSemanaDesdeCualquierDia($ref);
+        }
+
+        $claves = array_column($opciones, 'key');
+        $semanaElegida = $semanaIsoSolicitada;
+        if (! $semanaElegida || ! in_array($semanaElegida, $claves, true)) {
+            $hoy = Carbon::today();
+            if ($hoy->between($vistaInicio, $vistaFin)) {
+                $semanaElegida = $this->semanaIsoKey($hoy);
+            } else {
+                $pivote = $vistaFin->copy();
+                $semanaElegida = $this->semanaIsoKey($pivote);
+            }
+            if (! in_array($semanaElegida, $claves, true)) {
+                $semanaElegida = $opciones[0]['key'];
+            }
+        }
+
+        $weekStart = $this->parseSemanaIsoKey($semanaElegida);
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        $numSemana = (int) $weekStart->isoWeek;
+
+        $indicadoresSemana = IndicadorDiario::whereBetween('fecha_operacion', [
+            $weekStart->toDateString(),
+            $weekEnd->toDateString(),
+        ])->orderBy('fecha_operacion')->get()
+            ->keyBy(fn (IndicadorDiario $d) => $d->fecha_operacion->format('Y-m-d'));
+
+        $hoyDia = Carbon::today();
+
+        $labels = [];
+        $cobD = [];
+        $sobD = [];
+        $corD = [];
+        $hemD = [];
+
+        for ($i = 0; $i < 7; $i++) {
+            $d = $weekStart->copy()->addDays($i);
+            $labels[] = (string) $d->day;
+            $k = $d->format('Y-m-d');
+            if ($d->gt($hoyDia)) {
+                $cobD[] = null;
+                $sobD[] = null;
+                $corD[] = null;
+                $hemD[] = null;
+
+                continue;
+            }
+            $ind = $indicadoresSemana->get($k);
+            if (! $ind) {
+                $cobD[] = 0.0;
+                $sobD[] = 0.0;
+                $corD[] = 0.0;
+                $hemD[] = 0.0;
+
+                continue;
+            }
+            $mediasCanales = ($ind->animales_procesados > 0 ? (int) $ind->animales_procesados : 1) * 2;
+            $c = (int) $ind->cobertura_grasa;
+            $s = (int) $ind->sobrebarriga_rota;
+            $p = (int) $ind->cortes_piernas;
+            $h = (int) $ind->hematomas;
+            $cobD[] = round(($c / $mediasCanales) * 100, 2);
+            $sobD[] = round(($s / $mediasCanales) * 100, 2);
+            $corD[] = round(($p / $mediasCanales) * 100, 2);
+            $hemD[] = round(($h / $mediasCanales) * 100, 2);
+        }
+
+        $cobD[] = $this->promedioTipoExcelPorcentajesDiarios($cobD);
+        $sobD[] = $this->promedioTipoExcelPorcentajesDiarios($sobD);
+        $corD[] = $this->promedioTipoExcelPorcentajesDiarios($corD);
+        $hemD[] = $this->promedioTipoExcelPorcentajesDiarios($hemD);
+        $labels[] = 'PROMEDIO';
+
+        $titulo = 'ACUMULADO SEMANA '.$numSemana;
+
+        return [
+            'semana_iso' => $semanaElegida,
+            'semanas_opciones' => $opciones,
+            'titulo' => strtoupper($titulo),
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'label' => 'Cobertura grasa (1,5%)',
+                    'data' => $cobD,
+                    'borderColor' => '#EF4444',
+                    'meta_pct' => 1.5,
+                ],
+                [
+                    'label' => 'Sobrebarrigas rotas (1%)',
+                    'data' => $sobD,
+                    'borderColor' => '#22C55E',
+                    'meta_pct' => 1.0,
+                ],
+                [
+                    'label' => 'Cortes en piernas (1%)',
+                    'data' => $corD,
+                    'borderColor' => '#3B82F6',
+                    'meta_pct' => 1.0,
+                ],
+                [
+                    'label' => 'Hematomas (Significativos) (0,5%)',
+                    'data' => $hemD,
+                    'borderColor' => '#A855F7',
+                    'meta_pct' => 0.5,
+                ],
+            ],
+        ];
+    }
+
+    private function listarSemanasIsoEnRango(Carbon $vistaInicio, Carbon $vistaFin): array
+    {
+        $cursor = $vistaInicio->copy();
+        $vistos = [];
+        $opciones = [];
+        while ($cursor->lte($vistaFin)) {
+            $key = $this->semanaIsoKey($cursor);
+            if (! isset($vistos[$key])) {
+                $vistos[$key] = true;
+                $opciones[] = $this->opcionSemanaDesdeCualquierDia($cursor);
+            }
+            $cursor->addDay();
+        }
+
+        return $opciones;
+    }
+
+    private function semanaIsoKey(Carbon $d): string
+    {
+        return sprintf('%d-W%02d', (int) $d->isoWeekYear, (int) $d->isoWeek);
+    }
+
+    private function opcionSemanaDesdeCualquierDia(Carbon $cualquierDia): array
+    {
+        $ini = $cualquierDia->copy()->startOfWeek(Carbon::MONDAY);
+        $fin = $cualquierDia->copy()->endOfWeek(Carbon::SUNDAY);
+        $key = $this->semanaIsoKey($cualquierDia);
+
+        return [
+            'key' => $key,
+            'label' => 'Sem. '.$cualquierDia->isoWeek.' · '.$ini->format('d/m').' — '.$fin->format('d/m'),
+        ];
+    }
+
+    private function parseSemanaIsoKey(string $key): Carbon
+    {
+        if (preg_match('/^(\d{4})-W(\d{1,2})$/', $key, $m)) {
+            return (new Carbon)
+                ->setISODate((int) $m[1], (int) $m[2])
+                ->startOfWeek(Carbon::MONDAY)
+                ->startOfDay();
+        }
+
+        return Carbon::today()->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+    }
+
+    /**
+     * Igual que Excel PROMEDIO sobre la fila de % diarios: solo entra cada día con número (los null = día futuro se omiten; el 0 sí cuenta).
+     */
+    private function promedioTipoExcelPorcentajesDiarios(array $serieSinPromedio): float
+    {
+        $nums = [];
+        foreach ($serieSinPromedio as $v) {
+            if ($v === null) {
+                continue;
+            }
+            $nums[] = (float) $v;
+        }
+        if ($nums === []) {
+            return 0.0;
+        }
+
+        return round(array_sum($nums) / count($nums), 2);
     }
 
     /**

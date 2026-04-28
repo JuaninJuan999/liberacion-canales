@@ -187,6 +187,36 @@
             </div>
             @endisset
 
+            @isset($seguimientoSemanalLinea)
+            <div id="seguimiento-semanal-linea" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 scroll-mt-4">
+                <div class="px-4 sm:px-6 py-4 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-slate-50">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <h2 class="text-lg font-bold text-gray-900">Seguimiento semanal</h2>
+                        <form id="form-semana-iso" method="GET" action="{{ route('dashboard.mensual') }}" class="flex flex-wrap items-center gap-2 text-sm">
+                            <input type="hidden" name="mes" value="{{ $mes }}">
+                            <input type="hidden" name="anio" value="{{ $anio }}">
+                            <label for="semana_iso" class="text-gray-600 font-medium">Semana ISO</label>
+                            <select id="semana_iso" name="semana_iso"
+                                    class="rounded-md border-gray-300 shadow-sm text-sm min-w-[14rem] focus:border-sky-500 focus:ring-sky-500">
+                                @foreach($seguimientoSemanalLinea['semanas_opciones'] as $opt)
+                                    <option value="{{ $opt['key'] }}"
+                                            @selected(($seguimientoSemanalLinea['semana_iso'] ?? '') === $opt['key'])>
+                                        {{ $opt['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    </div>
+                </div>
+                <div class="p-4 sm:px-6 sm:pt-2 sm:pb-6">
+                    <p class="text-xs text-gray-500 mb-2">Por día: hallazgos del tipo ÷ medias canales del día. PROMEDIO: media de esos % del lunes al domingo (como PROMEDIO en Excel; omitimos días futuros).</p>
+                    <div class="h-80 max-w-5xl">
+                        <canvas id="chartSeguimientoSemanalLinea" style="min-height: 18rem;"></canvas>
+                    </div>
+                </div>
+            </div>
+            @endisset
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold mb-4 text-gray-800">Indicador de Sobrebarriga rotas</h3>
@@ -235,6 +265,61 @@
     </div>
 
     @push('scripts')
+    <script>
+        (function () {
+            const key = 'liberacion_mensual_semana_scroll';
+            var savedY = null;
+            try {
+                savedY = sessionStorage.getItem(key);
+            } catch (e) {}
+            if (savedY === null) {
+                return;
+            }
+            try {
+                sessionStorage.removeItem(key);
+            } catch (e) {}
+            const y = parseInt(savedY, 10);
+            if (isNaN(y) || y < 0) {
+                return;
+            }
+            function applyScroll() {
+                window.scrollTo(0, y);
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyScroll);
+            } else {
+                applyScroll();
+            }
+            requestAnimationFrame(function () {
+                requestAnimationFrame(applyScroll);
+            });
+            window.addEventListener('load', function () {
+                window.scrollTo(0, y);
+            }, { once: true });
+        })();
+    </script>
+    <script>
+        (function () {
+            function bindSemanaForm() {
+                const form = document.getElementById('form-semana-iso');
+                const sel = document.getElementById('semana_iso');
+                if (!form || !sel) {
+                    return;
+                }
+                sel.addEventListener('change', function () {
+                    try {
+                        sessionStorage.setItem('liberacion_mensual_semana_scroll', String(window.scrollY || 0));
+                    } catch (e) {}
+                    form.submit();
+                });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bindSemanaForm);
+            } else {
+                bindSemanaForm();
+            }
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script>
@@ -345,6 +430,217 @@
                                 },
                             },
                             x: { ticks: { maxRotation: 40, minRotation: 0, font: { size: 10 } } },
+                        },
+                    },
+                });
+            })();
+            @endisset
+
+            @isset($seguimientoSemanalLinea)
+            (function () {
+                const sl = @json($seguimientoSemanalLinea);
+                const el = document.getElementById('chartSeguimientoSemanalLinea');
+                if (!el || !sl || !sl.labels) {
+                    return;
+                }
+                function hexToRgba(color, alpha) {
+                    if (!color || typeof color !== 'string' || color[0] !== '#') {
+                        return 'rgba(100, 100, 100, ' + alpha + ')';
+                    }
+                    const h = color.slice(1);
+                    if (h.length !== 6) {
+                        return 'rgba(100, 100, 100, ' + alpha + ')';
+                    }
+                    const r = parseInt(h.slice(0, 2), 16);
+                    const g = parseInt(h.slice(2, 4), 16);
+                    const b = parseInt(h.slice(4, 6), 16);
+                    return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+                }
+                function roundRectPath(ctx, rx, ry, rw, rh, rad) {
+                    const rr = Math.min(rad, rw / 2, rh / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(rx + rr, ry);
+                    ctx.arcTo(rx + rw, ry, rx + rw, ry + rh, rr);
+                    ctx.arcTo(rx + rw, ry + rh, rx, ry + rh, rr);
+                    ctx.arcTo(rx, ry + rh, rx, ry, rr);
+                    ctx.arcTo(rx, ry, rx + rw, ry, rr);
+                    ctx.closePath();
+                }
+                /**
+                 * Abanico horizontal por serie + trazo en L: cada % queda alineado con su pico
+                 * (sin apilar todo en la misma X, que confundía el orden respecto al valor).
+                 */
+                const seguimientoSemanalCallouts = {
+                    id: 'seguimientoSemanalCallouts',
+                    afterDatasetsDraw: function (chart) {
+                        const ctx = chart.ctx;
+                        const chartArea = chart.chartArea;
+                        if (!chartArea) {
+                            return;
+                        }
+                        const nDatasets = chart.data.datasets.length;
+                        const centerOff = nDatasets > 1 ? (nDatasets - 1) / 2 : 0;
+                        const toDraw = [];
+                        chart.data.datasets.forEach(function (dataset, datasetIndex) {
+                            const meta = chart.getDatasetMeta(datasetIndex);
+                            if (meta.hidden === true) {
+                                return;
+                            }
+                            const raw = dataset.data;
+                            for (let i = 0; i < raw.length; i++) {
+                                const v = raw[i];
+                                if (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) {
+                                    continue;
+                                }
+                                const point = meta.data[i];
+                                if (!point || point.skip) {
+                                    continue;
+                                }
+                                const p = point.getProps(['x', 'y'], true);
+                                toDraw.push({
+                                    x: p.x,
+                                    y: p.y,
+                                    text: Number(v).toFixed(2) + '%',
+                                    color: dataset.borderColor || '#6b7280',
+                                    datasetIndex: datasetIndex,
+                                });
+                            }
+                        });
+                        ctx.save();
+                        ctx.font = '700 11px system-ui, -apple-system, "Segoe UI", sans-serif';
+                        const padX = 7;
+                        const padY = 3;
+                        const lineHeight = 14;
+                        const boxH = lineHeight + padY * 2;
+                        const baseLift = 20;
+                        const spread = nDatasets >= 2 ? 38 : 0;
+                        const items = toDraw.map(function (it) {
+                            const w = ctx.measureText(it.text).width + padX * 2;
+                            const offsetX = (it.datasetIndex - centerOff) * spread;
+                            let xLabel = it.x + offsetX;
+                            xLabel = Math.max(
+                                chartArea.left + w / 2 + 2,
+                                Math.min(chartArea.right - w / 2 - 2, xLabel)
+                            );
+                            let labelCy = it.y - baseLift - boxH / 2;
+                            if (labelCy - boxH / 2 < chartArea.top + 2) {
+                                labelCy = chartArea.top + 2 + boxH / 2;
+                            }
+                            return {
+                                x: it.x,
+                                y: it.y,
+                                xLabel: xLabel,
+                                labelCy: labelCy,
+                                text: it.text,
+                                color: it.color,
+                                w: w,
+                                h: boxH,
+                            };
+                        });
+                        items.forEach(function (it) {
+                            const h = it.h;
+                            const boxTop = it.labelCy - h / 2;
+                            const boxBottom = it.labelCy + h / 2;
+                            const boxLeft = it.xLabel - it.w / 2;
+                            ctx.strokeStyle = hexToRgba(it.color, 0.7);
+                            ctx.lineWidth = 1.15;
+                            ctx.setLineDash([]);
+                            ctx.lineCap = 'round';
+                            ctx.lineJoin = 'round';
+                            ctx.beginPath();
+                            ctx.moveTo(it.x, it.y);
+                            ctx.lineTo(it.xLabel, it.y);
+                            ctx.lineTo(it.xLabel, boxBottom);
+                            ctx.stroke();
+                        });
+                        items.forEach(function (it) {
+                            const h = it.h;
+                            const boxTop = it.labelCy - h / 2;
+                            const boxLeft = it.xLabel - it.w / 2;
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.98)';
+                            ctx.strokeStyle = it.color;
+                            ctx.lineWidth = 1.5;
+                            roundRectPath(ctx, boxLeft, boxTop, it.w, h, 6);
+                            ctx.fill();
+                            ctx.stroke();
+                            ctx.fillStyle = it.color;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(it.text, it.xLabel, it.labelCy);
+                        });
+                        ctx.restore();
+                    },
+                };
+                const datasets = (sl.datasets || []).map(function (ds) {
+                    const c = ds.borderColor || '#6b7280';
+                    return {
+                        label: ds.label,
+                        data: ds.data,
+                        borderColor: c,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 4],
+                        pointRadius: 3.5,
+                        pointHoverRadius: 5,
+                        pointBackgroundColor: c,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1.5,
+                        tension: 0.12,
+                        spanGaps: false,
+                    };
+                });
+                new Chart(el, {
+                    type: 'line',
+                    data: { labels: sl.labels, datasets: datasets },
+                    plugins: [seguimientoSemanalCallouts],
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: 72,
+                                right: 28,
+                                left: 28,
+                                bottom: 8,
+                            },
+                        },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: sl.titulo || '',
+                                font: { size: 15, weight: '600' },
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: { usePointStyle: true, padding: 12, font: { size: 11 } },
+                            },
+                            datalabels: {
+                                display: false,
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        const py = ctx.parsed.y;
+                                        if (py === null || (typeof py === 'number' && isNaN(py))) {
+                                            return '';
+                                        }
+                                        return (ctx.dataset.label || '') + ': ' + Number(py).toFixed(2) + '%';
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grace: '10%',
+                                ticks: {
+                                    callback: function (v) {
+                                        return Number(v).toFixed(2) + '%';
+                                    },
+                                },
+                            },
+                            x: { ticks: { maxRotation: 0, minRotation: 0, font: { size: 11 } } },
                         },
                     },
                 });
