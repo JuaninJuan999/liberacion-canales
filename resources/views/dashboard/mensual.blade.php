@@ -859,6 +859,12 @@
         $mensualTituloSemanalLineaPng = isset($seguimientoSemanalLinea)
             ? (string) ($seguimientoSemanalLinea['titulo'] ?? '')
             : '';
+        $mensualPromedioTotalSemanaLineaPng = '';
+        if (isset($seguimientoSemanalLinea)) {
+            $mensualPromedioTotalSemanaLineaPng = 'Promedio total de la Semana: '
+                . number_format((float) ($seguimientoSemanalLinea['total_acumulado_promedios'] ?? 0), 2, ',', '.')
+                . ' %';
+        }
     @endphp
     <script>
         window.__mensualPngContext = {
@@ -913,7 +919,7 @@
         /**
          * Componer PNG con cabecera degradada, tarjeta y pie (listo para informes).
          */
-        function exportarGraficaMensualComoPNG(sourceCanvas, titulo, nombreArchivoBase, lineaExtra) {
+        function exportarGraficaMensualComoPNG(sourceCanvas, titulo, nombreArchivoBase, lineaExtra, lineaPromedioSemanal) {
             if (!sourceCanvas || !sourceCanvas.width) {
                 alert('No se pudo leer la gráfica.');
                 return;
@@ -922,7 +928,14 @@
             var scale = typeof window.devicePixelRatio === 'number' && window.devicePixelRatio >= 2 ? 2 : 1.65;
             var W = 1180;
             var padX = 36;
-            var headerH = lineaExtra ? 108 : 92;
+            var subCount = (lineaExtra ? 1 : 0) + (lineaPromedioSemanal ? 1 : 0);
+            var headerH = 92;
+            if (subCount === 1) {
+                headerH = 108;
+            }
+            if (subCount >= 2) {
+                headerH = 128;
+            }
             var footerH = 48;
             var cardPad = 20;
             var innerW = W - padX * 2;
@@ -964,10 +977,17 @@
             ctx.font = '400 14px system-ui, -apple-system, "Segoe UI", sans-serif';
             ctx.fillStyle = 'rgba(255,255,255,0.9)';
             ctx.fillText('Periodo: ' + (meta.periodo || ''), tx, ty + 34);
+            var subY = ty + 52;
             if (lineaExtra) {
                 ctx.font = 'italic 13px system-ui, -apple-system, "Segoe UI", sans-serif';
                 ctx.fillStyle = 'rgba(255,255,255,0.82)';
-                ctx.fillText(lineaExtra, tx, ty + 54);
+                ctx.fillText(lineaExtra, tx, subY);
+                subY += 22;
+            }
+            if (lineaPromedioSemanal) {
+                ctx.font = '600 13px system-ui, -apple-system, "Segoe UI", sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                ctx.fillText(lineaPromedioSemanal, tx, subY);
             }
 
             var cardTop = headerH + 12;
@@ -1014,8 +1034,9 @@
             if (!ul) return;
             var defs = [
                 { id: 'chartSeguimientoSemanal', label: 'Seguimiento mensual', slug: 'seguimiento_mensual', extra: null },
-                { id: 'chartSeguimientoSemanalLinea', label: 'Seguimiento semanal (líneas)', slug: 'seguimiento_semanal',
-                  extra: @json($mensualTituloSemanalLineaPng) || null },
+                { id: 'chartSeguimientoSemanalLinea', label: 'Seguimiento semanal', slug: 'seguimiento_semanal',
+                  extra: @json($mensualTituloSemanalLineaPng) || null,
+                  promedioSemanal: @json($mensualPromedioTotalSemanaLineaPng) || null },
                 { id: 'chartSobrebarriga', label: 'Sobrebarriga rotas', slug: 'sobrebarriga' },
                 { id: 'chartHematomas', label: 'Hematomas', slug: 'hematomas' },
                 { id: 'chartCortePiernas', label: 'Corte en piernas', slug: 'cortes_piernas' },
@@ -1037,7 +1058,12 @@
                 cb.dataset.canvasId = d.id;
                 cb.dataset.slug = d.slug;
                 cb.dataset.title = d.label;
-                if (d.extra) cb.dataset.extra = d.extra;
+                if (d.extra) {
+                    cb.dataset.extra = d.extra;
+                }
+                if (d.promedioSemanal) {
+                    cb.dataset.promedioSemanal = d.promedioSemanal;
+                }
                 var lb = document.createElement('label');
                 lb.htmlFor = lid;
                 lb.className = 'text-sm text-gray-700 cursor-pointer leading-snug';
@@ -1082,10 +1108,11 @@
                 var titulo = cb.dataset.title || 'Gráfica';
                 var slug = cb.dataset.slug || id;
                 var lineaExtra = cb.dataset.extra || null;
+                var lineaPromedio = cb.dataset.promedioSemanal || null;
                 setTimeout(function () {
                     var canvas = document.getElementById(id);
                     if (canvas) {
-                        exportarGraficaMensualComoPNG(canvas, titulo, slug, lineaExtra);
+                        exportarGraficaMensualComoPNG(canvas, titulo, slug, lineaExtra, lineaPromedio);
                     }
                 }, delay);
                 delay += 420;
