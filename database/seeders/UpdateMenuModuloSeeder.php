@@ -9,17 +9,14 @@ class UpdateMenuModuloSeeder extends Seeder
 {
     public function run(): void
     {
-        // Actualizar el módulo de Gestión de Usuarios
-        $modulo = MenuModulo::where('nombre', 'Gestión de Usuarios')
-            ->orWhere('nombre', 'Gestion de Usuarios')
-            ->first();
+        $modulo = MenuModulo::where('vista', 'usuarios.index')->first();
 
         if ($modulo) {
             $modulo->vista = 'usuarios.gestion';
             $modulo->save();
-            echo "\n✅ Módulo 'Gestión de Usuarios' actualizado a ruta 'usuarios.gestion'\n\n";
+            echo "\n✅ Módulo usuarios (sidebar) actualizado a ruta 'usuarios.gestion'\n\n";
         } else {
-            echo "\n⚠️ Módulo 'Gestión de Usuarios' no encontrado\n\n";
+            echo "\n⚠️ Módulo con vista 'usuarios.index' no encontrado\n\n";
         }
     }
 }
