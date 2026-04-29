@@ -98,12 +98,12 @@
 
                 <form wire:submit="guardar" class="p-4 sm:p-6 space-y-6">
                     <div class="flex flex-col lg:flex-row gap-6 lg:gap-10">
-                        {{-- Recuadro ID producto --}}
-                        <div class="shrink-0 flex flex-col items-stretch lg:w-[220px]">
+                        {{-- Recuadro ID producto: ancho fijo a la izquierda (como antes) + texto en una sola línea en la tarjeta --}}
+                        <div class="shrink-0 flex flex-col items-stretch w-full sm:max-w-md sm:mx-auto lg:mx-0 lg:max-w-none lg:w-[280px]">
                             <span class="text-xs font-semibold uppercase tracking-wide text-teal-800 mb-2">ID producto</span>
-                            <div class="rounded-2xl border-2 border-teal-400 bg-gradient-to-br from-teal-50 to-emerald-50 px-5 py-8 text-center shadow-inner shadow-teal-900/10 min-h-[8rem] flex flex-col items-center justify-center">
+                            <div class="rounded-2xl border-2 border-teal-400 bg-gradient-to-br from-teal-50 to-emerald-50 px-5 py-8 text-center shadow-inner shadow-teal-900/10 min-h-[8rem] w-full flex flex-col items-center justify-center overflow-x-auto">
                                 @if ($filaActual && isset($filaActual['id_producto']))
-                                    <span class="text-2xl sm:text-4xl font-black text-teal-950 tracking-tight break-all leading-tight">{{ trim((string) $filaActual['id_producto']) }}</span>
+                                    <span class="block w-max max-w-full whitespace-nowrap text-2xl sm:text-3xl md:text-4xl font-black tabular-nums tracking-tight text-teal-950 leading-tight text-center mx-auto">{{ trim((string) $filaActual['id_producto']) }}</span>
                                 @else
                                     <span class="text-sm text-teal-700/80 leading-snug px-2">
                                         @if (! $externoDisponible)
@@ -197,7 +197,7 @@
                             @forelse ($historial as $h)
                                 <tr wire:key="pcc-h-{{ $h->id }}" class="hover:bg-teal-50/70 transition-colors">
                                     <td class="px-3 py-2.5 whitespace-nowrap text-teal-950 text-xs">{{ $h->created_at->format('d/m/Y H:i') }}</td>
-                                    <td class="px-3 py-2.5 font-semibold text-teal-950 break-all max-w-[14rem]">{{ $h->codigoProductoCompleto() }}</td>
+                                    <td class="px-3 py-2.5 font-semibold tabular-nums text-teal-950 whitespace-nowrap">{{ $h->codigoProductoCompleto() }}</td>
                                     <td class="px-3 py-2.5 whitespace-nowrap">
                                         @if ($h->cumple_media_canal_1)
                                             <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">Cumple</span>
