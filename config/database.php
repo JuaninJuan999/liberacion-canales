@@ -98,6 +98,25 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        /*
+        | BD externa de trazabilidad (solo lectura para Verificación PCC).
+        | Usa DB_TRAZABILIDAD_* o, si no existen, POSTGRES_* (p. ej. POSTGRES_HOST, POSTGRES_DB).
+        */
+        'pgsql_trazabilidad' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_TRAZABILIDAD_URL'),
+            'host' => env('DB_TRAZABILIDAD_HOST', env('POSTGRES_HOST', '127.0.0.1')),
+            'port' => env('DB_TRAZABILIDAD_PORT', env('POSTGRES_PORT', '5432')),
+            'database' => env('DB_TRAZABILIDAD_DATABASE', env('POSTGRES_DB')),
+            'username' => env('DB_TRAZABILIDAD_USERNAME', env('POSTGRES_USER', 'postgres')),
+            'password' => env('DB_TRAZABILIDAD_PASSWORD', env('POSTGRES_PASSWORD', '')),
+            'charset' => env('DB_TRAZABILIDAD_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => env('DB_TRAZABILIDAD_SEARCH_PATH', 'trazabilidad_proceso,organizaciones,public'),
+            'sslmode' => env('DB_TRAZABILIDAD_SSLMODE', 'prefer'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),
