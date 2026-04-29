@@ -25,6 +25,8 @@ use App\Livewire\IndicadoresDia;
 use App\Livewire\RegistroHallazgo;
 use App\Livewire\RegistroHallazgoToleranciaZero;
 use App\Livewire\TiempoUsabilidad;
+use App\Livewire\TitulacionAcidoLactico;
+use App\Livewire\ConsumoAcidoLactico;
 use Illuminate\Support\Facades\Route;
 
 // Rutas públicas (sin autenticación)
@@ -81,6 +83,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/usuarios/gestion', GestionUsuarios::class)->name('usuarios.gestion');
         Route::get('/usuarios/roles', GestionRoles::class)->name('usuarios.roles');
         Route::get('/tiempo-usabilidad', TiempoUsabilidad::class)->name('tiempo-usabilidad');
+        Route::get('/titulacion-acido-lactico', TitulacionAcidoLactico::class)->name('titulacion-acido-lactico');
+        Route::get('/consumo-acido-lactico', ConsumoAcidoLactico::class)->name('consumo-acido-lactico');
         // Route::resource('usuarios', UsuarioController::class); // Usar GestionUsuarios component en su lugar
         // Nueva ruta para Puestos de Trabajo
         Route::resource('puestos_trabajo', PuestoTrabajoController::class)->except(['show']);

@@ -101,6 +101,20 @@ class MenuModuloSeeder extends Seeder
                 'orden' => 13,
                 'roles' => ['ADMINISTRADOR'],
             ],
+            [
+                'nombre' => 'Titulación de Ácido Láctico',
+                'vista' => 'titulacion-acido-lactico',
+                'icono' => 'beaker',
+                'orden' => 14,
+                'roles' => ['OPERACIONES', 'CALIDAD', 'ADMINISTRADOR', 'GERENCIA'],
+            ],
+            [
+                'nombre' => 'Consumo de Ácido Láctico',
+                'vista' => 'consumo-acido-lactico',
+                'icono' => 'chart-bar',
+                'orden' => 15,
+                'roles' => ['OPERACIONES', 'CALIDAD', 'ADMINISTRADOR', 'GERENCIA'],
+            ],
         ];
 
         foreach ($modulos as $modulo) {
