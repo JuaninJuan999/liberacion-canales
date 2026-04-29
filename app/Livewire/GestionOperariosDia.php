@@ -16,6 +16,17 @@ class GestionOperariosDia extends Component
     public $operariosDisponibles = [];
     public $puestos = [];
 
+    public bool $modalNuevoOperario = false;
+
+    /** Puesto desde el que se abrió el modal (se asigna el nuevo operario si queda activo). */
+    public ?int $puestoIdModalNuevoOperario = null;
+
+    public string $nuevo_operario_nombre = '';
+
+    public string $nuevo_operario_documento = '';
+
+    public bool $nuevo_operario_activo = true;
+
     public function mount()
     {
         $this->fecha_operacion = now()->toDateString();
@@ -82,6 +93,62 @@ class GestionOperariosDia extends Component
             ->get();
 
         session()->flash('info', '🔄 Lista de operarios actualizada.');
+    }
+
+    public function abrirModalNuevoOperario(int $puestoId): void
+    {
+        $this->resetValidation();
+        $this->puestoIdModalNuevoOperario = $puestoId;
+        $this->nuevo_operario_nombre = '';
+        $this->nuevo_operario_documento = '';
+        $this->nuevo_operario_activo = true;
+        $this->modalNuevoOperario = true;
+    }
+
+    public function cerrarModalNuevoOperario(): void
+    {
+        $this->modalNuevoOperario = false;
+        $this->puestoIdModalNuevoOperario = null;
+        $this->nuevo_operario_nombre = '';
+        $this->nuevo_operario_documento = '';
+        $this->nuevo_operario_activo = true;
+        $this->resetValidation();
+    }
+
+    /**
+     * Alta rápida igual criterios que OperarioController::store (nombre, documento único opcional, activo).
+     */
+    public function guardarNuevoOperario(): void
+    {
+        $this->nuevo_operario_documento = trim($this->nuevo_operario_documento);
+
+        $this->validate([
+            'nuevo_operario_nombre' => ['required', 'string', 'max:100'],
+            'nuevo_operario_documento' => ['nullable', 'string', 'max:20', 'unique:operarios,documento'],
+            'nuevo_operario_activo' => ['boolean'],
+        ]);
+
+        $puestoDestino = $this->puestoIdModalNuevoOperario;
+
+        $documento = $this->nuevo_operario_documento !== '' ? $this->nuevo_operario_documento : null;
+
+        $operario = Operario::create([
+            'nombre' => trim($this->nuevo_operario_nombre),
+            'documento' => $documento,
+            'activo' => $this->nuevo_operario_activo,
+        ]);
+
+        $this->operariosDisponibles = Operario::where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+
+        if ($operario->activo && $puestoDestino !== null) {
+            $this->asignaciones[$puestoDestino] = $operario->id;
+        }
+
+        session()->flash('success', '✅ Operario registrado en el catálogo'.($operario->activo && $puestoDestino !== null ? ' y asignado a este puesto.' : '.'));
+
+        $this->cerrarModalNuevoOperario();
     }
 
     public function guardarAsignaciones()

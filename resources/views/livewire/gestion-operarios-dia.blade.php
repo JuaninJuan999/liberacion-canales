@@ -55,7 +55,7 @@
                     <button type="button"
                             wire:click="refrescarListaOperarios"
                             class="px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md hover:bg-gray-50 transition text-sm"
-                            title="Después de crear un operario en otra pestaña, pulse aquí para verlo en las listas">
+                            title="Recarga el catálogo desde base de datos sin borrar las asignaciones actuales">
                         🔃 Actualizar lista
                     </button>
                 </div>
@@ -75,7 +75,7 @@
                 @if($puestos->count() > 0)
                     @if($operariosDisponibles->count() === 0)
                         <div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 text-sm mb-4">
-                            No hay operarios activos en el catálogo. Use «Crear nuevo operario» en el desplegable o cree uno desde el catálogo y pulse «Actualizar lista».
+                            No hay operarios activos en el catálogo. Use «Crear nuevo operario» en el desplegable o cree uno desde el catálogo y pulse «Actualizar lista» si ya existía fuera de esta pantalla.
                         </div>
                     @endif
 
@@ -109,8 +109,8 @@
                                                 wire:key="combo-{{ $puesto->id }}-{{ $comboVersion }}"
                                                 class="relative w-full max-w-md"
                                                 x-data="{
+                                                    pid: {{ $puesto->id }},
                                                     opts: @js($opcionesCombo),
-                                                    crearUrl: @js(route('operarios.create')),
                                                     selectedId: @entangle('asignaciones.'.$puesto->id).live,
                                                     query: '',
                                                     open: false,
@@ -172,8 +172,8 @@
                                                         this.cerrarPanel();
                                                     },
                                                     abrirCrear() {
-                                                        window.open(this.crearUrl, '_blank');
                                                         this.cerrarPanel();
+                                                        $wire.abrirModalNuevoOperario(this.pid);
                                                     },
                                                 }"
                                                 @keydown.escape.window="open && cerrarPanel()"
@@ -291,6 +291,107 @@
                             {{ \Carbon\Carbon::parse($fecha_operacion)->format('d/m/Y') }}
                         </p>
                     </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- Modal: nuevo operario (mismo criterio que operarios/create) --}}
+        @if ($modalNuevoOperario)
+            <div
+                class="fixed inset-0 z-[10050] flex items-center justify-center p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="titulo-modal-nuevo-operario"
+                x-data
+                x-on:keydown.escape.window="$wire.cerrarModalNuevoOperario()"
+            >
+                <button
+                    type="button"
+                    class="absolute inset-0 bg-black/40 cursor-default"
+                    wire:click="cerrarModalNuevoOperario"
+                    aria-label="Cerrar"
+                ></button>
+
+                <div
+                    class="relative z-10 w-full max-w-lg rounded-lg bg-white shadow-xl ring-1 ring-black/5"
+                    wire:click.stop
+                >
+                    <div class="border-b border-gray-100 px-6 py-4">
+                        <h4 id="titulo-modal-nuevo-operario" class="text-lg font-semibold text-gray-900">
+                            Nuevo operario
+                        </h4>
+                        <p class="mt-1 text-sm text-gray-600">
+                            Se guardará en el catálogo de operarios igual que desde «Gestión de operarios» en el menú.
+                        </p>
+                    </div>
+
+                    <form wire:submit.prevent="guardarNuevoOperario" class="px-6 py-4 space-y-4">
+                        <div>
+                            <label for="modal-op-nombre" class="block text-sm font-medium text-gray-700 mb-1">
+                                Nombre completo *
+                            </label>
+                            <input
+                                id="modal-op-nombre"
+                                type="text"
+                                wire:model.blur="nuevo_operario_nombre"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                autocomplete="name"
+                                autofocus
+                            >
+                            @error('nuevo_operario_nombre')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="modal-op-documento" class="block text-sm font-medium text-gray-700 mb-1">
+                                Documento de identidad
+                            </label>
+                            <input
+                                id="modal-op-documento"
+                                type="text"
+                                wire:model.blur="nuevo_operario_documento"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                placeholder="Opcional"
+                                autocomplete="off"
+                            >
+                            @error('nuevo_operario_documento')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    wire:model="nuevo_operario_activo"
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                <span class="text-sm text-gray-700">Operario activo</span>
+                            </label>
+                            @error('nuevo_operario_activo')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                            <button
+                                type="button"
+                                wire:click="cerrarModalNuevoOperario"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                wire:loading.attr="disabled"
+                                class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition disabled:opacity-60"
+                            >
+                                <span wire:loading.remove wire:target="guardarNuevoOperario">Guardar operario</span>
+                                <span wire:loading wire:target="guardarNuevoOperario">Guardando…</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         @endif
