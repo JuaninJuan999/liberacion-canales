@@ -26,8 +26,18 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="rounded-2xl border border-teal-100 bg-white p-4 sm:p-5 shadow-lg shadow-teal-900/[0.05] ring-1 ring-teal-900/5">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-teal-700">Hoy</p>
-                    <p class="mt-1 text-xs text-teal-800/75">{{ now()->translatedFormat('d/m/Y') }}</p>
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-teal-700">Día</p>
+                            <p class="mt-1 text-xs text-teal-800/75">{{ $diaEtiqueta }}</p>
+                        </div>
+                        <div class="shrink-0">
+                            <label class="sr-only" for="cal-dia">Seleccionar día</label>
+                            <input id="cal-dia" type="date" wire:model.live="dia_seleccionado"
+                                   max="{{ now()->format('Y-m-d') }}"
+                                   class="h-9 rounded-lg border-teal-200 bg-white/90 shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-xs">
+                        </div>
+                    </div>
                     <dl class="mt-4 space-y-3">
                         <div>
                             <dt class="text-xs text-teal-700/90">Litros preparados</dt>

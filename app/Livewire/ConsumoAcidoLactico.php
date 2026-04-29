@@ -22,12 +22,16 @@ class ConsumoAcidoLactico extends Component
     /** Formato YYYY-MM para <input type="month"> */
     public string $mes_seleccionado = '';
 
+    /** Formato YYYY-MM-DD para <input type="date"> */
+    public string $dia_seleccionado = '';
+
     protected string $paginationTheme = 'tailwind';
 
     public function mount(): void
     {
         $this->autorizarVistaMenu('consumo-acido-lactico');
         $this->mes_seleccionado = now()->format('Y-m');
+        $this->dia_seleccionado = now()->format('Y-m-d');
     }
 
     public function guardar(): void
@@ -69,7 +73,16 @@ class ConsumoAcidoLactico extends Component
 
     public function render()
     {
-        $hoy = now()->toDateString();
+        try {
+            $diaRef = Carbon::createFromFormat('Y-m-d', $this->dia_seleccionado)->startOfDay();
+        } catch (\Throwable) {
+            $diaRef = now()->startOfDay();
+            $this->dia_seleccionado = $diaRef->format('Y-m-d');
+        }
+
+        $fechaDia = $diaRef->toDateString();
+        $diaEtiqueta = $diaRef->locale(app()->getLocale())->translatedFormat('d/m/Y');
+
         try {
             $mes = Carbon::createFromFormat('Y-m', $this->mes_seleccionado)->startOfMonth();
         } catch (\Throwable) {
@@ -84,7 +97,7 @@ class ConsumoAcidoLactico extends Component
         $base = ConsumoAcidoLacticoRegistro::query()
             ->selectRaw('COALESCE(SUM(litros_preparados),0) as litros, COALESCE(SUM(cantidad_acido_lactico_ml),0) as ml');
 
-        $totalesHoy = (clone $base)->whereDate('fecha', $hoy)->first();
+        $totalesHoy = (clone $base)->whereDate('fecha', $fechaDia)->first();
         $totalesMes = (clone $base)->whereBetween('fecha', [$inicioMes, $finMes])->first();
         $totalesTotal = (clone $base)->first();
 
@@ -100,6 +113,7 @@ class ConsumoAcidoLactico extends Component
             'totalesMes' => $totalesMes,
             'totalesTotal' => $totalesTotal,
             'mesEtiqueta' => $mesEtiqueta,
+            'diaEtiqueta' => $diaEtiqueta,
         ])->layout('layouts.app');
     }
 }
