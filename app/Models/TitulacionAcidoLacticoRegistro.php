@@ -18,6 +18,7 @@ class TitulacionAcidoLacticoRegistro extends Model
         'correccion',
         'actividad',
         'user_id',
+        'verificado_user_id',
         'verificado_nombre',
     ];
 
@@ -34,6 +35,11 @@ class TitulacionAcidoLacticoRegistro extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function verificadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verificado_user_id');
     }
 
     /** @return array<string, string> */

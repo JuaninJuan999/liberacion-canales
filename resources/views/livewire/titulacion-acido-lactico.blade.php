@@ -125,10 +125,21 @@
                             </div>
                             <div class="flex flex-col">
                                 <label for="tit-al-verificado" class="text-sm font-medium text-teal-950">Verificado</label>
-                                <p class="mt-1 text-xs text-teal-700/80 min-h-[2.25rem] leading-snug">Persona que revisa el registro</p>
-                                <input id="tit-al-verificado" type="text" wire:model="verificado_nombre" placeholder="Nombre de quien verifica"
-                                       class="mt-auto h-11 w-full rounded-lg border-teal-200 bg-white/90 shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-sm">
-                                @error('verificado_nombre') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
+                                <p class="mt-1 text-xs text-teal-700/80 min-h-[2.25rem] leading-snug">Usuario autorizado que revisa el registro</p>
+                                @if ($verificadoresAutorizados->isEmpty())
+                                    <div class="mt-auto rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                        No hay verificadores autorizados. Un administrador debe asignarlos en <strong>Gestión de usuarios → Permisos</strong>.
+                                    </div>
+                                @else
+                                    <select id="tit-al-verificado" wire:model="verificado_user_id"
+                                            class="mt-auto h-11 w-full rounded-lg border-teal-200 bg-white/90 shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-sm">
+                                        <option value="">— Seleccione —</option>
+                                        @foreach ($verificadoresAutorizados as $v)
+                                            <option value="{{ $v->id }}">{{ $v->name }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                                @error('verificado_user_id') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
@@ -136,7 +147,8 @@
                     <div class="flex justify-end pt-3 border-t border-teal-100">
                         <button type="submit"
                                 wire:loading.attr="disabled"
-                                class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-teal-600 to-emerald-700 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-700/30 hover:from-teal-500 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 disabled:opacity-60 transition-all">
+                                @disabled($verificadoresAutorizados->isEmpty())
+                                class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-teal-600 to-emerald-700 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-700/30 hover:from-teal-500 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all">
                             <span wire:loading.remove wire:target="guardar">Guardar registro</span>
                             <span wire:loading wire:target="guardar">Guardando…</span>
                         </button>
@@ -187,7 +199,7 @@
                                     <td class="px-3 py-2.5 text-teal-900/90 max-w-xs truncate" title="{{ $row->correccion }}">{{ $row->correccion ?: '—' }}</td>
                                     <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $actividadesOpciones[$row->actividad] ?? $row->actividad }}</td>
                                     <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $row->usuario->name ?? '—' }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $row->verificado_nombre }}</td>
+                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $row->verificadoPor?->name ?? $row->verificado_nombre ?? '—' }}</td>
                                 </tr>
                             @empty
                                 <tr>

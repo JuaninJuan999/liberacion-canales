@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'rol_id',
         'activo',
+        'puede_verificar_titulacion',
     ];
 
     /**
@@ -48,6 +49,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'puede_verificar_titulacion' => 'boolean',
+            'activo' => 'boolean',
         ];
     }
 

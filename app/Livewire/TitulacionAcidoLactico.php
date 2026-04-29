@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Livewire\Concerns\AuthorizaPorMenuModulo;
 use App\Models\TitulacionAcidoLacticoRegistro;
+use App\Models\User;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -24,7 +25,7 @@ class TitulacionAcidoLactico extends Component
 
     public string $actividad = 'operativo';
 
-    public string $verificado_nombre = '';
+    public ?int $verificado_user_id = null;
 
     protected string $paginationTheme = 'tailwind';
 
@@ -46,17 +47,23 @@ class TitulacionAcidoLactico extends Component
             'cumple' => ['required', Rule::in(['0', '1'])],
             'correccion' => ['nullable', 'string', 'max:5000'],
             'actividad' => ['required', 'string', 'in:'.implode(',', $opcionesActividad)],
-            'verificado_nombre' => ['required', 'string', 'max:255'],
+            'verificado_user_id' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('puede_verificar_titulacion', true)->where('activo', true)),
+            ],
         ], [
             'volumen_naoh_ml.required' => 'Indica el volumen de NaOH.',
             'volumen_naoh_ml.between' => 'El volumen debe estar entre 2,2 y 2,3 ml.',
             'concentracion_sol_pct.required' => 'Indica la concentración.',
             'concentracion_sol_pct.between' => 'La concentración debe estar entre 1,9 % y 2,1 % (2 % ± 0,1).',
             'actividad.required' => 'Selecciona la actividad.',
-            'verificado_nombre.required' => 'Indica quién verifica.',
+            'verificado_user_id.required' => 'Selecciona quién verifica.',
         ]);
 
         $instante = now();
+
+        $verificador = User::findOrFail($this->verificado_user_id);
 
         TitulacionAcidoLacticoRegistro::create([
             'fecha' => $instante->toDateString(),
@@ -67,7 +74,8 @@ class TitulacionAcidoLactico extends Component
             'correccion' => $this->correccion !== '' ? $this->correccion : null,
             'actividad' => $this->actividad,
             'user_id' => auth()->id(),
-            'verificado_nombre' => $this->verificado_nombre,
+            'verificado_user_id' => $verificador->id,
+            'verificado_nombre' => $verificador->name,
         ]);
 
         $this->volumen_naoh_ml = null;
@@ -75,7 +83,7 @@ class TitulacionAcidoLactico extends Component
         $this->cumple = '1';
         $this->correccion = '';
         $this->actividad = 'operativo';
-        $this->verificado_nombre = '';
+        $this->verificado_user_id = null;
 
         session()->flash('ok', 'Registro guardado correctamente.');
         $this->resetPage();
@@ -84,7 +92,7 @@ class TitulacionAcidoLactico extends Component
     public function render()
     {
         $registros = TitulacionAcidoLacticoRegistro::query()
-            ->with('usuario')
+            ->with(['usuario', 'verificadoPor'])
             ->orderByDesc('fecha')
             ->orderByDesc('hora')
             ->paginate(15);
@@ -92,6 +100,11 @@ class TitulacionAcidoLactico extends Component
         return view('livewire.titulacion-acido-lactico', [
             'registros' => $registros,
             'actividadesOpciones' => TitulacionAcidoLacticoRegistro::actividadesOpciones(),
+            'verificadoresAutorizados' => User::query()
+                ->where('activo', true)
+                ->where('puede_verificar_titulacion', true)
+                ->orderBy('name')
+                ->get(),
         ])->layout('layouts.app');
     }
 }
