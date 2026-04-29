@@ -51,6 +51,13 @@
                             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm font-semibold">
                         💾 Guardar Asignaciones
                     </button>
+
+                    <button type="button"
+                            wire:click="refrescarListaOperarios"
+                            class="px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-md hover:bg-gray-50 transition text-sm"
+                            title="Después de crear un operario en otra pestaña, pulse aquí para verlo en las listas">
+                        🔃 Actualizar lista
+                    </button>
                 </div>
             </div>
         </div>
@@ -61,8 +68,17 @@
                 <h3 class="text-lg font-semibold mb-4 text-gray-900">
                     Asignación de Operarios a Puestos
                 </h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Cada operario solo puede aparecer en <strong>un</strong> puesto a la vez; al elegirlo en un desplegable, deja de mostrarse en los demás hasta que lo quite de ese puesto.
+                </p>
 
-                @if($puestos->count() > 0 && $operariosDisponibles->count() > 0)
+                @if($puestos->count() > 0)
+                    @if($operariosDisponibles->count() === 0)
+                        <div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 text-sm mb-4">
+                            No hay operarios activos en el catálogo. Use «Crear nuevo operario» en el desplegable o cree uno desde el catálogo y pulse «Actualizar lista».
+                        </div>
+                    @endif
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -77,20 +93,170 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($puestos as $puesto)
-                                    <tr class="hover:bg-gray-50">
+                                    @php
+                                        $opcionesCombo = $this->operariosOpcionesPara($puesto->id)
+                                            ->map(fn ($o) => ['id' => (string) $o->id, 'nombre' => $o->nombre])
+                                            ->values()
+                                            ->all();
+                                        $comboVersion = md5(json_encode($opcionesCombo));
+                                    @endphp
+                                    <tr class="hover:bg-gray-50" wire:key="puesto-row-{{ $puesto->id }}">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {{ $puesto->nombre }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <select wire:model="asignaciones.{{ $puesto->id }}"
-                                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                <option value="">-- Sin asignar --</option>
-                                                @foreach($operariosDisponibles as $operario)
-                                                    <option value="{{ $operario->id }}">
-                                                        {{ $operario->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                        <td class="px-6 py-4 text-sm text-gray-900 align-top min-w-[14rem]">
+                                            <div
+                                                wire:key="combo-{{ $puesto->id }}-{{ $comboVersion }}"
+                                                class="relative w-full max-w-md"
+                                                x-data="{
+                                                    opts: @js($opcionesCombo),
+                                                    crearUrl: @js(route('operarios.create')),
+                                                    selectedId: @entangle('asignaciones.'.$puesto->id).live,
+                                                    query: '',
+                                                    open: false,
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: 280,
+                                                    _reposHandler: null,
+                                                    reposition() {
+                                                        const el = this.$refs.triggerBtn;
+                                                        if (!el) return;
+                                                        const r = el.getBoundingClientRect();
+                                                        this.top = r.bottom + 6;
+                                                        this.left = r.left;
+                                                        this.width = Math.max(r.width, 220);
+                                                    },
+                                                    cerrarPanel() {
+                                                        this.open = false;
+                                                        this.query = '';
+                                                        if (this._reposHandler) {
+                                                            window.removeEventListener('scroll', this._reposHandler, true);
+                                                            window.removeEventListener('resize', this._reposHandler);
+                                                            this._reposHandler = null;
+                                                        }
+                                                    },
+                                                    toggle() {
+                                                        if (this.open) {
+                                                            this.cerrarPanel();
+                                                            return;
+                                                        }
+                                                        this.open = true;
+                                                        this.query = '';
+                                                        this.$nextTick(() => {
+                                                            this.reposition();
+                                                            this._reposHandler = () => this.reposition();
+                                                            window.addEventListener('scroll', this._reposHandler, true);
+                                                            window.addEventListener('resize', this._reposHandler);
+                                                            this.$refs.qInput && this.$refs.qInput.focus();
+                                                        });
+                                                    },
+                                                    get filtered() {
+                                                        const q = (this.query || '').toLowerCase().trim();
+                                                        if (!q) return this.opts;
+                                                        return this.opts.filter(o =>
+                                                            (o.nombre || '').toLowerCase().includes(q)
+                                                        );
+                                                    },
+                                                    label() {
+                                                        const id = this.selectedId;
+                                                        if (id === null || id === undefined || id === '') {
+                                                            return '— Sin asignar —';
+                                                        }
+                                                        const o = this.opts.find(x => String(x.id) === String(id));
+                                                        return o ? o.nombre : '— Sin asignar —';
+                                                    },
+                                                    selectOperario(id) {
+                                                        this.selectedId = (id === null || id === undefined || id === '')
+                                                            ? ''
+                                                            : String(id);
+                                                        this.cerrarPanel();
+                                                    },
+                                                    abrirCrear() {
+                                                        window.open(this.crearUrl, '_blank');
+                                                        this.cerrarPanel();
+                                                    },
+                                                }"
+                                                @keydown.escape.window="open && cerrarPanel()"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    x-ref="triggerBtn"
+                                                    @click="toggle()"
+                                                    class="flex w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                                                >
+                                                    <span class="truncate" x-text="label()"></span>
+                                                    <svg class="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+
+                                                <template x-teleport="body">
+                                                    <div
+                                                        x-show="open"
+                                                        x-cloak
+                                                        x-transition.opacity
+                                                        class="fixed inset-0 z-[9998] bg-black/20"
+                                                        style="display: none;"
+                                                        @click="cerrarPanel()"
+                                                    ></div>
+                                                </template>
+                                                <template x-teleport="body">
+                                                    <div
+                                                        x-show="open"
+                                                        x-cloak
+                                                        x-transition
+                                                        class="fixed z-[9999] rounded-md border border-gray-200 bg-white shadow-xl"
+                                                        style="display: none;"
+                                                        :style="{ top: top + 'px', left: left + 'px', width: width + 'px' }"
+                                                        @click.stop
+                                                    >
+                                                        <div class="border-b border-gray-100 p-2">
+                                                            <label class="sr-only">Filtrar operarios</label>
+                                                            <input
+                                                                type="search"
+                                                                x-ref="qInput"
+                                                                x-model="query"
+                                                                placeholder="Escriba para filtrar por nombre…"
+                                                                class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                                                                autocomplete="off"
+                                                                @keydown.escape="cerrarPanel()"
+                                                            >
+                                                        </div>
+                                                        <div class="border-b border-gray-50 py-1">
+                                                            <button
+                                                                type="button"
+                                                                class="w-full px-3 py-2 text-left text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+                                                                @click="abrirCrear()"
+                                                            >
+                                                                ➕ Crear nuevo operario…
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                class="w-full px-3 py-2 text-left text-sm text-gray-600 hover:bg-gray-50"
+                                                                @click="selectOperario('')"
+                                                            >
+                                                                — Sin asignar —
+                                                            </button>
+                                                        </div>
+                                                        <div class="max-h-60 overflow-y-auto py-1">
+                                                            <template x-for="op in filtered" :key="op.id">
+                                                                <button
+                                                                    type="button"
+                                                                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100"
+                                                                    x-text="op.nombre"
+                                                                    @click="selectOperario(op.id)"
+                                                                ></button>
+                                                            </template>
+                                                            <div
+                                                                class="px-3 py-2 text-xs text-gray-500"
+                                                                x-show="filtered.length === 0 && query.trim().length > 0"
+                                                            >
+                                                                No hay coincidencias con ese texto.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -100,11 +266,7 @@
                 @else
                     <div class="text-center py-12">
                         <div class="text-gray-400 mb-4 text-4xl">⚠️</div>
-                        @if($puestos->count() === 0)
-                            <p class="text-gray-500">No hay puestos de trabajo registrados.</p>
-                        @elseif($operariosDisponibles->count() === 0)
-                            <p class="text-gray-500">No hay operarios activos disponibles.</p>
-                        @endif
+                        <p class="text-gray-500">No hay puestos de trabajo registrados.</p>
                     </div>
                 @endif
             </div>
