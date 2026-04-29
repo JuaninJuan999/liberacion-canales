@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Livewire\Concerns\AuthorizaPorMenuModulo;
 use App\Models\ConsumoAcidoLacticoRegistro;
+use Illuminate\Support\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -18,11 +19,15 @@ class ConsumoAcidoLactico extends Component
 
     public string $observacion = '';
 
+    /** Formato YYYY-MM para <input type="month"> */
+    public string $mes_seleccionado = '';
+
     protected string $paginationTheme = 'tailwind';
 
     public function mount(): void
     {
         $this->autorizarVistaMenu('consumo-acido-lactico');
+        $this->mes_seleccionado = now()->format('Y-m');
     }
 
     public function guardar(): void
@@ -64,6 +69,25 @@ class ConsumoAcidoLactico extends Component
 
     public function render()
     {
+        $hoy = now()->toDateString();
+        try {
+            $mes = Carbon::createFromFormat('Y-m', $this->mes_seleccionado)->startOfMonth();
+        } catch (\Throwable) {
+            $mes = now()->startOfMonth();
+            $this->mes_seleccionado = $mes->format('Y-m');
+        }
+
+        $inicioMes = $mes->copy()->startOfMonth()->toDateString();
+        $finMes = $mes->copy()->endOfMonth()->toDateString();
+        $mesEtiqueta = $mes->translatedFormat('F Y');
+
+        $base = ConsumoAcidoLacticoRegistro::query()
+            ->selectRaw('COALESCE(SUM(litros_preparados),0) as litros, COALESCE(SUM(cantidad_acido_lactico_ml),0) as ml');
+
+        $totalesHoy = (clone $base)->whereDate('fecha', $hoy)->first();
+        $totalesMes = (clone $base)->whereBetween('fecha', [$inicioMes, $finMes])->first();
+        $totalesTotal = (clone $base)->first();
+
         $registros = ConsumoAcidoLacticoRegistro::query()
             ->with('usuario')
             ->orderByDesc('fecha')
@@ -72,6 +96,10 @@ class ConsumoAcidoLactico extends Component
 
         return view('livewire.consumo-acido-lactico', [
             'registros' => $registros,
+            'totalesHoy' => $totalesHoy,
+            'totalesMes' => $totalesMes,
+            'totalesTotal' => $totalesTotal,
+            'mesEtiqueta' => $mesEtiqueta,
         ])->layout('layouts.app');
     }
 }

@@ -67,6 +67,14 @@ class DashboardMensualController extends Controller
             $indicador->porcentaje_cobertura_grasa = ($indicador->cobertura_grasa / $mediasCanales) * 100;
         });
 
+        // Un registro por día (si hubo duplicados por fecha, se toma el de mayor id)
+        $indicadores = $indicadores
+            ->groupBy(fn ($d) => Carbon::parse($d->fecha_operacion)->format('Y-m-d'))
+            ->map(fn ($rows) => $rows->sortBy(fn ($x) => $x->id)->last())
+            ->values()
+            ->sortBy(fn ($d) => Carbon::parse($d->fecha_operacion)->timestamp)
+            ->values();
+
         $sumMediasTotales = (int) $indicadores->sum('medias_canales_total');
         if ($sumMediasTotales <= 0 && $indicadores->isNotEmpty()) {
             $sumMediasTotales = (int) max(0, $indicadores->sum('animales_procesados')) * 2;
@@ -83,32 +91,33 @@ class DashboardMensualController extends Controller
             'sobrebarriga_rotas' => $indicadores->sum('sobrebarriga_rota'),
         ];
 
-        // --- Generar todos los días del mes ---
-        $inicio = Carbon::create($anio, $mes, 1)->startOfMonth();
-        $fin = Carbon::create($anio, $mes, 1)->endOfMonth();
-        // Si el mes es el actual, solo mostramos hasta hoy
-        if ($inicio->year === now()->year && $inicio->month === now()->month) {
-            $fin = now()->startOfDay();
-        }
+        // --- Labels SOLO con fechas donde hubo registros ---
+        $fechaKeys = $indicadores
+            ->map(fn ($d) => Carbon::parse($d->fecha_operacion)->format('Y-m-d'))
+            ->values()
+            ->all();
+
+        $labels = $indicadores
+            ->map(function ($d) {
+                $t = Carbon::parse($d->fecha_operacion)->locale('es')->isoFormat('ddd DD/MM');
+
+                return ucfirst($t);
+            })
+            ->values()
+            ->all();
+
+        $sobrebarrigaData = $indicadores->map(fn ($d) => round((float) $d->porcentaje_sobrebarriga_rotas, 2))->values()->all();
+        $hematomasData = $indicadores->map(fn ($d) => round((float) $d->porcentaje_hematomas, 2))->values()->all();
+        $cortesData = $indicadores->map(fn ($d) => round((float) $d->porcentaje_corte_en_piernas, 2))->values()->all();
+        $coberturaData = $indicadores->map(fn ($d) => round((float) $d->porcentaje_cobertura_grasa, 2))->values()->all();
 
         $indicadoresPorFecha = $indicadores->keyBy(fn ($d) => Carbon::parse($d->fecha_operacion)->format('Y-m-d'));
 
-        $labels = [];
-        $sobrebarrigaData = [];
-        $hematomasData = [];
-        $cortesData = [];
-        $coberturaData = [];
-
-        $cursor = $inicio->copy();
-        while ($cursor->lte($fin)) {
-            $fechaKey = $cursor->format('Y-m-d');
-            $labels[] = $cursor->format('d/m');
-            $ind = $indicadoresPorFecha->get($fechaKey);
-            $sobrebarrigaData[] = $ind ? round($ind->porcentaje_sobrebarriga_rotas, 2) : 0;
-            $hematomasData[] = $ind ? round($ind->porcentaje_hematomas, 2) : 0;
-            $cortesData[] = $ind ? round($ind->porcentaje_corte_en_piernas, 2) : 0;
-            $coberturaData[] = $ind ? round($ind->porcentaje_cobertura_grasa, 2) : 0;
-            $cursor->addDay();
+        // Rango del mes (para módulos que aún lo usan, ej. seguimiento semanal por rango)
+        $inicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        if ($inicio->year === now()->year && $inicio->month === now()->month) {
+            $fin = now()->startOfDay();
         }
 
         $daysCount = count($labels);
@@ -144,7 +153,7 @@ class DashboardMensualController extends Controller
         ];
 
         // Datos de hallazgos TC por tipo
-        $hallazgosNuevos = $this->contarHallazgosNuevos($labels, $inicio, $fin, $indicadoresPorFecha);
+        $hallazgosNuevos = $this->contarHallazgosNuevos($fechaKeys, $labels, $indicadoresPorFecha);
         $hallazgosNuevos['meta'] = 1.0;
 
         $seguimientoSemanal = $this->buildSeguimientoSemanalMensual($indicadores, $totales, $mes, $anio);
@@ -595,7 +604,7 @@ class DashboardMensualController extends Controller
         ];
     }
 
-    private function contarHallazgosNuevos(array $labels, Carbon $inicio, Carbon $fin, $indicadoresPorFecha): array
+    private function contarHallazgosNuevos(array $fechaKeys, array $labels, $indicadoresPorFecha): array
     {
         $tiposNuevos = ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE'];
 
@@ -606,9 +615,7 @@ class DashboardMensualController extends Controller
             'LECHE VISIBLE' => [],
         ];
 
-        $cursor = $inicio->copy();
-        while ($cursor->lte($fin)) {
-            $fechaKey = $cursor->format('Y-m-d');
+        foreach ($fechaKeys as $fechaKey) {
             $ind = $indicadoresPorFecha->get($fechaKey);
             $animalesProcesados = (int) ($ind->animales_procesados ?? 0);
             $divisor = $animalesProcesados * 4;
@@ -625,8 +632,6 @@ class DashboardMensualController extends Controller
                     $resultado[$tipo][] = 0;
                 }
             }
-
-            $cursor->addDay();
         }
 
         return $resultado;

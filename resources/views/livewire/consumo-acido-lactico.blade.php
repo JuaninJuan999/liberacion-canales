@@ -24,6 +24,60 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="rounded-2xl border border-teal-100 bg-white p-4 sm:p-5 shadow-lg shadow-teal-900/[0.05] ring-1 ring-teal-900/5">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-teal-700">Hoy</p>
+                    <p class="mt-1 text-xs text-teal-800/75">{{ now()->translatedFormat('d/m/Y') }}</p>
+                    <dl class="mt-4 space-y-3">
+                        <div>
+                            <dt class="text-xs text-teal-700/90">Litros preparados</dt>
+                            <dd class="text-xl font-bold tabular-nums text-teal-950">{{ format_decimal_es_trim($totalesHoy->litros) }} <span class="text-sm font-semibold text-teal-800">L</span></dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-teal-700/90">Ácido láctico utilizado</dt>
+                            <dd class="text-xl font-bold tabular-nums text-teal-950">{{ format_decimal_es_trim($totalesHoy->ml) }} <span class="text-sm font-semibold text-teal-800">ml</span></dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="rounded-2xl border border-teal-100 bg-white p-4 sm:p-5 shadow-lg shadow-teal-900/[0.05] ring-1 ring-teal-900/5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-teal-700">Mes</p>
+                            <p class="mt-1 text-xs text-teal-800/75 capitalize">{{ $mesEtiqueta }}</p>
+                        </div>
+                        <div class="shrink-0">
+                            <label class="sr-only" for="cal-mes">Seleccionar mes</label>
+                            <input id="cal-mes" type="month" wire:model.live="mes_seleccionado"
+                                   class="h-9 rounded-lg border-teal-200 bg-white/90 shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-xs">
+                        </div>
+                    </div>
+                    <dl class="mt-4 space-y-3">
+                        <div>
+                            <dt class="text-xs text-teal-700/90">Litros preparados</dt>
+                            <dd class="text-xl font-bold tabular-nums text-teal-950">{{ format_decimal_es_trim($totalesMes->litros) }} <span class="text-sm font-semibold text-teal-800">L</span></dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-teal-700/90">Ácido láctico utilizado</dt>
+                            <dd class="text-xl font-bold tabular-nums text-teal-950">{{ format_decimal_es_trim($totalesMes->ml) }} <span class="text-sm font-semibold text-teal-800">ml</span></dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="rounded-2xl border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/40 p-4 sm:p-5 shadow-lg shadow-emerald-900/[0.06] ring-1 ring-emerald-900/5 sm:col-span-1">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">Total acumulado</p>
+                    <p class="mt-1 text-xs text-emerald-900/75">Todos los registros</p>
+                    <dl class="mt-4 space-y-3">
+                        <div>
+                            <dt class="text-xs text-emerald-800/90">Litros preparados</dt>
+                            <dd class="text-xl font-bold tabular-nums text-emerald-950">{{ format_decimal_es_trim($totalesTotal->litros) }} <span class="text-sm font-semibold text-emerald-900">L</span></dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-emerald-800/90">Ácido láctico utilizado</dt>
+                            <dd class="text-xl font-bold tabular-nums text-emerald-950">{{ format_decimal_es_trim($totalesTotal->ml) }} <span class="text-sm font-semibold text-emerald-900">ml</span></dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
             @if (session('ok'))
                 <div class="rounded-xl bg-emerald-50 border border-emerald-200/90 text-emerald-900 px-4 py-3 text-sm shadow-sm shadow-emerald-900/5 flex items-start gap-3">
                     <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-bold">✓</span>

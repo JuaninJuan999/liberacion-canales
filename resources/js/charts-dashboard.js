@@ -183,18 +183,41 @@ const percentageCalloutPlugin = {
 
 Chart.register(percentageCalloutPlugin);
 
+function normalizeMonthlyIndicatorDatasets(datasets) {
+    if (!Array.isArray(datasets)) {
+        return [];
+    }
+
+    return datasets.map((ds) => {
+        const isMeta = String(ds.label || '') === 'META';
+
+        return {
+            ...ds,
+            fill: false,
+            borderWidth: isMeta ? 2.5 : ds.borderWidth ?? 2,
+            order: isMeta ? 2 : 1,
+            spanGaps: false,
+        };
+    });
+}
+
 export function initDashboardCharts(chartData) {
-    const createChart = (elementId, datasets) => {
+    const labelCount = Array.isArray(chartData.labels) ? chartData.labels.length : 0;
+    const xTickFontSize = labelCount > 22 ? 8 : labelCount > 16 ? 9 : 10;
+
+    const createChart = (elementId, datasetsRaw) => {
         const canvas = document.getElementById(elementId);
         if (!canvas) {
             return;
         }
 
+        const datasets = normalizeMonthlyIndicatorDatasets(datasetsRaw);
+
         new Chart(canvas, {
             type: 'line',
             data: {
                 labels: chartData.labels,
-                datasets: datasets,
+                datasets,
             },
             options: {
                 responsive: true,
@@ -204,6 +227,7 @@ export function initDashboardCharts(chartData) {
                         top: 56,
                         right: 10,
                         left: 6,
+                        bottom: labelCount > 12 ? 18 : 10,
                     },
                 },
                 scales: {
@@ -219,11 +243,11 @@ export function initDashboardCharts(chartData) {
                     },
                     x: {
                         ticks: {
-                            font: { size: 12 },
+                            font: { size: xTickFontSize },
                             maxRotation: 45,
                             minRotation: 0,
-                            autoSkip: true,
-                            maxTicksLimit: 14,
+                            autoSkip: false,
+                            color: '#374151',
                         },
                     },
                 },

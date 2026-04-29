@@ -1160,11 +1160,11 @@
                         },
                         x: {
                             ticks: {
-                                font: { size: 12 },
+                                font: { size: (hallazgosNuevos.fechas || []).length > 22 ? 9 : 11 },
                                 maxRotation: 45,
                                 minRotation: 0,
-                                autoSkip: true,
-                                maxTicksLimit: 14,
+                                autoSkip: false,
+                                color: '#374151',
                             }
                         }
                     }
@@ -1824,7 +1824,13 @@
                                         },
                                     },
                                     x: {
-                                        ticks: { maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 14 },
+                                        ticks: {
+                                            maxRotation: 45,
+                                            minRotation: 0,
+                                            autoSkip: false,
+                                            font: { size: (cd.labels || []).length > 22 ? 9 : 11 },
+                                            color: '#374151',
+                                        },
                                     },
                                 },
                                 plugins: {
@@ -1969,7 +1975,15 @@
                                 },
                                 scales: {
                                     y: { beginAtZero: true, grace: '12%', ticks: { callback: function (v) { return String(Number(v).toFixed(2)).replace('.', ',') + '%'; } } },
-                                    x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 14 } },
+                                    x: {
+                                        ticks: {
+                                            maxRotation: 45,
+                                            minRotation: 0,
+                                            autoSkip: false,
+                                            font: { size: (hn.fechas || []).length > 22 ? 9 : 11 },
+                                            color: '#374151',
+                                        },
+                                    },
                                 },
                             },
                         });
