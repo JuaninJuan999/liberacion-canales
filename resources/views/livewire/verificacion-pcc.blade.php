@@ -104,6 +104,13 @@
                             <div class="rounded-2xl border-2 border-teal-400 bg-gradient-to-br from-teal-50 to-emerald-50 px-5 py-8 text-center shadow-inner shadow-teal-900/10 min-h-[8rem] w-full flex flex-col items-center justify-center overflow-x-auto">
                                 @if ($filaActual && isset($filaActual['id_producto']))
                                     <span class="block w-max max-w-full whitespace-nowrap text-2xl sm:text-3xl md:text-4xl font-black tabular-nums tracking-tight text-teal-950 leading-tight text-center mx-auto">{{ trim((string) $filaActual['id_producto']) }}</span>
+                                    @php
+                                        $nombrePropietario = trim((string) (data_get($filaActual, 'nombre_empresa') ?? ''));
+                                    @endphp
+                                    <p class="mt-3 w-full text-sm sm:text-base text-teal-900/90 leading-snug break-words hyphens-auto text-center">
+                                        <span class="font-semibold text-teal-800">Propietario:</span>
+                                        <span class="ml-0.5">{{ $nombrePropietario !== '' ? $nombrePropietario : '—' }}</span>
+                                    </p>
                                 @else
                                     <span class="text-sm text-teal-700/80 leading-snug px-2">
                                         @if (! $externoDisponible)
