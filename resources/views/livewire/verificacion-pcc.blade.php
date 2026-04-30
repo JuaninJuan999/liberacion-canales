@@ -11,13 +11,34 @@
                         <div class="min-w-0">
                             <p class="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Calidad</p>
                             <h1 class="text-xl sm:text-2xl font-bold !text-gray-900 tracking-tight mt-0.5">Verificación PCC</h1>
-                            <p class="mt-1 text-sm text-teal-900/85 max-w-2xl leading-snug">
-                                Cola del <strong>día actual</strong>: solo productos con insensibilización registrada hoy en la BD externa (plan/turno del día).
-                                Al guardar se pasa automáticamente al siguiente ID producto pendiente.
-                            </p>
                         </div>
                     </div>
+                    @if ($externoDisponible)
+                        <div class="flex flex-wrap gap-3 w-full sm:w-auto shrink-0 justify-end">
+                            <span class="inline-flex items-center justify-center sm:justify-start rounded-xl bg-teal-100 px-4 py-2 text-sm font-semibold text-teal-900 tabular-nums min-w-0 flex-1 sm:flex-initial">
+                                Total hoy: {{ $totalExternosHoy }}
+                            </span>
+                            <span class="inline-flex items-center justify-center sm:justify-start rounded-xl bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-900 tabular-nums min-w-0 flex-1 sm:flex-initial">
+                                Verificados: {{ $verificadosEnEstaAppHoy }}
+                            </span>
+                            <span class="inline-flex items-center justify-center sm:justify-start rounded-xl bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-950 tabular-nums min-w-0 flex-1 sm:flex-initial">
+                                Pendientes: {{ $pendientesCount }}
+                            </span>
+                        </div>
+                    @endif
                 </div>
+                @if ($externoDisponible)
+                    @if ($totalExternosHoy === 0)
+                        <p class="mt-4 text-sm text-gray-600 border-t border-teal-200/80 pt-4">
+                            No hay registros de insensibilización para la fecha de hoy en la BD externa (o la fecha del servidor PostgreSQL no coincide con tu día local — revisa zona horaria).
+                        </p>
+                    @elseif ($pendientesCount === 0 && $totalExternosHoy > 0)
+                        <p class="mt-4 text-sm font-medium text-emerald-800 border-t border-teal-200/80 pt-4 flex items-center gap-2 flex-wrap">
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white text-sm shrink-0">✓</span>
+                            Ya registraste todas las verificaciones PCC para los productos del día en esta aplicación.
+                        </p>
+                    @endif
+                @endif
             </div>
 
             @if (! $externoDisponible)
@@ -42,48 +63,6 @@
             @if (session('error'))
                 <div class="rounded-xl bg-red-50 border border-red-200 text-red-900 px-4 py-3 text-sm">
                     {{ session('error') }}
-                </div>
-            @endif
-
-            {{-- Estado cola del día --}}
-            @if ($externoDisponible)
-                <div class="rounded-2xl border border-teal-100 bg-white shadow-lg shadow-teal-900/[0.06] px-4 py-5 sm:px-6 ring-1 ring-teal-900/5">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-teal-700">Turno / día (BD externa)</p>
-                            <p class="mt-1 text-sm text-teal-900">Fecha de trabajo: <span class="font-semibold tabular-nums">{{ now()->format('d/m/Y') }}</span></p>
-                            <p class="mt-2 text-xs text-teal-800/85 max-w-xl">
-                                Solo se listan insensibilizaciones con <strong>fecha de registro = hoy</strong> (sin histórico de días anteriores).
-                            </p>
-                        </div>
-                        <div class="flex flex-wrap gap-3 shrink-0">
-                            <span class="inline-flex items-center rounded-xl bg-teal-100 px-4 py-2 text-sm font-semibold text-teal-900 tabular-nums">
-                                Total hoy: {{ $totalExternosHoy }}
-                            </span>
-                            <span class="inline-flex items-center rounded-xl bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-900 tabular-nums">
-                                Verificados: {{ $verificadosEnEstaAppHoy }}
-                            </span>
-                            <span class="inline-flex items-center rounded-xl bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-950 tabular-nums">
-                                Pendientes: {{ $pendientesCount }}
-                            </span>
-                        </div>
-                    </div>
-                    @if ($totalExternosHoy === 0)
-                        <p class="mt-4 text-sm text-gray-600 border-t border-teal-100 pt-4">
-                            No hay registros de insensibilización para la fecha de hoy en la BD externa (o la fecha del servidor PostgreSQL no coincide con tu día local — revisa zona horaria).
-                        </p>
-                    @elseif ($pendientesCount === 0 && $totalExternosHoy > 0)
-                        <p class="mt-4 text-sm font-medium text-emerald-800 border-t border-teal-100 pt-4 flex items-center gap-2">
-                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white text-sm">✓</span>
-                            Ya registraste todas las verificaciones PCC para los productos del día en esta aplicación.
-                        </p>
-                    @elseif ($filaActual && $totalExternosHoy > 0)
-                        <p class="mt-4 text-sm text-teal-900 border-t border-teal-100 pt-4">
-                            Siguiente en cola:
-                            <span class="font-bold tabular-nums">paso {{ $verificadosEnEstaAppHoy + 1 }} de {{ $totalExternosHoy }}</span>
-                            (orden por ID insensibilización ascendente).
-                        </p>
-                    @endif
                 </div>
             @endif
 
@@ -158,16 +137,19 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-col max-w-xl">
-                        <label for="pcc-resp" class="text-sm font-medium text-teal-950">Responsable puesto de trabajo</label>
-                        <input id="pcc-resp" type="text" wire:model="responsable_puesto_trabajo" placeholder="Nombre o cargo"
-                               class="mt-2 h-11 w-full rounded-lg border-teal-200 bg-white shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-sm">
-                        @error('responsable_puesto_trabajo') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="rounded-xl bg-teal-50/35 border border-teal-100/90 px-4 py-3 text-sm text-teal-900/90">
-                        <span class="font-medium text-teal-950">Registrado en el sistema por:</span>
-                        {{ auth()->user()->name }}
+                    <div class="grid grid-cols-1 gap-5 max-w-3xl">
+                        <div>
+                            <label for="pcc-obs" class="text-sm font-medium text-teal-950">Observación <span class="text-teal-600/80 font-normal">(opcional)</span></label>
+                            <textarea id="pcc-obs" wire:model="observacion" rows="3" placeholder="Notas u observaciones…"
+                                      class="mt-2 w-full rounded-lg border-teal-200 bg-white shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-sm resize-y min-h-[5rem]"></textarea>
+                            @error('observacion') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="pcc-acc" class="text-sm font-medium text-teal-950">Acción correctiva <span class="text-teal-600/80 font-normal">(opcional)</span></label>
+                            <textarea id="pcc-acc" wire:model="accion_correctiva" rows="3" placeholder="Acción correctiva si aplica…"
+                                      class="mt-2 w-full rounded-lg border-teal-200 bg-white shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-sm resize-y min-h-[5rem]"></textarea>
+                            @error('accion_correctiva') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
                     </div>
 
                     <div class="flex justify-end pt-1 border-t border-teal-100">
@@ -197,6 +179,8 @@
                                 <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">MC1</th>
                                 <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">MC2</th>
                                 <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 min-w-[120px]">Responsable</th>
+                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 min-w-[100px]">Obs.</th>
+                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 min-w-[100px]">Acc. corr.</th>
                                 <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Usuario</th>
                             </tr>
                         </thead>
@@ -219,12 +203,26 @@
                                             <span class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">No cumple</span>
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2.5 text-teal-900 text-xs max-w-[180px] truncate" title="{{ $h->responsable_puesto_trabajo }}">{{ $h->responsable_puesto_trabajo }}</td>
+                                    <td class="px-3 py-2.5 text-teal-900 text-xs max-w-[180px] truncate" title="{{ $h->responsablePuestoResuelto() }}">{{ $h->responsablePuestoResuelto() }}</td>
+                                    <td class="px-3 py-2.5 text-teal-900 text-xs max-w-[140px] align-top">
+                                        @if (filled($h->observacion))
+                                            <span class="line-clamp-2" title="{{ $h->observacion }}">{{ $h->observacion }}</span>
+                                        @else
+                                            <span class="text-teal-500/70">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3 py-2.5 text-teal-900 text-xs max-w-[140px] align-top">
+                                        @if (filled($h->accion_correctiva))
+                                            <span class="line-clamp-2" title="{{ $h->accion_correctiva }}">{{ $h->accion_correctiva }}</span>
+                                        @else
+                                            <span class="text-teal-500/70">—</span>
+                                        @endif
+                                    </td>
                                     <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $h->usuario->name ?? '—' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-3 py-10 text-center text-teal-700/80 bg-teal-50/30">Aún no hay verificaciones guardadas.</td>
+                                    <td colspan="8" class="px-3 py-10 text-center text-teal-700/80 bg-teal-50/30">Aún no hay verificaciones guardadas.</td>
                                 </tr>
                             @endforelse
                         </tbody>

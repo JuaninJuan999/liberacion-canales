@@ -18,7 +18,9 @@ class VerificacionPcc extends Component
     /** @var '0'|'1'|'' */
     public string $cumple_media_canal_2 = '';
 
-    public string $responsable_puesto_trabajo = '';
+    public string $observacion = '';
+
+    public string $accion_correctiva = '';
 
     public function mount(): void
     {
@@ -88,15 +90,20 @@ class VerificacionPcc extends Component
             return;
         }
 
+        $responsable = VerificacionPccRegistro::operarioDesinfeccionParaFecha(now());
+
         $this->validate([
             'cumple_media_canal_1' => ['required', 'in:0,1'],
             'cumple_media_canal_2' => ['required', 'in:0,1'],
-            'responsable_puesto_trabajo' => ['required', 'string', 'max:255'],
+            'observacion' => ['nullable', 'string', 'max:5000'],
+            'accion_correctiva' => ['nullable', 'string', 'max:5000'],
         ], [
             'cumple_media_canal_1.required' => 'Indica si media canal 1 cumple o no cumple.',
             'cumple_media_canal_2.required' => 'Indica si media canal 2 cumple o no cumple.',
-            'responsable_puesto_trabajo.required' => 'Indica el responsable del puesto de trabajo.',
         ]);
+
+        $obs = trim($this->observacion);
+        $acc = trim($this->accion_correctiva);
 
         VerificacionPccRegistro::create([
             'user_id' => auth()->id(),
@@ -105,13 +112,16 @@ class VerificacionPcc extends Component
             'snapshot_externo' => $actual,
             'cumple_media_canal_1' => $this->cumple_media_canal_1 === '1',
             'cumple_media_canal_2' => $this->cumple_media_canal_2 === '1',
-            'responsable_puesto_trabajo' => $this->responsable_puesto_trabajo,
+            'responsable_puesto_trabajo' => $responsable,
+            'observacion' => $obs !== '' ? $obs : null,
+            'accion_correctiva' => $acc !== '' ? $acc : null,
         ]);
 
         session()->flash('ok', 'Verificación guardada. Se muestra el siguiente ID producto pendiente del día.');
         $this->cumple_media_canal_1 = '';
         $this->cumple_media_canal_2 = '';
-        $this->responsable_puesto_trabajo = '';
+        $this->observacion = '';
+        $this->accion_correctiva = '';
     }
 
     protected function normalizarCodigoProducto(mixed $raw): string
