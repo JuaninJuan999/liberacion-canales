@@ -16,11 +16,18 @@
                             <p class="mt-1 text-sm text-teal-900/85 max-w-2xl leading-snug">Registro de titulación y verificación del desinfectante.</p>
                         </div>
                     </div>
-                    <a href="{{ route('consumo-acido-lactico') }}"
-                       class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-teal-400/80 bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/15 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors w-full sm:w-auto">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        Consumo de ácido láctico
-                    </a>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <a href="{{ route('consumo-acido-lactico') }}"
+                           class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-teal-400/80 bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-900/15 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors w-full sm:w-auto">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            Consumo de ácido láctico
+                        </a>
+                        <a href="{{ route('titulacion-acido-lactico.historial') }}"
+                           class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-500/70 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 shadow-md shadow-teal-900/10 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors w-full sm:w-auto">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Historial de registros
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -36,7 +43,7 @@
                 <div class="border-b border-teal-100 bg-gradient-to-r from-teal-50 via-cyan-50/40 to-emerald-50/50 px-4 sm:px-6 py-5">
                     <h2 class="text-lg font-semibold text-teal-900">Nuevo registro</h2>
                     <p class="mt-2 text-sm text-teal-800/90 leading-relaxed max-w-3xl">
-                        La <span class="font-semibold text-teal-950">fecha</span> y la <span class="font-semibold text-teal-950">hora</span> del registro se guardan automáticamente al pulsar «Guardar registro».
+                        La <span class="font-semibold text-teal-950">fecha</span> se asigna automáticamente al pulsar «Guardar registro». La <span class="font-semibold text-teal-950">hora</span> puedes seleccionarla.
                     </p>
                 </div>
 
@@ -105,7 +112,14 @@
                             Actividad y verificación
                             <span class="h-px flex-1 bg-emerald-100 rounded"></span>
                         </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-5">
+                            <div class="flex flex-col">
+                                <label for="tit-al-hora" class="text-sm font-medium text-teal-950">Hora del registro</label>
+                                <p class="mt-1 text-xs text-teal-700/80 min-h-[2.25rem] leading-snug">Selecciona la hora (HH:MM)</p>
+                                <input id="tit-al-hora" type="time" wire:model="hora"
+                                       class="mt-auto h-11 w-full rounded-lg border-teal-200 bg-white/90 shadow-inner shadow-teal-900/5 focus:border-teal-500 focus:ring-2 focus:ring-teal-400/40 text-sm">
+                                @error('hora') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
                             <div class="flex flex-col">
                                 <label for="tit-al-actividad" class="text-sm font-medium text-teal-950">Actividad</label>
                                 <p class="mt-1 text-xs text-teal-700/80 min-h-[2.25rem] leading-snug">Momento en que se realiza el control</p>
@@ -154,73 +168,6 @@
                         </button>
                     </div>
                 </form>
-            </div>
-
-            {{-- Tabla histórico --}}
-            <div class="rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/[0.06] overflow-hidden ring-1 ring-teal-900/5">
-                <div class="px-4 py-4 border-b border-teal-700/20 bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-800">
-                    <h2 class="text-base font-semibold text-white tracking-tight flex items-center gap-2">
-                        <svg class="w-5 h-5 text-teal-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2h-2M9 13h6"/>
-                        </svg>
-                        Registros recientes
-                    </h2>
-                    <p class="mt-1 text-xs text-teal-100/90">Historial de titulaciones guardadas</p>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-teal-100 text-sm">
-                        <thead class="bg-teal-900/95">
-                            <tr>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Fecha</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Hora</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Vol. NaOH (ml)</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Conc. (%)</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Cumple</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 min-w-[120px]">Corrección</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Actividad</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Responsable</th>
-                                <th scope="col" class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Verificado</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-teal-50 bg-white">
-                            @forelse ($registros as $row)
-                                <tr wire:key="tit-al-{{ $row->id }}" class="hover:bg-teal-50/70 transition-colors">
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-950 font-medium">{{ $row->fecha->format('d/m/Y') }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ \Illuminate\Support\Str::substr($row->hora, 0, 5) }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900 tabular-nums">{{ number_format((float) $row->volumen_naoh_ml, 2, ',', '') }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900 tabular-nums">{{ number_format((float) $row->concentracion_sol_pct, 2, ',', '') }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap">
-                                        @if ($row->cumple)
-                                            <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200/80">Cumple</span>
-                                        @else
-                                            <span class="inline-flex rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-900 ring-1 ring-rose-200/80">No cumple</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2.5 text-teal-900/90 max-w-xs truncate" title="{{ $row->correccion }}">{{ $row->correccion ?: '—' }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $actividadesOpciones[$row->actividad] ?? $row->actividad }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $row->usuario->name ?? '—' }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $row->verificadoPor?->name ?? $row->verificado_nombre ?? '—' }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="px-3 py-10 text-center text-teal-700/80 bg-teal-50/30">
-                                        <span class="inline-flex flex-col items-center gap-2">
-                                            <span class="rounded-full bg-teal-100 p-3 text-teal-600">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                            </span>
-                                            No hay registros todavía.
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                @if ($registros->hasPages())
-                    <div class="px-4 py-3 border-t border-teal-100 bg-teal-50/40">
-                        {{ $registros->links() }}
-                    </div>
-                @endif
             </div>
         </div>
     </div>

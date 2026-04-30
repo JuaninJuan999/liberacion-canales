@@ -18,6 +18,9 @@ class TitulacionAcidoLactico extends Component
 
     public ?string $concentracion_sol_pct = null;
 
+    /** Hora seleccionada por el usuario (HH:MM) */
+    public ?string $hora = null;
+
     /** @var '0'|'1' Livewire enlaza mejor radios/select como string */
     public string $cumple = '1';
 
@@ -32,6 +35,7 @@ class TitulacionAcidoLactico extends Component
     public function mount(): void
     {
         $this->autorizarVistaMenu('titulacion-acido-lactico');
+        $this->hora = now()->format('H:i');
     }
 
     public function guardar(): void
@@ -44,6 +48,7 @@ class TitulacionAcidoLactico extends Component
         $this->validate([
             'volumen_naoh_ml' => ['required', 'numeric', 'between:2.2,2.3'],
             'concentracion_sol_pct' => ['required', 'numeric', 'between:1.9,2.1'],
+            'hora' => ['required', 'date_format:H:i'],
             'cumple' => ['required', Rule::in(['0', '1'])],
             'correccion' => ['nullable', 'string', 'max:5000'],
             'actividad' => ['required', 'string', 'in:'.implode(',', $opcionesActividad)],
@@ -57,6 +62,8 @@ class TitulacionAcidoLactico extends Component
             'volumen_naoh_ml.between' => 'El volumen debe estar entre 2,2 y 2,3 ml.',
             'concentracion_sol_pct.required' => 'Indica la concentración.',
             'concentracion_sol_pct.between' => 'La concentración debe estar entre 1,9 % y 2,1 % (2 % ± 0,1).',
+            'hora.required' => 'Selecciona la hora del registro.',
+            'hora.date_format' => 'La hora debe tener formato HH:MM.',
             'actividad.required' => 'Selecciona la actividad.',
             'verificado_user_id.required' => 'Selecciona quién verifica.',
         ]);
@@ -66,8 +73,9 @@ class TitulacionAcidoLactico extends Component
         $verificador = User::findOrFail($this->verificado_user_id);
 
         TitulacionAcidoLacticoRegistro::create([
+            // La fecha se toma del momento de guardar; la hora la elige el usuario.
             'fecha' => $instante->toDateString(),
-            'hora' => $instante->format('H:i:s'),
+            'hora' => $this->hora.':00',
             'volumen_naoh_ml' => $this->volumen_naoh_ml,
             'concentracion_sol_pct' => $this->concentracion_sol_pct,
             'cumple' => $this->cumple === '1',
@@ -80,6 +88,7 @@ class TitulacionAcidoLactico extends Component
 
         $this->volumen_naoh_ml = null;
         $this->concentracion_sol_pct = null;
+        $this->hora = now()->format('H:i');
         $this->cumple = '1';
         $this->correccion = '';
         $this->actividad = 'operativo';
@@ -91,14 +100,7 @@ class TitulacionAcidoLactico extends Component
 
     public function render()
     {
-        $registros = TitulacionAcidoLacticoRegistro::query()
-            ->with(['usuario', 'verificadoPor'])
-            ->orderByDesc('fecha')
-            ->orderByDesc('hora')
-            ->paginate(15);
-
         return view('livewire.titulacion-acido-lactico', [
-            'registros' => $registros,
             'actividadesOpciones' => TitulacionAcidoLacticoRegistro::actividadesOpciones(),
             'verificadoresAutorizados' => User::query()
                 ->where('activo', true)
