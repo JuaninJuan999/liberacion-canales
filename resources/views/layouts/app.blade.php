@@ -157,93 +157,116 @@
             </div>
         </div>
 
-        <!-- Script unificado para sidebar toggle -->
+        <!-- Script unificado para sidebar toggle (re-inicializa tras Livewire navigate) -->
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            (function () {
                 const STORAGE_KEY = 'liberacion_canales_sidebar_desktop_open';
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                const mainContent = document.getElementById('mainContent');
-                const openBtn = document.getElementById('sidebarToggleBtn');
-                const closeBtn = document.getElementById('sidebarCloseBtn');
-                let abierto = true;
+                let teardown = null;
 
-                function esMobil() { return window.innerWidth < 768; }
-
-                function persistirPreferenciaEscritorio() {
-                    if (esMobil()) return;
-                    try {
-                        localStorage.setItem(STORAGE_KEY, abierto ? '1' : '0');
-                    } catch (e) { /* ignorar */ }
+                function esMobil() {
+                    return window.innerWidth < 768;
                 }
 
-                function actualizarUI() {
-                    openBtn.style.display = abierto ? 'none' : 'block';
-                    if (esMobil()) {
-                        overlay.classList.toggle('hidden', !abierto);
-                        mainContent.style.paddingLeft = '';
-                        mainContent.classList.remove('md:ml-0');
-                        mainContent.classList.add('md:ml-64');
-                    } else {
-                        overlay.classList.add('hidden');
-                        if (abierto) {
-                            mainContent.classList.add('md:ml-64');
-                            mainContent.classList.remove('md:ml-0');
+                function setupSidebarToggle() {
+                    if (typeof teardown === 'function') {
+                        teardown();
+                        teardown = null;
+                    }
+
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('sidebarOverlay');
+                    const mainContent = document.getElementById('mainContent');
+                    const openBtn = document.getElementById('sidebarToggleBtn');
+                    const closeBtn = document.getElementById('sidebarCloseBtn');
+
+                    if (!sidebar || !overlay || !mainContent || !openBtn || !closeBtn) {
+                        return;
+                    }
+
+                    const ac = new AbortController();
+                    const signal = ac.signal;
+                    let abierto = true;
+
+                    function persistirPreferenciaEscritorio() {
+                        if (esMobil()) return;
+                        try {
+                            localStorage.setItem(STORAGE_KEY, abierto ? '1' : '0');
+                        } catch (e) { /* ignorar */ }
+                    }
+
+                    function actualizarUI() {
+                        openBtn.style.display = abierto ? 'none' : 'block';
+                        if (esMobil()) {
+                            overlay.classList.toggle('hidden', !abierto);
                             mainContent.style.paddingLeft = '';
+                            mainContent.classList.remove('md:ml-0');
+                            mainContent.classList.add('md:ml-64');
                         } else {
-                            mainContent.classList.remove('md:ml-64');
-                            mainContent.classList.add('md:ml-0');
-                            mainContent.style.paddingLeft = '3.5rem';
+                            overlay.classList.add('hidden');
+                            if (abierto) {
+                                mainContent.classList.add('md:ml-64');
+                                mainContent.classList.remove('md:ml-0');
+                                mainContent.style.paddingLeft = '';
+                            } else {
+                                mainContent.classList.remove('md:ml-64');
+                                mainContent.classList.add('md:ml-0');
+                                mainContent.style.paddingLeft = '3.5rem';
+                            }
                         }
                     }
-                }
 
-                // En móvil empieza cerrado (sin leer localStorage)
-                if (esMobil()) {
-                    abierto = false;
-                    sidebar.classList.remove('translate-x-0');
-                    sidebar.classList.add('-translate-x-full');
-                } else {
-                    // Escritorio: restaurar tras recarga / auto-refresh (p. ej. dashboard mensual)
-                    try {
-                        if (localStorage.getItem(STORAGE_KEY) === '0') {
-                            abierto = false;
-                            sidebar.classList.remove('translate-x-0');
-                            sidebar.classList.add('-translate-x-full');
-                        }
-                    } catch (e) { /* ignorar */ }
-                }
-                actualizarUI();
-
-                function abrir() {
-                    abierto = true;
-                    sidebar.classList.add('translate-x-0');
-                    sidebar.classList.remove('-translate-x-full');
-                    actualizarUI();
-                    persistirPreferenciaEscritorio();
-                }
-
-                function cerrar() {
-                    abierto = false;
-                    sidebar.classList.remove('translate-x-0');
-                    sidebar.classList.add('-translate-x-full');
-                    actualizarUI();
-                    persistirPreferenciaEscritorio();
-                }
-
-                openBtn.addEventListener('click', abrir);
-                closeBtn.addEventListener('click', cerrar);
-                overlay.addEventListener('click', cerrar);
-
-                // Cerrar al hacer clic fuera en móvil
-                document.addEventListener('click', function(e) {
-                    if (esMobil() && abierto) {
-                        if (!sidebar.contains(e.target) && !openBtn.contains(e.target)) {
-                            cerrar();
-                        }
+                    // Tras wire:navigate el HTML del layout vuelve a estado inicial; en móvil forzar cerrado para limpiar overlay.
+                    if (esMobil()) {
+                        abierto = false;
+                        sidebar.classList.remove('translate-x-0');
+                        sidebar.classList.add('-translate-x-full');
+                    } else {
+                        try {
+                            if (localStorage.getItem(STORAGE_KEY) === '0') {
+                                abierto = false;
+                                sidebar.classList.remove('translate-x-0');
+                                sidebar.classList.add('-translate-x-full');
+                            }
+                        } catch (e) { /* ignorar */ }
                     }
-                });
-            });
+                    actualizarUI();
+
+                    function abrir() {
+                        abierto = true;
+                        sidebar.classList.add('translate-x-0');
+                        sidebar.classList.remove('-translate-x-full');
+                        actualizarUI();
+                        persistirPreferenciaEscritorio();
+                    }
+
+                    function cerrar() {
+                        abierto = false;
+                        sidebar.classList.remove('translate-x-0');
+                        sidebar.classList.add('-translate-x-full');
+                        actualizarUI();
+                        persistirPreferenciaEscritorio();
+                    }
+
+                    openBtn.addEventListener('click', abrir, { signal });
+                    closeBtn.addEventListener('click', cerrar, { signal });
+                    overlay.addEventListener('click', cerrar, { signal });
+
+                    document.addEventListener('click', function (e) {
+                        if (esMobil() && abierto) {
+                            if (!sidebar.contains(e.target) && !openBtn.contains(e.target)) {
+                                cerrar();
+                            }
+                        }
+                    }, { signal });
+
+                    teardown = function () {
+                        ac.abort();
+                    };
+                }
+
+                document.addEventListener('DOMContentLoaded', setupSidebarToggle);
+                document.addEventListener('livewire:navigated', setupSidebarToggle);
+            })();
         </script>
         @stack('scripts')
     </body>
