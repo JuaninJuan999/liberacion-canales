@@ -156,55 +156,76 @@
                 $pc = $sSeg['por_clave'] ?? [];
                 $pPct = fn (string $k): string => \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($pc[$k]['pct_media'] ?? 0));
             @endphp
+            <style>
+                @keyframes mensual-kpi-enter {
+                    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                .mensual-kpi-card {
+                    animation: mensual-kpi-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+                }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(1) { animation-delay: 0.04s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(2) { animation-delay: 0.08s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(3) { animation-delay: 0.12s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(4) { animation-delay: 0.16s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(5) { animation-delay: 0.20s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(6) { animation-delay: 0.24s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(7) { animation-delay: 0.28s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(8) { animation-delay: 0.32s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(9) { animation-delay: 0.36s; }
+                @media (prefers-reduced-motion: reduce) {
+                    .mensual-kpi-card { animation: none !important; }
+                }
+            </style>
             {{-- Tarjetas Resumen del Mes --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Días Operados</p>
-                    <p class="text-3xl font-bold text-blue-600">{{ $totales['dias_operados'] }}</p>
-                </div>
-                
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Total Animales</p>
-                    <p class="text-3xl font-bold text-green-600">{{ number_format($totales['animales'], 0, ',', '.') }}</p>
+            <div class="mensual-kpi-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Días Operados</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-1">{{ $totales['dias_operados'] }}</p>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Total Medias Canales</p>
-                    <p class="text-3xl font-bold text-teal-600">{{ number_format($totales['medias_canales'], 0, ',', '.') }}</p>
-                </div>
-                
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Total Hallazgos</p>
-                    <p class="text-3xl font-bold text-red-600">{{ number_format($totales['hallazgos'], 0, ',', '.') }}</p>
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Total Animales</p>
+                    <p class="text-3xl font-bold text-green-600 mt-1">{{ number_format($totales['animales'], 0, ',', '.') }}</p>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Sobrebarriga Rotas</p>
-                    <p class="text-3xl font-bold text-orange-600">{{ number_format($totales['sobrebarriga_rotas'], 0, ',', '.') }}</p>
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Total Medias Canales</p>
+                    <p class="text-3xl font-bold text-teal-600 mt-1">{{ number_format($totales['medias_canales'], 0, ',', '.') }}</p>
+                </div>
+
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Total Hallazgos</p>
+                    <p class="text-3xl font-bold text-red-600 mt-1">{{ number_format($totales['hallazgos'], 0, ',', '.') }}</p>
+                </div>
+
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Sobrebarriga Rotas</p>
+                    <p class="text-3xl font-bold text-orange-600 mt-1">{{ number_format($totales['sobrebarriga_rotas'], 0, ',', '.') }}</p>
                     <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('sobrebarriga_rota') }}</span></p>
                 </div>
-                
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Hematomas</p>
-                    <p class="text-3xl font-bold text-purple-600">{{ number_format($totales['hematomas'], 0, ',', '.') }}</p>
+
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Hematomas</p>
+                    <p class="text-3xl font-bold text-purple-600 mt-1">{{ number_format($totales['hematomas'], 0, ',', '.') }}</p>
                     <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('hematomas') }}</span></p>
                 </div>
-                
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Cobertura Grasa</p>
-                    <p class="text-3xl font-bold text-yellow-600">{{ number_format($totales['cobertura'], 0, ',', '.') }}</p>
+
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Cobertura Grasa</p>
+                    <p class="text-3xl font-bold text-yellow-600 mt-1">{{ number_format($totales['cobertura'], 0, ',', '.') }}</p>
                     <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('cobertura_grasa') }}</span></p>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-center">
-                    <p class="text-sm text-gray-500 uppercase">Cortes Piernas</p>
-                    <p class="text-3xl font-bold text-pink-600">{{ number_format($totales['cortes_piernas'], 0, ',', '.') }}</p>
+                <div class="mensual-kpi-card bg-white overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-gray-100/90 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-gray-200 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-gray-500 uppercase tracking-wide">Cortes Piernas</p>
+                    <p class="text-3xl font-bold text-pink-600 mt-1">{{ number_format($totales['cortes_piernas'], 0, ',', '.') }}</p>
                     <p class="text-xs sm:text-sm text-gray-500 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('cortes_piernas') }}</span></p>
                 </div>
 
-                <div class="bg-amber-50/90 overflow-hidden shadow-sm sm:rounded-lg p-6 text-center border border-amber-200/80">
-                    <p class="text-sm text-amber-900/80 uppercase">Acumulado del mes</p>
-                    <p class="text-3xl font-bold text-amber-800 tabular-nums">{{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($sSeg['acumulado_pct_media'] ?? 0)) }}</p>
+                <div class="mensual-kpi-card bg-amber-50/90 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-amber-200/80 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl hover:border-amber-300 hover:bg-amber-50 hover:scale-[1.02] active:scale-[0.99]">
+                    <p class="text-sm text-amber-900/80 uppercase tracking-wide">Acumulado del mes</p>
+                    <p class="text-3xl font-bold text-amber-800 tabular-nums mt-1">{{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($sSeg['acumulado_pct_media'] ?? 0)) }}</p>
                 </div>
             </div>
 
