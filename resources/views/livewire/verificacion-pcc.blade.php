@@ -13,8 +13,12 @@
                             <h1 class="text-xl sm:text-2xl font-bold !text-gray-900 tracking-tight mt-0.5">Verificación PCC</h1>
                         </div>
                     </div>
-                    @if ($externoDisponible)
-                        <div class="flex flex-wrap gap-3 w-full sm:w-auto shrink-0 justify-end">
+                    <div class="flex flex-wrap gap-3 w-full sm:w-auto shrink-0 justify-end items-center">
+                        <a href="{{ route('verificacion-pcc.historial') }}" wire:navigate
+                           class="inline-flex items-center justify-center rounded-xl border-2 border-teal-700 bg-teal-900 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors">
+                            Historial PCC 
+                        </a>
+                        @if ($externoDisponible)
                             <span class="inline-flex items-center justify-center sm:justify-start rounded-xl bg-teal-100 px-4 py-2 text-sm font-semibold text-teal-900 tabular-nums min-w-0 flex-1 sm:flex-initial">
                                 Total hoy: {{ $totalExternosHoy }}
                             </span>
@@ -24,8 +28,8 @@
                             <span class="inline-flex items-center justify-center sm:justify-start rounded-xl bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-950 tabular-nums min-w-0 flex-1 sm:flex-initial">
                                 Pendientes: {{ $pendientesCount }}
                             </span>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 </div>
                 @if ($externoDisponible)
                     @if ($totalExternosHoy === 0)
@@ -162,77 +166,6 @@
                         </button>
                     </div>
                 </form>
-            </div>
-
-            {{-- Historial local --}}
-            <div class="rounded-2xl border border-teal-100 bg-white shadow-xl shadow-teal-900/[0.06] overflow-hidden ring-1 ring-teal-900/5">
-                <div class="px-4 py-4 border-b border-teal-700/20 bg-gradient-to-r from-slate-700 via-slate-600 to-teal-900">
-                    <h2 class="text-base font-semibold text-white tracking-tight">Historial en esta aplicación</h2>
-                    <p class="mt-1 text-xs text-teal-100/90">Verificaciones PCC guardadas localmente</p>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-teal-100 text-sm">
-                        <thead class="bg-teal-900/95">
-                            <tr>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Fecha</th>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">ID producto</th>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">MC1</th>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">MC2</th>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 min-w-[120px]">Responsable</th>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 min-w-[100px]">Obs.</th>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 min-w-[100px]">Acc. corr.</th>
-                                <th class="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-teal-100 whitespace-nowrap">Usuario</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-teal-50 bg-white">
-                            @forelse ($historial as $h)
-                                <tr wire:key="pcc-h-{{ $h->id }}" class="hover:bg-teal-50/70 transition-colors">
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-950 text-xs">{{ $h->created_at->format('d/m/Y H:i') }}</td>
-                                    <td class="px-3 py-2.5 font-semibold tabular-nums text-teal-950 whitespace-nowrap">{{ $h->codigoProductoCompleto() }}</td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap">
-                                        @if ($h->cumple_media_canal_1)
-                                            <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">Cumple</span>
-                                        @else
-                                            <span class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">No cumple</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap">
-                                        @if ($h->cumple_media_canal_2)
-                                            <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">Cumple</span>
-                                        @else
-                                            <span class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">No cumple</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2.5 text-teal-900 text-xs max-w-[180px] truncate" title="{{ $h->responsablePuestoResuelto() }}">{{ $h->responsablePuestoResuelto() }}</td>
-                                    <td class="px-3 py-2.5 text-teal-900 text-xs max-w-[140px] align-top">
-                                        @if (filled($h->observacion))
-                                            <span class="line-clamp-2" title="{{ $h->observacion }}">{{ $h->observacion }}</span>
-                                        @else
-                                            <span class="text-teal-500/70">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2.5 text-teal-900 text-xs max-w-[140px] align-top">
-                                        @if (filled($h->accion_correctiva))
-                                            <span class="line-clamp-2" title="{{ $h->accion_correctiva }}">{{ $h->accion_correctiva }}</span>
-                                        @else
-                                            <span class="text-teal-500/70">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2.5 whitespace-nowrap text-teal-900">{{ $h->usuario->name ?? '—' }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="px-3 py-10 text-center text-teal-700/80 bg-teal-50/30">Aún no hay verificaciones guardadas.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                @if ($historial->hasPages())
-                    <div class="px-4 py-3 border-t border-teal-100 bg-teal-50/40">
-                        {{ $historial->links() }}
-                    </div>
-                @endif
             </div>
         </div>
     </div>

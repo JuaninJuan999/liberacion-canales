@@ -146,18 +146,12 @@ class VerificacionPcc extends Component
         $pendientesCount = $pendientes->count();
         $verificadosEnEstaAppHoy = max(0, $totalExternosHoy - $pendientesCount);
 
-        $historial = VerificacionPccRegistro::query()
-            ->with('usuario')
-            ->latest()
-            ->paginate(12, ['*'], 'histPage');
-
         return view('livewire.verificacion-pcc', [
             'externoDisponible' => $externoDisponible,
             'filaActual' => $filaActual,
             'totalExternosHoy' => $totalExternosHoy,
             'pendientesCount' => $pendientesCount,
             'verificadosEnEstaAppHoy' => $verificadosEnEstaAppHoy,
-            'historial' => $historial,
         ])->layout('layouts.app');
     }
 }

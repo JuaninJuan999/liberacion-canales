@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardMensualController;
 use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\IndicadorController;
 use App\Http\Controllers\ManualUsuarioController;
+use App\Http\Controllers\VerificacionPccHistorialExcelController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\PuestoTrabajoController;
 use App\Http\Controllers\ReporteController;
@@ -28,6 +29,7 @@ use App\Livewire\TiempoUsabilidad;
 use App\Livewire\TitulacionAcidoLactico;
 use App\Livewire\ConsumoAcidoLactico;
 use App\Livewire\VerificacionPcc;
+use App\Livewire\VerificacionPccHistorial;
 use App\Livewire\PermisosVerificadores;
 use Illuminate\Support\Facades\Route;
 
@@ -89,6 +91,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/titulacion-acido-lactico', TitulacionAcidoLactico::class)->name('titulacion-acido-lactico');
         Route::get('/consumo-acido-lactico', ConsumoAcidoLactico::class)->name('consumo-acido-lactico');
         Route::get('/verificacion-pcc', VerificacionPcc::class)->name('verificacion-pcc');
+        Route::get('/verificacion-pcc/historial', VerificacionPccHistorial::class)->name('verificacion-pcc.historial');
+        Route::get('/verificacion-pcc/historial/excel', VerificacionPccHistorialExcelController::class)->name('verificacion-pcc.historial.excel');
         // Route::resource('usuarios', UsuarioController::class); // Usar GestionUsuarios component en su lugar
         // Nueva ruta para Puestos de Trabajo
         Route::resource('puestos_trabajo', PuestoTrabajoController::class)->except(['show']);
