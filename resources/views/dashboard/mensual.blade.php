@@ -2205,7 +2205,7 @@
         })();
     </script>
 
-    {{-- Auto-refresh cada 40 segundos (pausado mientras el modal está abierto) --}}
+    {{-- Auto-refresh cada 2 minutos (pausado mientras el modal está abierto) --}}
     <script>
         (function() {
             window._pausarAutoRefresh = false;
@@ -2213,7 +2213,7 @@
                 if (!window._pausarAutoRefresh) {
                     window.location.reload();
                 }
-            }, 40000);
+            }, 120000);
         })();
     </script>
 </x-app-layout>
