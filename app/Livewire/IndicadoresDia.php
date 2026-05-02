@@ -112,6 +112,33 @@ class IndicadoresDia extends Component
         return $valor <= $meta;
     }
 
+    /**
+     * Meta (% sobre medias canales) según el nombre del tipo en desglose_hallazgos.
+     * Misma lógica que {@see \App\Observers\RegistroHallazgoObserver}.
+     */
+    public static function metaHallazgoPorNombre(string $nombre): ?float
+    {
+        $u = strtoupper(trim($nombre));
+
+        if (str_contains($u, 'COBERTURA') && str_contains($u, 'GRASA')) {
+            return self::META_COBERTURA;
+        }
+
+        if (str_contains($u, 'HEMATOMA')) {
+            return self::META_HEMATOMA;
+        }
+
+        if (str_contains($u, 'CORTE') && str_contains($u, 'PIERNA')) {
+            return self::META_CORTES_PIERNA;
+        }
+
+        if (str_contains($u, 'SOBREBARRIGA') && str_contains($u, 'ROTA')) {
+            return self::META_SOBREBARRIGA;
+        }
+
+        return null;
+    }
+
     /** Metas para usar en la vista */
     public function getMetasProperty(): array
     {

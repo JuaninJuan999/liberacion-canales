@@ -169,28 +169,28 @@
                             </td>
                             <td class="px-4 py-3 text-center text-sm">
                                 <span class="inline-flex flex-col items-center gap-1">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['cobertura_pct'], \App\Livewire\IndicadoresDia::META_COBERTURA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['cobertura_pct'], \App\Livewire\IndicadoresDia::META_COBERTURA) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($row['cobertura_pct'], 2) }}%
                                     </span>
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-center text-sm">
                                 <span class="inline-flex flex-col items-center gap-1">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['hematoma_pct'], \App\Livewire\IndicadoresDia::META_HEMATOMA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['hematoma_pct'], \App\Livewire\IndicadoresDia::META_HEMATOMA) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($row['hematoma_pct'], 2) }}%
                                     </span>
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-center text-sm">
                                 <span class="inline-flex flex-col items-center gap-1">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['cortes_pct'], \App\Livewire\IndicadoresDia::META_CORTES_PIERNA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['cortes_pct'], \App\Livewire\IndicadoresDia::META_CORTES_PIERNA) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($row['cortes_pct'], 2) }}%
                                     </span>
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-center text-sm">
                                 <span class="inline-flex flex-col items-center gap-1">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['sobrebarriga_pct'], \App\Livewire\IndicadoresDia::META_SOBREBARRIGA) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($row['sobrebarriga_pct'], \App\Livewire\IndicadoresDia::META_SOBREBARRIGA) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($row['sobrebarriga_pct'], 2) }}%
                                     </span>
                                 </span>
@@ -249,10 +249,44 @@
                                         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                                             @foreach($hallazgosPorTipo as $hallazgo)
                                                 @if(!in_array(strtoupper($hallazgo['nombre']), ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE']))
-                                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-2 sm:p-3 rounded-lg text-center border border-gray-200">
-                                                    <div class="font-semibold text-gray-700 text-xs mb-1 leading-tight">{{ $hallazgo['nombre'] }}</div>
-                                                    <div class="text-xl font-bold text-gray-800">{{ $hallazgo['total'] }}</div>
-                                                    <div class="mt-1 pt-1 border-t border-gray-200 text-xs text-gray-600">{{ $indicadores->medias_canales_total > 0 ? number_format(($hallazgo['total'] / $indicadores->medias_canales_total) * 100, 2) : 0 }}%</div>
+                                                @php
+                                                    $pctDesglose = $indicadores->medias_canales_total > 0
+                                                        ? round(($hallazgo['total'] / $indicadores->medias_canales_total) * 100, 2)
+                                                        : 0.0;
+                                                    $metaDesglose = \App\Livewire\IndicadoresDia::metaHallazgoPorNombre((string) $hallazgo['nombre']);
+                                                    $tieneMetaDesglose = $metaDesglose !== null;
+                                                    $cumpleMetaDesglose = $tieneMetaDesglose && \App\Livewire\IndicadoresDia::cumpleMeta((float) $pctDesglose, $metaDesglose);
+                                                    // Borde por style inline (siempre visible; no depende del purge de Tailwind)
+                                                    $bordeDesgloseStyle = ! $tieneMetaDesglose
+                                                        ? 'border: 2px solid #d1d5db;'
+                                                        : ($cumpleMetaDesglose
+                                                            ? 'border: 3px solid #059669;'
+                                                            : 'border: 3px solid #dc2626;');
+                                                @endphp
+                                                <div @class([
+                                                    'p-2 sm:p-3 rounded-lg text-center shadow-md box-border',
+                                                    'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900' => ! $tieneMetaDesglose,
+                                                    'bg-gradient-to-br from-emerald-50 via-emerald-50 to-teal-100 text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
+                                                    'bg-gradient-to-br from-red-50 via-rose-50 to-red-100 text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
+                                                ]) style="{{ $bordeDesgloseStyle }}">
+                                                    <div @class([
+                                                        'font-semibold text-xs mb-1 leading-tight',
+                                                        'text-gray-700' => ! $tieneMetaDesglose,
+                                                        'text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
+                                                        'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
+                                                    ])>{{ $hallazgo['nombre'] }}</div>
+                                                    <div @class([
+                                                        'text-xl font-bold tabular-nums',
+                                                        'text-gray-800' => ! $tieneMetaDesglose,
+                                                        'text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
+                                                        'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
+                                                    ])>{{ $hallazgo['total'] }}</div>
+                                                    <div @class([
+                                                        'mt-1 pt-1 border-t text-xs font-semibold tabular-nums inline-block min-w-[4.25rem]',
+                                                        'border-gray-200 text-gray-600' => ! $tieneMetaDesglose,
+                                                        'border-emerald-300/90 text-emerald-900 underline decoration-2 underline-offset-4 decoration-emerald-600' => $tieneMetaDesglose && $cumpleMetaDesglose,
+                                                        'border-red-300/90 text-red-900 underline decoration-2 underline-offset-4 decoration-red-600' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
+                                                    ])>{{ number_format($pctDesglose, 2) }}%</div>
                                                 </div>
                                                 @endif
                                             @endforeach
@@ -392,22 +426,22 @@
                                     {{ $fila['total_hallazgos'] }}
                                 </td>
                                 <td class="px-4 py-3 text-center text-sm">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($fila['contenido_ruminal_pct'], 2) }}%
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-center text-sm">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($fila['materia_fecal_pct'], 2) }}%
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-center text-sm">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($fila['leche_visible_pct'], 2) }}%
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-center text-sm">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['participacion'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    <span class="px-2 py-1 rounded-full text-xs font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($fila['participacion'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">
                                         {{ number_format($fila['participacion'], 2) }}%
                                     </span>
                                 </td>
@@ -431,7 +465,7 @@
                                                 <div class="text-2xl font-extrabold text-orange-600">{{ number_format($detalleTCDia['contenido_ruminal_pct'], 2) }}%</div>
                                                 <div class="flex items-center gap-1 mt-1 flex-wrap text-xs text-gray-600">
                                                     <span>{{ $detalleTCDia['contenido_ruminal'] }} hallazgos</span>
-                                                    <span class="px-1.5 py-0.5 rounded-full font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅' : '❌' }}</span>
+                                                    <span class="px-1.5 py-0.5 rounded-full font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">{{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['contenido_ruminal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅' : '❌' }}</span>
                                                 </div>
                                             </div>
                                             <div class="bg-white/90 p-3 rounded-lg border-l-4 border-yellow-500 shadow-sm">
@@ -439,7 +473,7 @@
                                                 <div class="text-2xl font-extrabold text-yellow-600">{{ number_format($detalleTCDia['materia_fecal_pct'], 2) }}%</div>
                                                 <div class="flex items-center gap-1 mt-1 flex-wrap text-xs text-gray-600">
                                                     <span>{{ $detalleTCDia['materia_fecal'] }} hallazgos</span>
-                                                    <span class="px-1.5 py-0.5 rounded-full font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅' : '❌' }}</span>
+                                                    <span class="px-1.5 py-0.5 rounded-full font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">{{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['materia_fecal_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅' : '❌' }}</span>
                                                 </div>
                                             </div>
                                             <div class="bg-white/90 p-3 rounded-lg border-l-4 border-blue-500 shadow-sm">
@@ -447,7 +481,7 @@
                                                 <div class="text-2xl font-extrabold text-blue-600">{{ number_format($detalleTCDia['leche_visible_pct'], 2) }}%</div>
                                                 <div class="flex items-center gap-1 mt-1 flex-wrap text-xs text-gray-600">
                                                     <span>{{ $detalleTCDia['leche_visible'] }} hallazgos</span>
-                                                    <span class="px-1.5 py-0.5 rounded-full font-bold {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅' : '❌' }}</span>
+                                                    <span class="px-1.5 py-0.5 rounded-full font-bold border-2 {{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? 'bg-green-100 text-green-800 border-green-600' : 'bg-red-100 text-red-800 border-red-600' }}">{{ \App\Livewire\IndicadoresDia::cumpleMeta($detalleTCDia['leche_visible_pct'], \App\Livewire\IndicadoresDia::META_TC) ? '✅' : '❌' }}</span>
                                                 </div>
                                             </div>
                                         </div>
