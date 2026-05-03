@@ -12,11 +12,11 @@ class VerificacionPcc extends Component
 {
     use AuthorizaPorMenuModulo;
 
-    /** @var '0'|'1'|'' */
-    public string $cumple_media_canal_1 = '';
+    /** @var '0'|'1' Por defecto "Cumple" para agilizar el registro; el usuario elige "No cumple" si aplica. */
+    public string $cumple_media_canal_1 = '1';
 
-    /** @var '0'|'1'|'' */
-    public string $cumple_media_canal_2 = '';
+    /** @var '0'|'1' */
+    public string $cumple_media_canal_2 = '1';
 
     public string $observacion = '';
 
@@ -118,8 +118,8 @@ class VerificacionPcc extends Component
         ]);
 
         session()->flash('ok', 'Verificación guardada. Se muestra el siguiente ID producto pendiente del día.');
-        $this->cumple_media_canal_1 = '';
-        $this->cumple_media_canal_2 = '';
+        $this->cumple_media_canal_1 = '1';
+        $this->cumple_media_canal_2 = '1';
         $this->observacion = '';
         $this->accion_correctiva = '';
     }
