@@ -264,25 +264,25 @@
                                                             : 'border: 3px solid #dc2626;');
                                                 @endphp
                                                 <div @class([
-                                                    'p-2 sm:p-3 rounded-lg text-center shadow-md box-border',
+                                                    'h-full min-h-[7rem] flex flex-col justify-center items-center gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-lg text-center shadow-md box-border',
                                                     'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900' => ! $tieneMetaDesglose,
                                                     'bg-gradient-to-br from-emerald-50 via-emerald-50 to-teal-100 text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
                                                     'bg-gradient-to-br from-red-50 via-rose-50 to-red-100 text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
                                                 ]) style="{{ $bordeDesgloseStyle }}">
                                                     <div @class([
-                                                        'font-semibold text-xs mb-1 leading-tight',
+                                                        'font-semibold text-xs leading-tight px-0.5',
                                                         'text-gray-700' => ! $tieneMetaDesglose,
                                                         'text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
                                                         'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
                                                     ])>{{ $hallazgo['nombre'] }}</div>
                                                     <div @class([
-                                                        'text-xl font-bold tabular-nums',
+                                                        'text-xl sm:text-2xl font-bold tabular-nums leading-none',
                                                         'text-gray-800' => ! $tieneMetaDesglose,
                                                         'text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
                                                         'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
                                                     ])>{{ $hallazgo['total'] }}</div>
                                                     <div @class([
-                                                        'mt-1 pt-1 border-t text-xs font-semibold tabular-nums inline-block min-w-[4.25rem]',
+                                                        'pt-2 border-t text-xs font-semibold tabular-nums min-w-[4.25rem] mx-auto',
                                                         'border-gray-200 text-gray-600' => ! $tieneMetaDesglose,
                                                         'border-emerald-300/90 text-emerald-900 underline decoration-2 underline-offset-4 decoration-emerald-600' => $tieneMetaDesglose && $cumpleMetaDesglose,
                                                         'border-red-300/90 text-red-900 underline decoration-2 underline-offset-4 decoration-red-600' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
@@ -292,7 +292,7 @@
                                             @endforeach
 
                                             {{-- Misma fila que el desglose: quinta tarjeta Responsables --}}
-                                            <div class="flex flex-col min-h-[8.5rem] rounded-lg border-2 border-blue-600 bg-gradient-to-b from-sky-50 to-white p-2 sm:p-2.5 shadow-md text-left ring-1 ring-blue-200/80">
+                                            <div class="flex flex-col h-full min-h-[8.5rem] rounded-lg border-2 border-blue-600 bg-gradient-to-b from-sky-50 to-white p-2 sm:p-2.5 shadow-md text-left ring-1 ring-blue-200/80">
                                                 <div class="text-[10px] sm:text-xs font-bold text-blue-900 text-center border-b border-blue-200/90 pb-1.5 mb-2 shrink-0">Responsables</div>
                                                 <div class="space-y-1.5 flex-1 min-h-0 overflow-y-auto text-[10px] sm:text-[11px] text-slate-700 leading-snug">
                                                     @foreach($responsablesDesglose as $resp)
