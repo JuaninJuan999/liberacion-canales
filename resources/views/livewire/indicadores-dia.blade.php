@@ -282,7 +282,7 @@
                                                         'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
                                                     ])>{{ $hallazgo['total'] }}</div>
                                                     <div @class([
-                                                        'pt-2 border-t text-xs font-semibold tabular-nums min-w-[4.25rem] mx-auto',
+                                                        'pt-2 border-t text-sm sm:text-base font-bold tabular-nums tracking-tight min-w-[4.5rem] mx-auto',
                                                         'border-gray-200 text-gray-600' => ! $tieneMetaDesglose,
                                                         'border-emerald-300/90 text-emerald-900 underline decoration-2 underline-offset-4 decoration-emerald-600' => $tieneMetaDesglose && $cumpleMetaDesglose,
                                                         'border-red-300/90 text-red-900 underline decoration-2 underline-offset-4 decoration-red-600' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
