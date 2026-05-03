@@ -196,9 +196,10 @@ class GestionOperariosDia extends Component
             }
 
             DB::commit();
-            
+
             session()->flash('success', "✅ Se guardaron {$guardadas} asignaciones exitosamente");
             $this->cargarDatos();
+            $this->dispatch('operarios-asignados-guardados');
             
         } catch (\Exception $e) {
             DB::rollBack();

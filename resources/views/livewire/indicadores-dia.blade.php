@@ -243,10 +243,10 @@
                                             </div>
                                         </div>
                                     </div>
-                                    @if(count($hallazgosPorTipo) > 0)
+                                    @if($indicadores)
                                     <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
                                         <h5 class="font-bold text-sm sm:text-base text-gray-900 mb-2">📊 Desglose de hallazgos</h5>
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 items-stretch">
                                             @foreach($hallazgosPorTipo as $hallazgo)
                                                 @if(!in_array(strtoupper($hallazgo['nombre']), ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE']))
                                                 @php
@@ -290,6 +290,16 @@
                                                 </div>
                                                 @endif
                                             @endforeach
+
+                                            {{-- Misma fila que el desglose: quinta tarjeta Responsables --}}
+                                            <div class="flex flex-col min-h-[8.5rem] rounded-lg border-2 border-blue-600 bg-gradient-to-b from-sky-50 to-white p-2 sm:p-2.5 shadow-md text-left ring-1 ring-blue-200/80">
+                                                <div class="text-[10px] sm:text-xs font-bold text-blue-900 text-center border-b border-blue-200/90 pb-1.5 mb-2 shrink-0">Responsables</div>
+                                                <div class="space-y-1.5 flex-1 min-h-0 overflow-y-auto text-[10px] sm:text-[11px] text-slate-700 leading-snug">
+                                                    @foreach($responsablesDesglose as $resp)
+                                                        <p class="leading-snug"><span class="font-semibold text-slate-900">{{ $resp['titulo'] }}:</span> {{ $resp['nombres'] }}</p>
+                                                    @endforeach
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     @endif

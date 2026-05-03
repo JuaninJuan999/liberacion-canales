@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
-use App\Models\IndicadorDiario;
 use App\Models\HallazgoToleranciaZero;
+use App\Models\IndicadorDiario;
+use App\Models\OperarioPorDia;
+use App\Models\PuestoTrabajo;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -15,6 +17,10 @@ class IndicadoresDia extends Component
     public $indicadores; // un solo día (para detalle cuando se use)
     public $historial = []; // lista de días para la tabla Historial de Liberación
     public $hallazgosPorTipo = [];
+
+    /** Líneas para tarjeta «Responsables» (desglose por grupos de puesto). @var list<array{titulo: string, puestos: string, nombres: string}> */
+    public array $responsablesDesglose = [];
+
     public $promedioMes = 0;
     
     // Tolerancia Cero
@@ -33,7 +39,12 @@ class IndicadoresDia extends Component
     const META_SOBREBARRIGA = 1.00;
     const META_TC = 1.00;
 
-    protected $listeners = ['hallazgo-registrado' => 'actualizarDespuesDeRegistro', 'fechaCambiada' => 'actualizarFecha', 'hallazgo-tolerancia-cero-registrado' => 'actualizarDespuesDeRegistro'];
+    protected $listeners = [
+        'hallazgo-registrado' => 'actualizarDespuesDeRegistro',
+        'fechaCambiada' => 'actualizarFecha',
+        'hallazgo-tolerancia-cero-registrado' => 'actualizarDespuesDeRegistro',
+        'operarios-asignados-guardados' => 'prepararResponsablesDesglose',
+    ];
 
     public function mount($fecha = null)
     {
@@ -56,6 +67,7 @@ class IndicadoresDia extends Component
     {
         $this->indicadores = IndicadorDiario::where('fecha_operacion', $this->fecha)->first();
         $this->prepararHallazgosPorTipo();
+        $this->prepararResponsablesDesglose();
     }
 
     /**
@@ -165,6 +177,78 @@ class IndicadoresDia extends Component
                 }
             }
         }
+    }
+
+    /**
+     * Nombres de operarios asignados ese día a uno o varios puestos (nombres exactos en `puestos_trabajo`).
+     */
+    protected function nombresOperariosParaPuestos(string $fecha, array $nombresPuestos): string
+    {
+        if ($nombresPuestos === []) {
+            return '—';
+        }
+
+        $puestoIds = PuestoTrabajo::query()
+            ->whereIn('nombre', $nombresPuestos)
+            ->pluck('id');
+
+        if ($puestoIds->isEmpty()) {
+            return '—';
+        }
+
+        $fechaNorm = Carbon::parse($fecha)->toDateString();
+
+        $nombres = OperarioPorDia::query()
+            ->whereDate('fecha_operacion', $fechaNorm)
+            ->whereIn('puesto_trabajo_id', $puestoIds)
+            ->with('operario:id,nombre')
+            ->orderBy('puesto_trabajo_id')
+            ->get()
+            ->map(fn (OperarioPorDia $r) => trim((string) ($r->operario?->nombre ?? '')))
+            ->filter()
+            ->unique()
+            ->values();
+
+        return $nombres->isEmpty() ? '—' : $nombres->implode(', ');
+    }
+
+    public function prepararResponsablesDesglose(): void
+    {
+        $this->responsablesDesglose = [];
+
+        if ($this->fecha === null || $this->fecha === '') {
+            return;
+        }
+
+        $f = Carbon::parse($this->fecha)->toDateString();
+
+        $this->responsablesDesglose = [
+            [
+                'titulo' => 'Desuelle 1 de piernas',
+                'puestos' => 'Primera par e impar',
+                'nombres' => $this->nombresOperariosParaPuestos($f, ['Primera par', 'Primera impar']),
+            ],
+            [
+                'titulo' => 'Desuelle 2 de piernas',
+                'puestos' => 'Segunda par e impar',
+                'nombres' => $this->nombresOperariosParaPuestos($f, ['Segunda par', 'Segunda impar']),
+            ],
+            [
+                'titulo' => 'Zapata Izquierda',
+                'puestos' => 'Zapata Izquierda',
+                'nombres' => $this->nombresOperariosParaPuestos($f, ['Zapata Izquierda']),
+            ],
+            [
+                'titulo' => 'Zapata Derecha',
+                'puestos' => 'Zapata Derecha',
+                'nombres' => $this->nombresOperariosParaPuestos($f, ['Zapata Derecha']),
+            ],
+            [
+                'titulo' => 'Cadera',
+                'puestos' => 'Cadera 1 y 2',
+                'nombres' => $this->nombresOperariosParaPuestos($f, ['Cadera 1', 'Cadera 2']),
+            ],
+        ];
     }
 
     /**
