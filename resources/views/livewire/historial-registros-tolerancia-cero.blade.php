@@ -82,11 +82,14 @@
                 <thead class="bg-red-50 border-b-2 border-red-300">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Fecha de Registro</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Código</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Cuarto</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Media</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Par/impar</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Tipo Hallazgo</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Ubicación Hallazgo</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Usuario</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Operario</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Usuario</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -95,10 +98,23 @@
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                                 📅 {{ $registro->fecha_registro->format('d/m/Y H:i') }}
                             </td>
+                            <td class="px-4 py-4 text-sm text-gray-900 max-w-[10rem] truncate" title="{{ $registro->codigo }}">
+                                {{ $registro->codigo ?? '—' }}
+                            </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
                                     🥩 {{ $registro->producto->nombre ?? 'N/A' }}
                                 </span>
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                @if($registro->media_canal)
+                                    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-semibold">Canal {{ $registro->media_canal }}</span>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
+                                {{ $registro->par_impar ? strtoupper($registro->par_impar) : '—' }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm">
                                 @php
@@ -119,15 +135,15 @@
                                 </span>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                👤 {{ $registro->usuario->name ?? 'N/A' }}
+                                {{ $this->obtenerOperarioResponsable($registro) }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $this->obtenerOperarioResponsable($registro) }}
+                                👤 {{ $registro->usuario->name ?? 'N/A' }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center">
+                            <td colspan="9" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <p class="text-3xl mb-2">📭</p>
                                     <p class="text-sm text-gray-500 font-medium">

@@ -10,7 +10,6 @@ use App\Models\Producto;
 use App\Models\Ubicacion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class RegistroHallazgoToleranciaZero extends Component
 {
@@ -20,6 +19,15 @@ class RegistroHallazgoToleranciaZero extends Component
     public $producto_id;
     public $tipo_hallazgo_id;
     public $ubicacion_id;
+
+    /** Código de referencia (obligatorio) */
+    public $codigo_ingresado = '';
+
+    /** Media canal: '1' | '2' */
+    public $media_canal = '';
+
+    /** par | impar */
+    public $par_impar = '';
 
     // Complementary Data
     public $fecha_actual;
@@ -45,6 +53,10 @@ class RegistroHallazgoToleranciaZero extends Component
         'producto_id.required' => 'Debe seleccionar el cuarto (Anterior o Posterior).',
         'tipo_hallazgo_id.required' => 'Debe seleccionar el tipo de hallazgo.',
         'ubicacion_id.required' => 'Debe seleccionar la ubicación específica.',
+        'media_canal.required' => 'Indique si el hallazgo es en media canal 1 o media canal 2.',
+        'codigo_ingresado.required' => 'Debe ingresar el código.',
+        'codigo_ingresado.max' => 'El código no puede superar 120 caracteres.',
+        'par_impar.required' => 'Indique si el canal es par o impar.',
     ];
 
     // Validation Rules
@@ -53,11 +65,11 @@ class RegistroHallazgoToleranciaZero extends Component
         $rules = [
             'producto_id' => 'required|exists:productos,id',
             'tipo_hallazgo_id' => 'required|exists:tipos_hallazgo,id',
+            'codigo_ingresado' => 'required|string|max:120',
+            'media_canal' => 'required|in:1,2',
+            'par_impar' => 'required|in:par,impar',
+            'ubicacion_id' => 'required|exists:ubicaciones,id',
         ];
-
-        if ($this->mostrarUbicacion) {
-            $rules['ubicacion_id'] = 'required|exists:ubicaciones,id';
-        }
 
         return $rules;
     }
@@ -200,18 +212,21 @@ class RegistroHallazgoToleranciaZero extends Component
 
     public function registrar()
     {
+        $this->codigo_ingresado = trim((string) $this->codigo_ingresado);
         $this->validate();
 
         try {
-            $codigoGenerado = 'TC-' . Carbon::now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
+            $codigoFinal = $this->codigo_ingresado;
 
             HallazgoToleranciaZero::create([
                 'fecha_registro' => Carbon::now(),
                 'fecha_operacion' => $this->fecha_actual,
-                'codigo' => $codigoGenerado,
+                'codigo' => $codigoFinal,
                 'producto_id' => $this->producto_id,
                 'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
-                'ubicacion_id' => $this->ubicacion_id ?? null,
+                'ubicacion_id' => $this->ubicacion_id,
+                'media_canal' => $this->media_canal,
+                'par_impar' => $this->par_impar,
                 'usuario_id' => Auth::id(),
             ]);
 
@@ -275,11 +290,21 @@ class RegistroHallazgoToleranciaZero extends Component
             ->count();
     }
 
+    public function limpiarPantalla(): void
+    {
+        $this->resetearFormulario();
+        $this->mensaje = '';
+        $this->tipoMensaje = 'success';
+    }
+
     private function resetearFormulario()
     {
         $this->producto_id = '';
         $this->tipo_hallazgo_id = '';
         $this->ubicacion_id = '';
+        $this->codigo_ingresado = '';
+        $this->media_canal = '';
+        $this->par_impar = '';
         $this->nombreProductoSeleccionado = '';
         $this->nombreTipoSeleccionado = '';
         $this->mostrarUbicacion = false;

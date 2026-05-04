@@ -17,6 +17,8 @@ class HallazgoToleranciaZero extends Model
         'producto_id',
         'tipo_hallazgo_id',
         'ubicacion_id',
+        'media_canal',
+        'par_impar',
         'usuario_id',
         'observacion',
     ];

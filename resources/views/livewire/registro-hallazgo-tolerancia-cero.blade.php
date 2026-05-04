@@ -3,7 +3,6 @@
         {{-- Header --}}
         <div class="mb-8 border-b-2 border-red-500 pb-4">
             <h2 class="text-3xl font-bold text-red-700">🚨 Registro Hallazgos - Tolerancia Cero</h2>
-            <p class="text-gray-600 mt-2">Registra los hallazgos críticos de MATERIA FECAL, CONTENIDO RUMINAL y LECHE VISIBLE</p>
             <p class="text-sm text-gray-500 mt-1">Registros del día: <span class="font-bold text-lg text-red-600">{{ $total_registros_dia }}</span></p>
         </div>
 
@@ -15,7 +14,68 @@
         @endif
 
         <form wire:submit="registrar" class="space-y-6">
-            {{-- Cuarto (Anterior/Posterior) --}}
+            {{-- 1. Código --}}
+            <div>
+                <label for="codigo_tc" class="block text-sm font-semibold text-gray-700 mb-2">
+                    🔢 Código<span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="codigo_tc" wire:model="codigo_ingresado" maxlength="120" required
+                       inputmode="numeric" autocomplete="off"
+                       placeholder="Identificador del producto o medio canal"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                @error('codigo_ingresado') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                <p class="text-xs text-gray-500 mt-1">Código obligatorio para este registro.</p>
+            </div>
+
+            {{-- 2. Media canal 1 / 2 --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Media canal<span class="text-red-500">*</span>
+                </label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button type="button" wire:click="$set('media_canal', '1')"
+                            class="flex-1 px-4 py-3 border rounded-md text-center font-semibold transition-colors duration-200
+                                   {{ $media_canal === '1'
+                                        ? 'bg-red-600 text-white border-red-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                        MEDIA CANAL 1
+                    </button>
+                    <button type="button" wire:click="$set('media_canal', '2')"
+                            class="flex-1 px-4 py-3 border rounded-md text-center font-semibold transition-colors duration-200
+                                   {{ $media_canal === '2'
+                                        ? 'bg-red-600 text-white border-red-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                        MEDIA CANAL 2
+                    </button>
+                </div>
+                @error('media_canal') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+            </div>
+
+            {{-- 3. Par / Impar --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Canal par o impar<span class="text-red-500">*</span>
+                </label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button type="button" wire:click="$set('par_impar', 'par')"
+                            class="flex-1 px-4 py-3 border rounded-md text-center font-semibold transition-colors duration-200
+                                   {{ $par_impar === 'par'
+                                        ? 'bg-red-600 text-white border-red-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                        PAR
+                    </button>
+                    <button type="button" wire:click="$set('par_impar', 'impar')"
+                            class="flex-1 px-4 py-3 border rounded-md text-center font-semibold transition-colors duration-200
+                                   {{ $par_impar === 'impar'
+                                        ? 'bg-red-600 text-white border-red-600'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                        IMPAR
+                    </button>
+                </div>
+                @error('par_impar') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+            </div>
+
+            {{-- 4. Cuarto (Anterior / Posterior) --}}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     🥩 Cuarto<span class="text-red-500">*</span>
@@ -38,8 +98,8 @@
                 @endif
             </div>
 
+            {{-- 5. Tipo de hallazgo --}}
             <div>
-                {{-- Campo: Tipo de Hallazgo --}}
                 <label for="tipo_hallazgo_id" class="block text-sm font-semibold text-gray-700 mb-2">
                     ⚠️ Tipo de Hallazgo<span class="text-red-500">*</span>
                 </label>
@@ -58,6 +118,7 @@
                 @if($nombreTipoSeleccionado)
                     <p class="text-sm text-blue-600 mt-2">✓ {{ $nombreTipoSeleccionado }} seleccionado</p>
                 @endif
+                @error('ubicacion_id') <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span> @enderror
             </div>
 
             {{-- Campo Condicional: Ubicación --}}
@@ -84,7 +145,8 @@
             {{-- Botones --}}
             <div class="flex gap-3 justify-end pt-4 border-t border-gray-200">
                 <button 
-                    type="reset"
+                    type="button"
+                    wire:click="limpiarPantalla"
                     class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold"
                 >
                     🔄 Limpiar
