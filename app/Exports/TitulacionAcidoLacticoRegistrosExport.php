@@ -23,6 +23,7 @@ class TitulacionAcidoLacticoRegistrosExport implements FromArray, ShouldAutoSize
         protected ?string $desdeYmd = null,
         protected ?string $hastaYmd = null,
         protected ?string $actividad = null,
+        protected ?string $diaYmd = null,
     ) {}
 
     public function array(): array
@@ -32,12 +33,16 @@ class TitulacionAcidoLacticoRegistrosExport implements FromArray, ShouldAutoSize
             ->orderByDesc('fecha')
             ->orderByDesc('hora');
 
-        if ($this->desdeYmd !== null && $this->desdeYmd !== '') {
-            $q->whereDate('fecha', '>=', $this->desdeYmd);
-        }
+        if ($this->diaYmd !== null && $this->diaYmd !== '') {
+            $q->whereDate('fecha', '=', $this->diaYmd);
+        } else {
+            if ($this->desdeYmd !== null && $this->desdeYmd !== '') {
+                $q->whereDate('fecha', '>=', $this->desdeYmd);
+            }
 
-        if ($this->hastaYmd !== null && $this->hastaYmd !== '') {
-            $q->whereDate('fecha', '<=', $this->hastaYmd);
+            if ($this->hastaYmd !== null && $this->hastaYmd !== '') {
+                $q->whereDate('fecha', '<=', $this->hastaYmd);
+            }
         }
 
         if ($this->actividad !== null && $this->actividad !== '') {
@@ -171,23 +176,30 @@ class TitulacionAcidoLacticoRegistrosExport implements FromArray, ShouldAutoSize
 
     public function title(): string
     {
+        $dia = $this->diaYmd !== null && $this->diaYmd !== '' ? $this->diaYmd : null;
         $desde = $this->desdeYmd !== null && $this->desdeYmd !== '' ? $this->desdeYmd : null;
         $hasta = $this->hastaYmd !== null && $this->hastaYmd !== '' ? $this->hastaYmd : null;
         $actividad = $this->actividad !== null && $this->actividad !== '' ? $this->actividad : null;
 
+        $sufAct = $actividad ? ' ('.$actividad.')' : '';
+
+        if ($dia) {
+            return \Illuminate\Support\Str::limit('Titul. día '.$dia.$sufAct, 31, '');
+        }
+
         if ($desde && $hasta) {
-            return 'Historial titulación — '.$desde.' a '.$hasta.($actividad ? ' ('.$actividad.')' : '');
+            return \Illuminate\Support\Str::limit('Historial titulación — '.$desde.' a '.$hasta.$sufAct, 31, '');
         }
 
         if ($desde) {
-            return 'Historial titulación — desde '.$desde.($actividad ? ' ('.$actividad.')' : '');
+            return \Illuminate\Support\Str::limit('Historial titulación — desde '.$desde.$sufAct, 31, '');
         }
 
         if ($hasta) {
-            return 'Historial titulación — hasta '.$hasta.($actividad ? ' ('.$actividad.')' : '');
+            return \Illuminate\Support\Str::limit('Historial titulación — hasta '.$hasta.$sufAct, 31, '');
         }
 
-        return 'Historial titulación — ácido láctico'.($actividad ? ' ('.$actividad.')' : '');
+        return \Illuminate\Support\Str::limit('Historial titulación ácido láctico'.$sufAct, 31, '');
     }
 }
 

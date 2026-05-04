@@ -24,21 +24,27 @@ class TitulacionAcidoLacticoHistorialExcelController extends Controller
 
         $desde = null;
         $hasta = null;
+        $dia = null;
         $actividad = null;
 
-        if ($request->filled('desde') || $request->filled('hasta') || $request->filled('actividad')) {
+        if ($request->filled('desde') || $request->filled('hasta') || $request->filled('dia') || $request->filled('actividad')) {
             $validated = $request->validate([
                 'desde' => ['nullable', 'date'],
                 'hasta' => ['nullable', 'date'],
+                'dia' => ['nullable', 'date'],
                 'actividad' => ['nullable', 'string', 'max:32'],
             ]);
 
             $desde = $validated['desde'] ?? null;
             $hasta = $validated['hasta'] ?? null;
+            $dia = $validated['dia'] ?? null;
             $actividad = $validated['actividad'] ?? null;
         }
 
         $suffixParts = [];
+        if ($dia) {
+            $suffixParts[] = 'dia_'.str_replace('-', '', (string) $dia);
+        }
         if ($desde) {
             $suffixParts[] = 'desde_'.str_replace('-', '', (string) $desde);
         }
@@ -52,7 +58,7 @@ class TitulacionAcidoLacticoHistorialExcelController extends Controller
 
         $filename = 'titulacion-acido-lactico_historial_'.$suffix.'.xlsx';
 
-        return Excel::download(new TitulacionAcidoLacticoRegistrosExport($desde, $hasta, $actividad), $filename);
+        return Excel::download(new TitulacionAcidoLacticoRegistrosExport($desde, $hasta, $actividad, $dia), $filename);
     }
 }
 

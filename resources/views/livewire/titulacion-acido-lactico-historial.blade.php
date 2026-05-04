@@ -45,19 +45,27 @@
                                     Total: {{ $totalRegistros }}
                                 </span>
                             </h2>
-                            <p class="mt-1 text-xs text-teal-100/90">Filtra por rango de fecha y actividad, y exporta a Excel.</p>
+                            <p class="mt-1 text-xs text-teal-100/90">Filtra por un día, por rango de fechas y actividad; exporta a Excel.</p>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row gap-2 sm:items-end">
+                        <div class="flex flex-col sm:flex-row gap-2 sm:items-end sm:flex-wrap">
+                            <div class="flex flex-col">
+                                <label for="tit-al-hist-dia" class="text-[11px] font-semibold uppercase tracking-wide text-teal-100/90">Día</label>
+                                <input id="tit-al-hist-dia" type="date" wire:model.live.debounce.300ms="fecha_dia"
+                                       title="Si eliges un día, se ignoran «Desde» y «Hasta»"
+                                       class="h-10 rounded-lg border-teal-200/40 bg-white/10 text-white shadow-inner shadow-black/10 focus:border-white/60 focus:ring-2 focus:ring-white/20 text-sm placeholder:text-teal-200/50">
+                            </div>
                             <div class="flex flex-col">
                                 <label for="tit-al-hist-desde" class="text-[11px] font-semibold uppercase tracking-wide text-teal-100/90">Desde</label>
                                 <input id="tit-al-hist-desde" type="date" wire:model.live.debounce.300ms="fecha_desde"
-                                       class="h-10 rounded-lg border-teal-200/40 bg-white/10 text-white shadow-inner shadow-black/10 focus:border-white/60 focus:ring-2 focus:ring-white/20 text-sm">
+                                       @disabled($fecha_dia !== '')
+                                       class="h-10 rounded-lg border-teal-200/40 bg-white/10 text-white shadow-inner shadow-black/10 focus:border-white/60 focus:ring-2 focus:ring-white/20 text-sm disabled:opacity-45 disabled:cursor-not-allowed">
                             </div>
                             <div class="flex flex-col">
                                 <label for="tit-al-hist-hasta" class="text-[11px] font-semibold uppercase tracking-wide text-teal-100/90">Hasta</label>
                                 <input id="tit-al-hist-hasta" type="date" wire:model.live.debounce.300ms="fecha_hasta"
-                                       class="h-10 rounded-lg border-teal-200/40 bg-white/10 text-white shadow-inner shadow-black/10 focus:border-white/60 focus:ring-2 focus:ring-white/20 text-sm">
+                                       @disabled($fecha_dia !== '')
+                                       class="h-10 rounded-lg border-teal-200/40 bg-white/10 text-white shadow-inner shadow-black/10 focus:border-white/60 focus:ring-2 focus:ring-white/20 text-sm disabled:opacity-45 disabled:cursor-not-allowed">
                             </div>
                             <div class="flex flex-col min-w-[190px]">
                                 <label for="tit-al-hist-actividad" class="text-[11px] font-semibold uppercase tracking-wide text-teal-100/90">Actividad</label>
@@ -76,7 +84,7 @@
                             </button>
 
                             <a
-                                href="{{ route('titulacion-acido-lactico.historial.excel', ['desde' => $fecha_desde ?: null, 'hasta' => $fecha_hasta ?: null, 'actividad' => $actividad_filtro ?: null]) }}"
+                                href="{{ route('titulacion-acido-lactico.historial.excel', array_filter(['desde' => $fecha_desde ?: null, 'hasta' => $fecha_hasta ?: null, 'dia' => $fecha_dia ?: null, 'actividad' => $actividad_filtro ?: null])) }}"
                                 class="h-10 inline-flex items-center justify-center rounded-lg bg-emerald-500/80 px-3 text-sm font-semibold text-white ring-1 ring-emerald-200/30 hover:bg-emerald-500 transition-colors"
                             >
                                 Exportar a Excel

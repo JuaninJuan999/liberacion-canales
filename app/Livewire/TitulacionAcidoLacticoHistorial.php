@@ -17,6 +17,9 @@ class TitulacionAcidoLacticoHistorial extends Component
 
     public string $fecha_hasta = '';
 
+    /** Un solo día (YYYY-MM-DD); si está definido, prevalece sobre desde/hasta */
+    public string $fecha_dia = '';
+
     /** Actividad del historial (key); vacío = todas */
     public string $actividad_filtro = '';
 
@@ -29,11 +32,26 @@ class TitulacionAcidoLacticoHistorial extends Component
 
     public function updatedFechaDesde(): void
     {
+        if ($this->fecha_desde !== '') {
+            $this->fecha_dia = '';
+        }
         $this->resetPage('histPage');
     }
 
     public function updatedFechaHasta(): void
     {
+        if ($this->fecha_hasta !== '') {
+            $this->fecha_dia = '';
+        }
+        $this->resetPage('histPage');
+    }
+
+    public function updatedFechaDia(): void
+    {
+        if ($this->fecha_dia !== '') {
+            $this->fecha_desde = '';
+            $this->fecha_hasta = '';
+        }
         $this->resetPage('histPage');
     }
 
@@ -46,6 +64,7 @@ class TitulacionAcidoLacticoHistorial extends Component
     {
         $this->fecha_desde = '';
         $this->fecha_hasta = '';
+        $this->fecha_dia = '';
         $this->actividad_filtro = '';
         $this->resetPage('histPage');
     }
@@ -53,8 +72,13 @@ class TitulacionAcidoLacticoHistorial extends Component
     public function render()
     {
         $aplicarFiltros = fn ($q) => $q
-            ->when($this->fecha_desde !== '', fn ($qq) => $qq->whereDate('fecha', '>=', $this->fecha_desde))
-            ->when($this->fecha_hasta !== '', fn ($qq) => $qq->whereDate('fecha', '<=', $this->fecha_hasta))
+            ->when(
+                $this->fecha_dia !== '',
+                fn ($qq) => $qq->whereDate('fecha', '=', $this->fecha_dia),
+                fn ($qq) => $qq
+                    ->when($this->fecha_desde !== '', fn ($q2) => $q2->whereDate('fecha', '>=', $this->fecha_desde))
+                    ->when($this->fecha_hasta !== '', fn ($q2) => $q2->whereDate('fecha', '<=', $this->fecha_hasta)),
+            )
             ->when($this->actividad_filtro !== '', fn ($qq) => $qq->where('actividad', $this->actividad_filtro));
 
         $totalRegistros = TitulacionAcidoLacticoRegistro::query()
