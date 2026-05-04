@@ -244,10 +244,17 @@
                                         </div>
                                     </div>
                                     @if($indicadores)
-                                    <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
-                                        <h5 class="font-bold text-sm sm:text-base text-gray-900 mb-2">📊 Desglose de hallazgos</h5>
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 items-stretch">
-                                            @foreach($hallazgosPorTipo as $hallazgo)
+                                    <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-sm">
+                                        <div class="flex items-center gap-2 mb-3 sm:mb-4">
+                                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 shrink-0" aria-hidden="true">
+                                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                                            </span>
+                                            <h5 class="font-bold text-sm sm:text-base text-gray-900">Desglose de hallazgos</h5>
+                                        </div>
+                                        {{-- Mitad hallazgos / mitad responsables (lg+) --}}
+                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-stretch">
+                                            <div class="w-full min-w-0 flex flex-col gap-2 sm:gap-2.5">
+                                                @foreach($hallazgosPorTipo as $hallazgo)
                                                 @if(!in_array(strtoupper($hallazgo['nombre']), ['MATERIA FECAL', 'CONTENIDO RUMINAL', 'LECHE VISIBLE']))
                                                 @php
                                                     $pctDesglose = $indicadores->medias_canales_total > 0
@@ -256,47 +263,46 @@
                                                     $metaDesglose = \App\Livewire\IndicadoresDia::metaHallazgoPorNombre((string) $hallazgo['nombre']);
                                                     $tieneMetaDesglose = $metaDesglose !== null;
                                                     $cumpleMetaDesglose = $tieneMetaDesglose && \App\Livewire\IndicadoresDia::cumpleMeta((float) $pctDesglose, $metaDesglose);
-                                                    // Borde por style inline (siempre visible; no depende del purge de Tailwind)
                                                     $bordeDesgloseStyle = ! $tieneMetaDesglose
-                                                        ? 'border: 2px solid #d1d5db;'
+                                                        ? 'border: 2px solid #9ca3af;'
                                                         : ($cumpleMetaDesglose
-                                                            ? 'border: 3px solid #059669;'
-                                                            : 'border: 3px solid #dc2626;');
+                                                            ? 'border: 2px solid #059669;'
+                                                            : 'border: 2px solid #dc2626;');
                                                 @endphp
                                                 <div @class([
-                                                    'h-full min-h-[7rem] flex flex-col justify-center items-center gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-lg text-center shadow-md box-border',
-                                                    'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900' => ! $tieneMetaDesglose,
-                                                    'bg-gradient-to-br from-emerald-50 via-emerald-50 to-teal-100 text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
-                                                    'bg-gradient-to-br from-red-50 via-rose-50 to-red-100 text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
+                                                    'rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 shadow-sm grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-x-1.5 sm:gap-x-2 items-center min-w-0 text-[10px] sm:text-xs overflow-x-auto',
+                                                    'bg-gray-50 text-gray-900' => ! $tieneMetaDesglose,
+                                                    'bg-emerald-50/90 text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
+                                                    'bg-rose-50/90 text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
                                                 ]) style="{{ $bordeDesgloseStyle }}">
-                                                    <div @class([
-                                                        'font-semibold text-xs leading-tight px-0.5',
+                                                    <span @class([
+                                                        'font-semibold text-left uppercase tracking-wide whitespace-nowrap justify-self-start min-w-0',
+                                                        'text-gray-800' => ! $tieneMetaDesglose,
+                                                        'text-emerald-950' => $tieneMetaDesglose && $cumpleMetaDesglose,
+                                                        'text-red-950' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
+                                                    ])>{{ $hallazgo['nombre'] }}</span>
+                                                    <span @class([
+                                                        'tabular-nums font-bold text-[11px] sm:text-sm whitespace-nowrap justify-self-center text-center',
+                                                        'text-gray-900' => ! $tieneMetaDesglose,
+                                                        'text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
+                                                        'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
+                                                    ])>{{ $hallazgo['total'] }}</span>
+                                                    <span @class([
+                                                        'tabular-nums font-semibold underline underline-offset-2 text-[11px] sm:text-sm whitespace-nowrap justify-self-end',
                                                         'text-gray-700' => ! $tieneMetaDesglose,
                                                         'text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
                                                         'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
-                                                    ])>{{ $hallazgo['nombre'] }}</div>
-                                                    <div @class([
-                                                        'text-xl sm:text-2xl font-bold tabular-nums leading-none',
-                                                        'text-gray-800' => ! $tieneMetaDesglose,
-                                                        'text-emerald-900' => $tieneMetaDesglose && $cumpleMetaDesglose,
-                                                        'text-red-900' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
-                                                    ])>{{ $hallazgo['total'] }}</div>
-                                                    <div @class([
-                                                        'pt-2 border-t text-sm sm:text-base font-bold tabular-nums tracking-tight min-w-[4.5rem] mx-auto',
-                                                        'border-gray-200 text-gray-600' => ! $tieneMetaDesglose,
-                                                        'border-emerald-300/90 text-emerald-900 underline decoration-2 underline-offset-4 decoration-emerald-600' => $tieneMetaDesglose && $cumpleMetaDesglose,
-                                                        'border-red-300/90 text-red-900 underline decoration-2 underline-offset-4 decoration-red-600' => $tieneMetaDesglose && ! $cumpleMetaDesglose,
-                                                    ])>{{ number_format($pctDesglose, 2) }}%</div>
+                                                    ])>{{ number_format($pctDesglose, 2) }}%</span>
                                                 </div>
                                                 @endif
-                                            @endforeach
+                                                @endforeach
+                                            </div>
 
-                                            {{-- Misma fila que el desglose: quinta tarjeta Responsables --}}
-                                            <div class="flex flex-col h-full min-h-[8.5rem] rounded-lg border-2 border-blue-600 bg-gradient-to-b from-sky-50 to-white p-2 sm:p-2.5 shadow-md text-left ring-1 ring-blue-200/80">
-                                                <div class="text-[10px] sm:text-xs font-bold text-blue-900 text-center border-b border-blue-200/90 pb-1.5 mb-2 shrink-0">Responsables</div>
-                                                <div class="space-y-1.5 flex-1 min-h-0 overflow-y-auto text-[10px] sm:text-[11px] text-slate-700 leading-snug">
+                                            <div class="w-full min-w-0 flex flex-col min-h-[10rem] rounded-lg border-2 border-blue-600 bg-sky-50/80 p-2.5 sm:p-4 shadow-sm text-left lg:min-h-0">
+                                                <div class="text-xs sm:text-sm font-bold text-blue-900 text-center border-b border-blue-200 pb-2 mb-2 shrink-0">Responsables</div>
+                                                <div class="space-y-2 flex-1 min-h-0 overflow-y-auto overflow-x-auto text-xs sm:text-sm text-slate-700">
                                                     @foreach($responsablesDesglose as $resp)
-                                                        <p class="leading-snug"><span class="font-semibold text-slate-900">{{ $resp['titulo'] }}:</span> {{ $resp['nombres'] }}</p>
+                                                        <p class="whitespace-nowrap leading-snug"><span class="font-semibold text-slate-900">{{ $resp['titulo'] }}:</span> {{ $resp['nombres'] }}</p>
                                                     @endforeach
                                                 </div>
                                             </div>
