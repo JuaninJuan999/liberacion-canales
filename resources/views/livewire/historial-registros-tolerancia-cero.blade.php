@@ -88,6 +88,7 @@
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Par/impar</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Tipo Hallazgo</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Ubicación Hallazgo</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Puesto trabajo</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Operario</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-red-900 uppercase tracking-wider">Usuario</th>
                     </tr>
@@ -135,6 +136,9 @@
                                 </span>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $this->obtenerNombrePuestoTrabajo($registro) }}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $this->obtenerOperarioResponsable($registro) }}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -143,7 +147,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center">
+                            <td colspan="10" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <p class="text-3xl mb-2">📭</p>
                                     <p class="text-sm text-gray-500 font-medium">

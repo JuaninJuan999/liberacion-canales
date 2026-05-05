@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class HallazgoToleranciaZero extends Model
 {
+    /** Ubicaciones donde el responsable TC es línea Desuello de Pierna según par/impar del registro. */
+    public const UBICACIONES_DESUELLO_PIERNA_PAR_IMP = [
+        'CORTE DE PATAS',
+        'MANIPULACION',
+        'CHOQUE DE CANAL',
+    ];
+
+    /** @var array<string,int>|null */
+    protected static ?array $mapaNombrePuestoAId = null;
+
     protected $table = 'hallazgos_tolerancia_cero';
 
     protected $fillable = [
@@ -47,6 +57,43 @@ class HallazgoToleranciaZero extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    /**
+     * IDs de `puestos_trabajo` para buscar OperarioPorDía asociado al hallazgo TC.
+     * Cuarto posterior + materia fecal en zona de pierna usa Desuello 1 / 2 según par/impar del canal.
+     */
+    public function puestoTrabajoIdParaOperario(): ?int
+    {
+        $this->loadMissing(['producto', 'tipoHallazgo', 'ubicacion']);
+
+        $ubicacionNombre = strtoupper(trim($this->ubicacion?->nombre ?? ''));
+        $productoNombre = trim((string) ($this->producto?->nombre ?? ''));
+        $tipoNombre = trim((string) ($this->tipoHallazgo?->nombre ?? ''));
+
+        if (
+            $productoNombre === 'CUARTO POSTERIOR'
+            && $tipoNombre === 'MATERIA FECAL'
+            && in_array($ubicacionNombre, self::UBICACIONES_DESUELLO_PIERNA_PAR_IMP, true)
+        ) {
+            $nombrePuesto = strtolower((string) $this->par_impar) === 'impar'
+                ? 'Desuello de Pierna 2'
+                : 'Desuello de Pierna 1';
+
+            return self::mapaNombrePuestoTrabajoAId()[$nombrePuesto] ?? null;
+        }
+
+        return $this->ubicacion?->puesto_trabajo_id ? (int) $this->ubicacion->puesto_trabajo_id : null;
+    }
+
+    /** @return array<string,int> */
+    protected static function mapaNombrePuestoTrabajoAId(): array
+    {
+        if (self::$mapaNombrePuestoAId === null) {
+            self::$mapaNombrePuestoAId = PuestoTrabajo::query()->pluck('id', 'nombre')->all();
+        }
+
+        return self::$mapaNombrePuestoAId;
     }
 
     /**

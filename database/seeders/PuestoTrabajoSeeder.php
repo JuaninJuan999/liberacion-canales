@@ -26,12 +26,13 @@ class PuestoTrabajoSeeder extends Seeder
             ['nombre' => 'Clipado de Esófago', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 10],
             ['nombre' => 'Eviscerado de Blancas', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 11],
             ['nombre' => 'Corte Esternón', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 12],
-            ['nombre' => 'Desuello de Pierna', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 13],
-            ['nombre' => 'Despeje de Recto', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 14],
-            ['nombre' => 'Corte de Manos', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 15],
-            ['nombre' => 'Desuello de Manos', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 16],
-            ['nombre' => 'Desolladora', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 17],
-            ['nombre' => 'Transferencia', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 18],
+            ['nombre' => 'Desuello de Pierna 1', 'descripcion' => 'Puesto tolerancia cero — línea par', 'orden' => 13],
+            ['nombre' => 'Desuello de Pierna 2', 'descripcion' => 'Puesto tolerancia cero — línea impar', 'orden' => 14],
+            ['nombre' => 'Despeje de Recto', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 15],
+            ['nombre' => 'Corte de Manos', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 16],
+            ['nombre' => 'Desuello de Manos', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 17],
+            ['nombre' => 'Desolladora', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 18],
+            ['nombre' => 'Transferencia', 'descripcion' => 'Puesto tolerancia cero / ubicaciones', 'orden' => 19],
         ];
 
         foreach ($puestos as $puesto) {

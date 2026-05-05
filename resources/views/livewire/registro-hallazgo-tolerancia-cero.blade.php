@@ -103,11 +103,15 @@
                 <label for="tipo_hallazgo_id" class="block text-sm font-semibold text-gray-700 mb-2">
                     ⚠️ Tipo de Hallazgo<span class="text-red-500">*</span>
                 </label>
+                @if(!$producto_id)
+                    <p class="text-sm text-amber-700 mb-2">Seleccione primero el cuarto para ver los tipos de hallazgo permitidos.</p>
+                @endif
                 <select 
                     id="tipo_hallazgo_id"
                     wire:model.live="tipo_hallazgo_id"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition cursor-pointer"
-                    required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition cursor-pointer disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    @if($producto_id) required @endif
+                    @disabled(!$producto_id)
                 >
                     <option value="">-- Selecciona un tipo --</option>
                     @foreach($tiposHallazgo as $tipo)

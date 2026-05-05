@@ -136,7 +136,7 @@ class DashboardController extends Controller
     private function contarHallazgosTZPorOperario($fecha_inicio, $fecha_fin)
     {
         $hallazgos = HallazgoToleranciaZero::porRangoFechasConTurno($fecha_inicio, $fecha_fin)
-            ->with(['tipoHallazgo', 'ubicacion'])
+            ->with(['tipoHallazgo', 'ubicacion', 'producto'])
             ->get();
 
         $resultado = [];
@@ -145,19 +145,21 @@ class DashboardController extends Controller
             $tipo = $hallazgo->tipoHallazgo->nombre ?? 'Desconocido';
             $operario = 'Sin asignación';
 
-            // Obtener operario a través de las relaciones
             if ($hallazgo->ubicacion) {
-                $puestoTrabajo = $hallazgo->ubicacion->puestoTrabajo;
+                $puestoId = $hallazgo->puestoTrabajoIdParaOperario();
 
-                if ($puestoTrabajo) {
-                    // Buscar el operario asignado para este puesto y fecha
-                    $operarioPorDia = $puestoTrabajo->operariosPorDia()
-                        ->whereDate('fecha_operacion', $hallazgo->fecha_operacion)
-                        ->with('operario')
-                        ->first();
+                if ($puestoId) {
+                    $puestoTrabajo = \App\Models\PuestoTrabajo::find($puestoId);
 
-                    if ($operarioPorDia && $operarioPorDia->operario) {
-                        $operario = $operarioPorDia->operario->nombre;
+                    if ($puestoTrabajo) {
+                        $operarioPorDia = $puestoTrabajo->operariosPorDia()
+                            ->whereDate('fecha_operacion', $hallazgo->fecha_operacion)
+                            ->with('operario')
+                            ->first();
+
+                        if ($operarioPorDia && $operarioPorDia->operario) {
+                            $operario = $operarioPorDia->operario->nombre;
+                        }
                     }
                 }
             }

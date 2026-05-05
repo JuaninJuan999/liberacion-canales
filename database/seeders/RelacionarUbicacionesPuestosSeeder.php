@@ -14,9 +14,8 @@ class RelacionarUbicacionesPuestosSeeder extends Seeder
             'CLIPADO DE ESOFAGO' => 'Clipado de Esófago',
             'EVISERADO DE BLANCAS' => 'Eviscerado de Blancas',
             'CORTE DE ESTERNON' => 'Corte Esternón',
-            'CORTE DE PATAS' => 'Desuello de Pierna',
-            'MANIPULACION' => 'Desuello de Pierna',
-            'CHOQUE DE CANAL' => 'Desuello de Pierna',
+            // CORTE DE PATAS, MANIPULACION, CHOQUE DE CANAL → sin FK fijo:
+            // el registro TC usa Desuello de Pierna 1 o 2 según par/impar y producto/tipo.
             'DESPEJE DE RECTO' => 'Despeje de Recto',
             'RAYADO DE PECHO' => 'Corte de Manos',
             'DESUELLO DE MANOS' => 'Desuello de Manos',
@@ -32,5 +31,9 @@ class RelacionarUbicacionesPuestosSeeder extends Seeder
                 $ubicacion->update(['puesto_trabajo_id' => $puesto->id]);
             }
         }
+
+        Ubicacion::query()
+            ->whereIn('nombre', ['CORTE DE PATAS', 'MANIPULACION', 'CHOQUE DE CANAL'])
+            ->update(['puesto_trabajo_id' => null]);
     }
 }

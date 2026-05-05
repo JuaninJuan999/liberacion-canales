@@ -126,7 +126,7 @@ class HistorialRegistrosToleranciaZero extends Component
     protected function construirQuery()
     {
         return HallazgoToleranciaZero::porRangoFechasConTurno($this->fecha_inicio, $this->fecha_fin)
-            ->with(['producto', 'tipoHallazgo', 'usuario', 'ubicacion.puestoTrabajo'])
+            ->with(['producto', 'tipoHallazgo', 'usuario', 'ubicacion'])
             ->when($this->producto_id, function($query) {
                 $query->where('producto_id', $this->producto_id);
             })
@@ -153,19 +153,18 @@ class HistorialRegistrosToleranciaZero extends Component
      */
     public function obtenerOperarioResponsable($registro)
     {
-        // Si no hay ubicación, no podemos determinar el operario
-        if (!$registro->ubicacion) {
+        if (! $registro->ubicacion) {
             return '-';
         }
 
-        // Si la ubicación no tiene puesto_trabajo asignado, retornar guion
-        if (!$registro->ubicacion->puesto_trabajo_id) {
+        $puestoId = $registro->puestoTrabajoIdParaOperario();
+
+        if (! $puestoId) {
             return '-';
         }
 
-        // Buscar el operario asignado a ese puesto en esa fecha
         $operarioPorDia = \App\Models\OperarioPorDia::whereDate('fecha_operacion', $registro->fecha_operacion)
-            ->where('puesto_trabajo_id', $registro->ubicacion->puesto_trabajo_id)
+            ->where('puesto_trabajo_id', $puestoId)
             ->with('operario')
             ->first();
 
@@ -174,5 +173,20 @@ class HistorialRegistrosToleranciaZero extends Component
         }
 
         return '-';
+    }
+
+    /**
+     * Nombre del puesto de trabajo efectivo para asignación TC (historial).
+     */
+    public function obtenerNombrePuestoTrabajo($registro): string
+    {
+        $puestoId = $registro->puestoTrabajoIdParaOperario();
+        if (! $puestoId) {
+            return '—';
+        }
+
+        $nombre = \App\Models\PuestoTrabajo::query()->whereKey($puestoId)->value('nombre');
+
+        return $nombre !== null && $nombre !== '' ? (string) $nombre : '—';
     }
 }

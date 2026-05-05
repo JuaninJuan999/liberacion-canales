@@ -64,7 +64,17 @@ class RegistroHallazgoToleranciaZero extends Component
     {
         $rules = [
             'producto_id' => 'required|exists:productos,id',
-            'tipo_hallazgo_id' => 'required|exists:tipos_hallazgo,id',
+            'tipo_hallazgo_id' => [
+                'required',
+                'exists:tipos_hallazgo,id',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $producto = Producto::find($this->producto_id);
+                    $tipo = TipoHallazgo::find($value);
+                    if ($producto && $tipo && $this->combinacionTcNoPermiteTipo($producto->nombre, $tipo->nombre)) {
+                        $fail('Este tipo de hallazgo no aplica al cuarto seleccionado.');
+                    }
+                },
+            ],
             'codigo_ingresado' => 'required|string|max:120',
             'media_canal' => 'required|in:1,2',
             'par_impar' => 'required|in:par,impar',
@@ -72,6 +82,21 @@ class RegistroHallazgoToleranciaZero extends Component
         ];
 
         return $rules;
+    }
+
+    /**
+     * Combinaciones no permitidas en TC (alineado con actualizarUbicacionesDisponibles).
+     */
+    private function combinacionTcNoPermiteTipo(string $nombreProducto, string $nombreTipo): bool
+    {
+        $producto = trim($nombreProducto);
+        $tipo = trim($nombreTipo);
+
+        if ($producto === 'CUARTO POSTERIOR' && $tipo === 'CONTENIDO RUMINAL') {
+            return true;
+        }
+
+        return false;
     }
 
     public function mount()
@@ -97,30 +122,66 @@ class RegistroHallazgoToleranciaZero extends Component
             ->orderBy('nombre')
             ->get();
 
-        // Cargar solo los tipos de hallazgo para tolerancia cero
-        $this->tiposHallazgo = TipoHallazgo::whereIn('nombre', [
-            'MATERIA FECAL',
-            'CONTENIDO RUMINAL',
-            'LECHE VISIBLE'
-        ])
+        // Cargar todas las ubicaciones
+        $this->ubicaciones = Ubicacion::orderBy('nombre')->get();
+
+        $this->actualizarTiposHallazgoDisponibles();
+    }
+
+    /**
+     * Tipos TC según cuarto: posterior no incluye CONTENIDO RUMINAL.
+     */
+    private function actualizarTiposHallazgoDisponibles(): void
+    {
+        if (! $this->producto_id) {
+            $this->tiposHallazgo = [];
+
+            return;
+        }
+
+        $producto = Producto::find($this->producto_id);
+        $nombre = trim($producto->nombre ?? '');
+
+        $nombresTipo = match ($nombre) {
+            'CUARTO ANTERIOR' => ['CONTENIDO RUMINAL', 'LECHE VISIBLE', 'MATERIA FECAL'],
+            'CUARTO POSTERIOR' => ['LECHE VISIBLE', 'MATERIA FECAL'],
+            default => [],
+        };
+
+        $this->tiposHallazgo = TipoHallazgo::whereIn('nombre', $nombresTipo)
             ->orderBy('nombre')
             ->get()
             ->toArray();
-
-        // Cargar todas las ubicaciones
-        $this->ubicaciones = Ubicacion::orderBy('nombre')->get();
     }
 
     public function updatedProductoId()
     {
+        $tipoPrevio = $this->tipo_hallazgo_id ? (int) $this->tipo_hallazgo_id : null;
+
         $this->reset(['ubicacion_id']);
         $this->mostrarUbicacion = false;
-        
+
         if ($this->producto_id) {
             $producto = Producto::find($this->producto_id);
             $this->nombreProductoSeleccionado = $producto?->nombre ?? '';
-            $this->actualizarUbicacionesDisponibles();
+        } else {
+            $this->nombreProductoSeleccionado = '';
         }
+
+        $this->actualizarTiposHallazgoDisponibles();
+
+        $idsPermitidos = collect($this->tiposHallazgo)->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        if ($tipoPrevio && in_array($tipoPrevio, $idsPermitidos, true)) {
+            $this->tipo_hallazgo_id = (string) $tipoPrevio;
+            $tipoHallazgo = TipoHallazgo::find($tipoPrevio);
+            $this->nombreTipoSeleccionado = $tipoHallazgo?->nombre ?? '';
+        } else {
+            $this->tipo_hallazgo_id = '';
+            $this->nombreTipoSeleccionado = '';
+        }
+
+        $this->actualizarUbicacionesDisponibles();
     }
 
     public function updatedTipoHallazgoId()
@@ -309,6 +370,7 @@ class RegistroHallazgoToleranciaZero extends Component
         $this->nombreTipoSeleccionado = '';
         $this->mostrarUbicacion = false;
         $this->ubicacionesDisponibles = [];
+        $this->actualizarTiposHallazgoDisponibles();
     }
 
     private function mostrarMensaje($mensaje, $tipo)
