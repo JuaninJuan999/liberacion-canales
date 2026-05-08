@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Events\HallazgoPublicado;
 use App\Models\AnimalProcesado;
 use App\Models\IndicadorDiario;
 use App\Models\RegistroHallazgo;
@@ -15,6 +16,29 @@ class RegistroHallazgoObserver
         // Recalcular para la fecha efectiva del turno
         $fechaEfectiva = $registroHallazgo->getFechaOperacionEfectiva();
         $this->sincronizarIndicadoresParaFecha($fechaEfectiva);
+
+        try {
+            $registroHallazgo->loadMissing(['tipoHallazgo', 'usuario', 'producto', 'lado']);
+            $mediaEtiqueta = match ((int) ($registroHallazgo->producto_id ?? 0)) {
+                1 => 'Media Canal 1',
+                2 => 'Media Canal 2',
+                default => '—',
+            };
+            broadcast(new HallazgoPublicado([
+                'origen' => 'hallazgos',
+                'usuario_registro_id' => $registroHallazgo->usuario_id,
+                'tipo_nombre' => $registroHallazgo->tipoHallazgo?->nombre,
+                'usuario_nombre' => $registroHallazgo->usuario?->name,
+                'codigo' => $registroHallazgo->codigo,
+                'producto_nombre' => $registroHallazgo->producto?->nombre,
+                'lado_nombre' => $registroHallazgo->lado?->nombre,
+                'media_etiqueta' => $mediaEtiqueta,
+                'registro_id' => $registroHallazgo->id,
+                'registrado_en' => now()->toIso8601String(),
+            ]));
+        } catch (\Throwable $e) {
+            Log::warning('Broadcast hallazgo: '.$e->getMessage());
+        }
     }
 
     public function updated(RegistroHallazgo $registroHallazgo): void

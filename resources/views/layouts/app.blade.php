@@ -4,6 +4,26 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        @if(config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key'))
+            @php
+                $reverbClienteMeta = [
+                    'enabled' => true,
+                    'key' => (string) config('broadcasting.connections.reverb.key'),
+                    'port' => (int) config('reverb.servers.reverb.port'),
+                ];
+                $echoWs = config('broadcasting.echo_ws_host');
+                if ($echoWs !== null && $echoWs !== '') {
+                    $reverbClienteMeta['wsHost'] = (string) $echoWs;
+                }
+            @endphp
+            {{-- JSON sin e(): e() codifica comillas como &quot; y JSON.parse puede fallar al leer el atributo. --}}
+            <meta name="reverb-client" content='@json($reverbClienteMeta)'>
+            <meta name="current-user-id" content="{{ Auth::id() }}">
+            <meta name="hallazgo-sound-url" content="{{ asset('sounds/not.mp3') }}">
+            @if(config('app.debug') || config('broadcasting.hallazgo_echo_debug'))
+                <meta name="echo-debug" content="1">
+            @endif
+        @endif
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 

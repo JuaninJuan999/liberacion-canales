@@ -1,19 +1,21 @@
 <?php
 
+use App\Events\HallazgoPublicado;
 use App\Http\Controllers\AnimalesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardMensualController;
 use App\Http\Controllers\HallazgoController;
 use App\Http\Controllers\IndicadorController;
 use App\Http\Controllers\ManualUsuarioController;
-use App\Http\Controllers\TitulacionAcidoLacticoHistorialExcelController;
-use App\Http\Controllers\VerificacionPccHistorialExcelController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\PuestoTrabajoController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\TitulacionAcidoLacticoHistorialExcelController;
 use App\Http\Controllers\UsuarioController;
-use App\Http\Controllers\WelcomeController; // Importar el nuevo controlador
+use App\Http\Controllers\VerificacionPccHistorialExcelController; // Importar el nuevo controlador
+use App\Http\Controllers\WelcomeController;
 use App\Livewire\AsignacionOperarios;
+use App\Livewire\ConsumoAcidoLactico;
 use App\Livewire\DashboardDia;
 use App\Livewire\DashboardMes;
 use App\Livewire\GestionOperariosDia;
@@ -24,15 +26,14 @@ use App\Livewire\GraficoToleranciaZeroMes;
 use App\Livewire\HistorialRegistros;
 use App\Livewire\HistorialRegistrosToleranciaZero;
 use App\Livewire\IndicadoresDia;
+use App\Livewire\PermisosVerificadores;
 use App\Livewire\RegistroHallazgo;
 use App\Livewire\RegistroHallazgoToleranciaZero;
 use App\Livewire\TiempoUsabilidad;
 use App\Livewire\TitulacionAcidoLactico;
 use App\Livewire\TitulacionAcidoLacticoHistorial;
-use App\Livewire\ConsumoAcidoLactico;
 use App\Livewire\VerificacionPcc;
 use App\Livewire\VerificacionPccHistorial;
-use App\Livewire\PermisosVerificadores;
 use Illuminate\Support\Facades\Route;
 
 // Rutas públicas (sin autenticación)
@@ -41,6 +42,28 @@ Route::get('/', [WelcomeController::class, 'index'])->name('home');
 
 // Rutas autenticadas (requieren login)
 Route::middleware(['auth'])->group(function () {
+
+    if (config('app.debug')) {
+        Route::get('/debug/reverb-ping', function () {
+            broadcast(new HallazgoPublicado([
+                'origen' => 'hallazgos',
+                'usuario_registro_id' => 999999,
+                'tipo_nombre' => 'Prueba Reverb',
+                'usuario_nombre' => 'Ping',
+                'codigo' => 'PING',
+                'producto_nombre' => 'Media Canal 1 Lengua',
+                'lado_nombre' => 'Par',
+                'media_etiqueta' => 'Media Canal 1',
+                'registro_id' => 0,
+                'registrado_en' => now()->toIso8601String(),
+            ]));
+
+            return response()->json([
+                'ok' => true,
+                'message' => 'Broadcast enviado (canal hallazgos). Debería sonar/notificar en los dispositivos con Echo conectado cuyo usuario no sea quien aparece como registrante en el payload (ej. usuario_registro_id 999999 en esta prueba).',
+            ]);
+        })->name('debug.reverb-ping');
+    }
 
     // Perfil de Usuario
     Route::get('/profile', [UsuarioController::class, 'profile'])->name('profile');

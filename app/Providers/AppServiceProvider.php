@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use App\Models\RegistroHallazgo;
-use App\Observers\RegistroHallazgoObserver;
 use App\Models\AnimalProcesado;
+use App\Models\HallazgoToleranciaZero;
+use App\Models\RegistroHallazgo;
 use App\Observers\AnimalProcesadoObserver;
+use App\Observers\HallazgoToleranciaZeroObserver;
+use App\Observers\RegistroHallazgoObserver;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Registrar Observers para cálculo automático de indicadores
         RegistroHallazgo::observe(RegistroHallazgoObserver::class);
+        HallazgoToleranciaZero::observe(HallazgoToleranciaZeroObserver::class);
         AnimalProcesado::observe(AnimalProcesadoObserver::class);
     }
 }
