@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\VerificacionPccRegistro;
+use App\Support\TurnoVerificacionPcc;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -24,7 +25,8 @@ class VerificacionPccRegistrosExport implements FromCollection, WithHeadings, Wi
             ->orderByDesc('created_at');
 
         if ($this->fechaYmd !== null && $this->fechaYmd !== '') {
-            $q->whereDate('created_at', $this->fechaYmd);
+            [$desde, $hasta] = TurnoVerificacionPcc::ventanaCreacionParaFechaOperativa($this->fechaYmd);
+            $q->whereBetween('created_at', [$desde, $hasta]);
         }
 
         return $q->get();

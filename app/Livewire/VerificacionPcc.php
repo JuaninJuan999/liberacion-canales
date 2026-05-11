@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Livewire\Concerns\AuthorizaPorMenuModulo;
 use App\Models\VerificacionPccRegistro;
 use App\Services\TrazabilidadInsensibilizacionReader;
+use App\Support\TurnoVerificacionPcc;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -27,6 +28,11 @@ class VerificacionPcc extends Component
         $this->autorizarVistaMenu('verificacion-pcc');
     }
 
+    protected function fechaOperativaYmd(): string
+    {
+        return TurnoVerificacionPcc::fechaOperativa()->format('Y-m-d');
+    }
+
     protected function coleccionExternaDelDia(): Collection
     {
         $reader = app(TrazabilidadInsensibilizacionReader::class);
@@ -37,19 +43,21 @@ class VerificacionPcc extends Component
 
         return collect(array_map(
             fn ($r) => json_decode(json_encode($r), true),
-            $reader->filasDelDiaActual()
+            $reader->filasParaFecha($this->fechaOperativaYmd())
         ));
     }
 
     /**
-     * IDs ins. ya guardados como verificación PCC en este sistema (hoy).
+     * IDs ins. ya registrados PCC en esta app para el turno / día operativo actual.
      *
      * @return list<int>
      */
     protected function idsInsVerificadosHoy(): array
     {
+        [$desde, $hasta] = TurnoVerificacionPcc::ventanaCreacionParaFechaOperativa($this->fechaOperativaYmd());
+
         return VerificacionPccRegistro::query()
-            ->whereDate('created_at', now()->toDateString())
+            ->whereBetween('created_at', [$desde, $hasta])
             ->whereNotNull('external_ins_id')
             ->pluck('external_ins_id')
             ->map(fn ($id) => (int) $id)
@@ -58,7 +66,7 @@ class VerificacionPcc extends Component
             ->all();
     }
 
-    /** Cola: productos del día en BD externa que aún no tienen verificación PCC guardada hoy. */
+    /** Cola: productos de trazabilidad para el día operativo actual que aún no tienen verificación PCC en este turno. */
     protected function pendientesParaVerificar(): Collection
     {
         $todas = $this->coleccionExternaDelDia();
@@ -77,7 +85,7 @@ class VerificacionPcc extends Component
         $actual = $pendientes->first();
 
         if ($actual === null) {
-            session()->flash('error', 'No hay productos pendientes de verificación para el día de hoy (o ya fueron registrados).');
+            session()->flash('error', 'No hay productos pendientes para el día operativo actual (o ya fueron registrados).');
 
             return;
         }
@@ -90,7 +98,7 @@ class VerificacionPcc extends Component
             return;
         }
 
-        $responsable = VerificacionPccRegistro::operarioDesinfeccionParaFecha(now());
+        $responsable = VerificacionPccRegistro::operarioDesinfeccionParaFecha($this->fechaOperativaYmd());
 
         $this->validate([
             'cumple_media_canal_1' => ['required', 'in:0,1'],
@@ -117,7 +125,7 @@ class VerificacionPcc extends Component
             'accion_correctiva' => $acc !== '' ? $acc : null,
         ]);
 
-        session()->flash('ok', 'Verificación guardada. Se muestra el siguiente ID producto pendiente del día.');
+        session()->flash('ok', 'Verificación guardada. Se muestra el siguiente ID pendiente del día operativo.');
         $this->cumple_media_canal_1 = '1';
         $this->cumple_media_canal_2 = '1';
         $this->observacion = '';
@@ -145,6 +153,7 @@ class VerificacionPcc extends Component
         $totalExternosHoy = $todasDelDia->count();
         $pendientesCount = $pendientes->count();
         $verificadosEnEstaAppHoy = max(0, $totalExternosHoy - $pendientesCount);
+        $fechaOperativa = TurnoVerificacionPcc::fechaOperativa();
 
         return view('livewire.verificacion-pcc', [
             'externoDisponible' => $externoDisponible,
@@ -152,6 +161,8 @@ class VerificacionPcc extends Component
             'totalExternosHoy' => $totalExternosHoy,
             'pendientesCount' => $pendientesCount,
             'verificadosEnEstaAppHoy' => $verificadosEnEstaAppHoy,
+            'fechaOperativaHumana' => $fechaOperativa->format('d/m/Y'),
+            'turnoHoraFinLabel' => sprintf('%02d:00', TurnoVerificacionPcc::horaLimiteDelDia()),
         ])->layout('layouts.app');
     }
 }

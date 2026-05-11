@@ -11,6 +11,10 @@
                         <div class="min-w-0 flex-1">
                             <p class="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Calidad</p>
                             <h1 class="text-lg sm:text-2xl font-bold !text-gray-900 tracking-tight mt-0.5 leading-snug">Verificación PCC</h1>
+                            <p class="mt-1 text-xs sm:text-sm text-gray-600 leading-snug">
+                                Día operativo (cola PCC): <span class="font-semibold tabular-nums text-gray-900">{{ $fechaOperativaHumana }}</span>.
+                                Guardados entre medianoche y las <span class="font-semibold tabular-nums">{{ $turnoHoraFinLabel }}</span> (hora de esta app) siguen asociados a esta fecha hasta el cierre de turno en trazabilidad.
+                            </p>
                         </div>
                     </div>
                     <div class="flex flex-col gap-3 w-full sm:w-auto sm:min-w-[280px] shrink-0 sm:items-end">
@@ -21,7 +25,7 @@
                         @if ($externoDisponible)
                             <div class="grid grid-cols-1 gap-2 w-full sm:flex sm:flex-wrap sm:justify-end sm:max-w-md">
                                 <span class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-teal-100 px-3 py-2.5 sm:py-2 text-sm font-semibold text-teal-900 tabular-nums min-h-[44px] sm:min-h-0 sm:flex-initial touch-manipulation">
-                                    Total hoy: {{ $totalExternosHoy }}
+                                    Total día operativo: {{ $totalExternosHoy }}
                                 </span>
                                 <span class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-emerald-100 px-3 py-2.5 sm:py-2 text-sm font-semibold text-emerald-900 tabular-nums min-h-[44px] sm:min-h-0 sm:flex-initial touch-manipulation">
                                     Verificados: {{ $verificadosEnEstaAppHoy }}
@@ -36,12 +40,12 @@
                 @if ($externoDisponible)
                     @if ($totalExternosHoy === 0)
                         <p class="mt-4 text-sm text-gray-600 border-t border-teal-200/80 pt-4 leading-relaxed break-words">
-                            No hay registros de insensibilización para la fecha de hoy en la BD externa (o la fecha del servidor PostgreSQL no coincide con tu día local — revisa zona horaria).
+                            No hay insensibilizaciones en trazabilidad con fecha {{ $fechaOperativaHumana }} para este día operativo (revisá fechas en trazabilidad y la zona horaria de la aplicación si parece inconsistente).
                         </p>
                     @elseif ($pendientesCount === 0 && $totalExternosHoy > 0)
                         <p class="mt-4 text-sm font-medium text-emerald-800 border-t border-teal-200/80 pt-4 flex items-center gap-2 flex-wrap">
                             <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white text-sm shrink-0">✓</span>
-                            Ya registraste todas las verificaciones PCC para los productos del día en esta aplicación.
+                            Ya registraste todas las verificaciones PCC para este día operativo en esta aplicación.
                         </p>
                     @endif
                 @endif

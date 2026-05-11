@@ -2,20 +2,23 @@
 
 namespace App\Services;
 
+use App\Support\TurnoVerificacionPcc;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
  * Lectura en BD PostgreSQL externa (trazabilidad).
- * Solo insensibilización del día actual (plan/turno del día — mismos ID producto del día).
+ * Insensibilización para una fecha de registro (`ins.fecha_registro`), alineada al día operativo PCC de la aplicación.
  */
 class TrazabilidadInsensibilizacionReader
 {
     /**
-     * Únicamente registros donde la fecha de insensibilización es la fecha actual del servidor BD (CURRENT_DATE).
+     * Registros donde la fecha de insensibilización coincide con una fecha calendario dada ($fechaYmd).
+     * Parámetro enlazado (no concatenar fecha en texto crudo desde fuera).
      * Orden ascendente por ins.id para cola FIFO (siguiente pendiente).
      */
-    public static function sqlInsensibilizacionDelDiaActual(): string
+    public static function sqlInsensibilizacionParaFecha(): string
     {
         return <<<'SQL'
 SELECT DISTINCT ON (ins.id)
@@ -41,7 +44,7 @@ LEFT JOIN trazabilidad_proceso.producto_empresa pe
 LEFT JOIN organizaciones.empresa e
     ON pe.id_empresa = e.id
 WHERE ins.fecha_registro IS NOT NULL
-    AND (ins.fecha_registro)::date = CURRENT_DATE
+    AND (ins.fecha_registro)::date = CAST(? AS date)
 ORDER BY ins.id ASC, pe.fecha_registro DESC NULLS LAST, pe.hora_registro DESC NULLS LAST
 LIMIT 5000
 SQL;
@@ -50,20 +53,45 @@ SQL;
     /**
      * @return list<object>
      */
-    public function filasDelDiaActual(): array
+    public function filasParaFecha(string $fechaYmd): array
     {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaYmd)) {
+            return [];
+        }
+
         $conn = config('database.connections.pgsql_trazabilidad');
         if (! is_array($conn) || empty($conn['database'])) {
             return [];
         }
 
         try {
-            return DB::connection('pgsql_trazabilidad')->select(self::sqlInsensibilizacionDelDiaActual());
+            return DB::connection('pgsql_trazabilidad')->select(
+                self::sqlInsensibilizacionParaFecha(),
+                [$fechaYmd]
+            );
         } catch (Throwable $e) {
             report($e);
 
             return [];
         }
+    }
+
+    /**
+     * Filas correspondientes al día operativo PCC actual (permite madrugada como continuación del turno anterior).
+     *
+     * @return list<object>
+     */
+    public function filasDelDiaOperativo(?CarbonInterface $instanteReferencia = null): array
+    {
+        return $this->filasParaFecha(
+            TurnoVerificacionPcc::fechaOperativa($instanteReferencia)->format('Y-m-d')
+        );
+    }
+
+    /** @see filasDelDiaOperativo */
+    public function filasDelDiaActual(): array
+    {
+        return $this->filasDelDiaOperativo();
     }
 
     public function configuracionLista(): bool

@@ -6,12 +6,12 @@
                     Historial de registros de Verificación PCC
                 </h1>
                 <p class="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                    <span class="block sm:inline">Filtra por día.</span>
+                    <span class="block sm:inline">Filtra por día operativo PCC (entre medianoche y el cierre de turno cuenta el día anterior).</span>
                     <span class="mt-1 block font-semibold text-gray-900 dark:text-gray-100 tabular-nums sm:mt-0 sm:inline sm:ml-1">
                         @php $n = $totalRegistros; @endphp
                         Total: {{ number_format($n, 0, ',', '.') }}
                         @if ($fecha_filtro !== '')
-                            {{ $n === 1 ? 'registro' : 'registros' }} para el día {{ \Illuminate\Support\Carbon::parse($fecha_filtro)->format('d/m/Y') }}.
+                            {{ $n === 1 ? 'registro' : 'registros' }} en el día operativo {{ \Illuminate\Support\Carbon::parse($fecha_filtro)->format('d/m/Y') }} (incluye guardados después de medianoche dentro del mismo turno).
                         @else
                             {{ $n === 1 ? 'registro guardado' : 'registros guardados' }}.
                         @endif
@@ -29,7 +29,7 @@
         <div class="mt-5 flex flex-col gap-3 border-t border-gray-200 pt-5 dark:border-gray-700 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4 sm:pt-6">
             <div class="flex w-full flex-col gap-1 sm:w-auto sm:max-w-[200px]">
                 <label for="fecha_filtro" class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Día (filtro)
+                    Día operativo (filtro)
                 </label>
                 <input id="fecha_filtro" type="date" wire:model.live="fecha_filtro"
                        class="min-h-[44px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base text-gray-900 shadow-sm focus:border-[#0047ab] focus:ring-[#0047ab] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 sm:min-h-0 sm:text-sm touch-manipulation">

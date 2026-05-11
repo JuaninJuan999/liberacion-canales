@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Livewire\Concerns\AuthorizaPorMenuModulo;
 use App\Models\VerificacionPccRegistro;
+use App\Support\TurnoVerificacionPcc;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -12,7 +13,7 @@ class VerificacionPccHistorial extends Component
     use AuthorizaPorMenuModulo;
     use WithPagination;
 
-    /** Filtro por día (columna created_at); vacío = todos los registros. */
+    /** Filtro por día operativo PCC (ventana desde turno_hora_fin); vacío = todos los registros. */
     public string $fecha_filtro = '';
 
     public function mount(): void
@@ -22,6 +23,9 @@ class VerificacionPccHistorial extends Component
 
     public function updatedFechaFiltro(): void
     {
+        if ($this->fecha_filtro !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->fecha_filtro)) {
+            $this->fecha_filtro = '';
+        }
         $this->resetPage('histPage');
     }
 
@@ -35,7 +39,10 @@ class VerificacionPccHistorial extends Component
     {
         $filtrarPorDia = fn ($q) => $q->when(
             $this->fecha_filtro !== '',
-            fn ($qq) => $qq->whereDate('created_at', $this->fecha_filtro)
+            function ($qq) {
+                [$desde, $hasta] = TurnoVerificacionPcc::ventanaCreacionParaFechaOperativa($this->fecha_filtro);
+                $qq->whereBetween('created_at', [$desde, $hasta]);
+            }
         );
 
         $totalRegistros = VerificacionPccRegistro::query()
