@@ -9,16 +9,20 @@ use Throwable;
 
 /**
  * Lectura en BD PostgreSQL externa (trazabilidad).
- * Insensibilización para una fecha de registro (`ins.fecha_registro`), alineada al día operativo PCC de la aplicación.
+ * Insensibilización alineada al día operativo / turno de faena PCC (no solo fecha calendario).
  */
 class TrazabilidadInsensibilizacionReader
 {
     /**
-     * Registros donde la fecha de insensibilización coincide con una fecha calendario dada ($fechaYmd).
-     * Parámetro enlazado (no concatenar fecha en texto crudo desde fuera).
-     * Orden ascendente por ins.id para cola FIFO (siguiente pendiente).
+     * Cola FIFO de insensibilización para un día operativo de faena ($fechaYmd = inicio calendario D).
+     *
+     * Incluye:
+     * - fecha_registro = D con hora >= cierre de turno (o sin hora).
+     * - fecha_registro = D+1 con hora < cierre de turno (madrugada del mismo turno de faena).
+     *
+     * Excluye madrugada de D (hora < cierre) porque pertenece al turno D-1.
      */
-    public static function sqlInsensibilizacionParaFecha(): string
+    public static function sqlInsensibilizacionParaDiaOperativo(): string
     {
         return <<<'SQL'
 SELECT DISTINCT ON (ins.id)
@@ -44,16 +48,37 @@ LEFT JOIN trazabilidad_proceso.producto_empresa pe
 LEFT JOIN organizaciones.empresa e
     ON pe.id_empresa = e.id
 WHERE ins.fecha_registro IS NOT NULL
-    AND (ins.fecha_registro)::date = CAST(? AS date)
+    AND (
+        (
+            (ins.fecha_registro)::date = CAST(? AS date)
+            AND (
+                ins.hora_registro IS NULL
+                OR EXTRACT(HOUR FROM ins.hora_registro)::int >= ?
+            )
+        )
+        OR (
+            (ins.fecha_registro)::date = (CAST(? AS date) + INTERVAL '1 day')::date
+            AND ins.hora_registro IS NOT NULL
+            AND EXTRACT(HOUR FROM ins.hora_registro)::int < ?
+        )
+    )
 ORDER BY ins.id ASC, pe.fecha_registro DESC NULLS LAST, pe.hora_registro DESC NULLS LAST
 LIMIT 5000
 SQL;
     }
 
+    /** @deprecated Use sqlInsensibilizacionParaDiaOperativo() — conservado por compatibilidad interna. */
+    public static function sqlInsensibilizacionParaFecha(): string
+    {
+        return self::sqlInsensibilizacionParaDiaOperativo();
+    }
+
     /**
+     * Insensibilizaciones del turno de faena para la fecha operativa dada (Y-m-d).
+     *
      * @return list<object>
      */
-    public function filasParaFecha(string $fechaYmd): array
+    public function filasParaDiaOperativo(string $fechaYmd): array
     {
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaYmd)) {
             return [];
@@ -64,10 +89,12 @@ SQL;
             return [];
         }
 
+        $horaLimite = TurnoVerificacionPcc::horaLimiteDelDia();
+
         try {
             return DB::connection('pgsql_trazabilidad')->select(
-                self::sqlInsensibilizacionParaFecha(),
-                [$fechaYmd]
+                self::sqlInsensibilizacionParaDiaOperativo(),
+                [$fechaYmd, $horaLimite, $fechaYmd, $horaLimite]
             );
         } catch (Throwable $e) {
             report($e);
@@ -77,13 +104,23 @@ SQL;
     }
 
     /**
+     * @return list<object>
+     *
+     * @deprecated Use filasParaDiaOperativo() — el parámetro es fecha operativa de faena, no solo calendario.
+     */
+    public function filasParaFecha(string $fechaYmd): array
+    {
+        return $this->filasParaDiaOperativo($fechaYmd);
+    }
+
+    /**
      * Filas correspondientes al día operativo PCC actual (permite madrugada como continuación del turno anterior).
      *
      * @return list<object>
      */
     public function filasDelDiaOperativo(?CarbonInterface $instanteReferencia = null): array
     {
-        return $this->filasParaFecha(
+        return $this->filasParaDiaOperativo(
             TurnoVerificacionPcc::fechaOperativa($instanteReferencia)->format('Y-m-d')
         );
     }

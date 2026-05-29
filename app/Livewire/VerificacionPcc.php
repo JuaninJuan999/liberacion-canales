@@ -43,7 +43,7 @@ class VerificacionPcc extends Component
 
         return collect(array_map(
             fn ($r) => json_decode(json_encode($r), true),
-            $reader->filasParaFecha($this->fechaOperativaYmd())
+            $reader->filasParaDiaOperativo($this->fechaOperativaYmd())
         ));
     }
 
