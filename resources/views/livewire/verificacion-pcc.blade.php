@@ -11,10 +11,6 @@
                         <div class="min-w-0 flex-1">
                             <p class="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">Calidad</p>
                             <h1 class="text-lg sm:text-2xl font-bold !text-gray-900 tracking-tight mt-0.5 leading-snug">Verificación PCC</h1>
-                            <p class="mt-1 text-xs sm:text-sm text-gray-600 leading-snug">
-                                Día operativo de faena (cola PCC): <span class="font-semibold tabular-nums text-gray-900">{{ $fechaOperativaHumana }}</span>.
-                                Incluye insensibilizaciones desde las <span class="font-semibold tabular-nums">{{ $turnoHoraFinLabel }}</span> de ese día hasta antes de las <span class="font-semibold tabular-nums">{{ $turnoHoraFinLabel }}</span> del día siguiente, aunque trazabilidad registre fecha calendario distinta después de medianoche.
-                            </p>
                         </div>
                     </div>
                     <div class="flex flex-col gap-3 w-full sm:w-auto sm:min-w-[280px] shrink-0 sm:items-end">

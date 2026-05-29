@@ -162,7 +162,6 @@ class VerificacionPcc extends Component
             'pendientesCount' => $pendientesCount,
             'verificadosEnEstaAppHoy' => $verificadosEnEstaAppHoy,
             'fechaOperativaHumana' => $fechaOperativa->format('d/m/Y'),
-            'turnoHoraFinLabel' => sprintf('%02d:00', TurnoVerificacionPcc::horaLimiteDelDia()),
         ])->layout('layouts.app');
     }
 }
