@@ -68,6 +68,8 @@ class TiempoUsabilidad extends Component
 
     public function cargarDatos()
     {
+        SesionUsuario::cerrarSesionesInactivas();
+
         $inicio = Carbon::parse($this->fechaInicio)->startOfDay();
         $fin = Carbon::parse($this->fechaFin)->endOfDay();
 
@@ -187,11 +189,17 @@ class TiempoUsabilidad extends Component
         }
 
         $this->sesionesTabla = $query->get()->map(function ($s) {
+            $abierta = $s->estaAbierta();
+
             return [
                 'usuario' => $s->user->name ?? 'N/A',
                 'login_at' => $s->login_at?->format('d/m/Y H:i'),
-                'logout_at' => $s->logout_at?->format('d/m/Y H:i') ?? 'Activa',
-                'duracion' => $s->duracion_minutos ? round($s->duracion_minutos, 1) . ' min' : 'En curso',
+                'logout_at' => $abierta
+                    ? 'Activa'
+                    : ($s->logout_at?->format('d/m/Y H:i') ?? '—'),
+                'duracion' => $abierta
+                    ? 'En curso'
+                    : ($s->duracion_minutos ? round($s->duracion_minutos, 1).' min' : '—'),
                 'ip' => $s->ip_address,
             ];
         })->toArray();

@@ -17,12 +17,8 @@ class Logout
         $sesionId = Session::get('sesion_usuario_id');
         if ($sesionId) {
             $sesion = SesionUsuario::find($sesionId);
-            if ($sesion && !$sesion->logout_at) {
-                $sesion->update([
-                    'logout_at' => now(),
-                    'ultima_actividad' => now(),
-                    'duracion_minutos' => round($sesion->login_at->diffInSeconds(now()) / 60, 2),
-                ]);
+            if ($sesion && ! $sesion->logout_at) {
+                $sesion->cerrar();
             }
         }
 
