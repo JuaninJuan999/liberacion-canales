@@ -9,6 +9,7 @@ use App\Http\Controllers\IndicadorController;
 use App\Http\Controllers\ManualUsuarioController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\PuestoTrabajoController;
+use App\Http\Controllers\HistorialRegistrosExportController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TitulacionAcidoLacticoHistorialExcelController;
 use App\Http\Controllers\UsuarioController;
@@ -87,6 +88,8 @@ Route::middleware(['auth'])->group(function () {
     // Registro y Historial de Hallazgos
     Route::get('/hallazgos/registrar', RegistroHallazgo::class)->name('hallazgos.registrar');
     Route::get('/hallazgos/historial', HistorialRegistros::class)->name('hallazgos.historial');
+    Route::get('/hallazgos/historial/excel', [HistorialRegistrosExportController::class, 'excel'])->name('hallazgos.historial.excel');
+    Route::get('/hallazgos/historial/pdf', [HistorialRegistrosExportController::class, 'pdf'])->name('hallazgos.historial.pdf');
     Route::resource('hallazgos', HallazgoController::class);
 
     // Módulo Hallazgos Tolerancia Cero
@@ -147,7 +150,6 @@ Route::prefix('api')->middleware(['auth'])->group(function () {
 
 // Exportaciones de reportes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/exportar/hallazgos', [ReporteController::class, 'exportarHallazgos'])->name('exportar.hallazgos');
     Route::get('/exportar/indicadores', [IndicadorController::class, 'exportarExcel'])->name('exportar.indicadores');
 });
 

@@ -8,6 +8,7 @@ use App\Models\RegistroHallazgo;
 use App\Models\RegistroHallazgoEliminado;
 use App\Models\TipoHallazgo;
 use App\Models\Ubicacion;
+use App\Support\HistorialRegistrosConsulta;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -628,162 +629,37 @@ class HistorialRegistros extends Component
 
     public function calcularEstadisticas()
     {
-        $query = $this->construirQuery();
+        $stats = HistorialRegistrosConsulta::estadisticas($this->filtrosActuales());
 
-        $stats = (clone $query)
-            ->select(
-                DB::raw('COUNT(registros_hallazgos.id) as total'),
-                DB::raw('SUM(CASE WHEN tipos_hallazgo.es_critico = TRUE THEN 1 ELSE 0 END) as criticos')
-            )
-            ->join('tipos_hallazgo', 'registros_hallazgos.tipo_hallazgo_id', '=', 'tipos_hallazgo.id')
-            ->first();
+        $this->totalRegistros = $stats['total'];
+        $this->totalCriticos = $stats['criticos'];
+        $this->totalLeves = $stats['leves'];
+        $this->estadisticasPorTipo = $stats['por_tipo'];
+    }
 
-        $this->totalRegistros = $stats->total ?? 0;
-        $this->totalCriticos = $stats->criticos ?? 0;
-        $this->totalLeves = $this->totalRegistros - $this->totalCriticos;
-
-        // Calcular estadísticas por tipo de hallazgo
-        $estadisticas = (clone $query)
-            ->select(
-                'tipos_hallazgo.nombre',
-                DB::raw('COUNT(registros_hallazgos.id) as cantidad')
-            )
-            ->join('tipos_hallazgo', 'registros_hallazgos.tipo_hallazgo_id', '=', 'tipos_hallazgo.id')
-            ->groupBy('tipos_hallazgo.nombre')
-            ->orderByDesc('cantidad')
-            ->get();
-
-        $this->estadisticasPorTipo = $estadisticas->keyBy('nombre')->map(function ($item) {
-            return $item->cantidad;
-        })->toArray();
+    /**
+     * @return array<string, mixed>
+     */
+    protected function filtrosActuales(): array
+    {
+        return [
+            'fecha_inicio' => $this->fecha_inicio,
+            'fecha_fin' => $this->fecha_fin,
+            'producto_id' => $this->producto_id,
+            'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
+            'numero_canal' => $this->numero_canal,
+            'solo_criticos' => $this->solo_criticos,
+        ];
     }
 
     protected function construirQuery()
     {
-        return RegistroHallazgo::query()
-            ->with(['producto', 'tipoHallazgo', 'puestoTrabajo', 'operario', 'usuario', 'ubicacion', 'lado'])
-            ->porRangoFechasConTurno($this->fecha_inicio, $this->fecha_fin)
-            ->when($this->producto_id, function ($query) {
-                $query->where('registros_hallazgos.producto_id', $this->producto_id);
-            })
-            ->when($this->tipo_hallazgo_id, function ($query) {
-                $query->where('registros_hallazgos.tipo_hallazgo_id', $this->tipo_hallazgo_id);
-            })
-            ->when($this->numero_canal, function ($query) {
-                $query->where('registros_hallazgos.codigo', 'like', "%{$this->numero_canal}%");
-            })
-            ->when($this->solo_criticos, function ($query) {
-                $query->whereHas('tipoHallazgo', function ($q) {
-                    $q->where('es_critico', true);
-                });
-            });
+        return HistorialRegistrosConsulta::queryConFiltros($this->filtrosActuales());
     }
 
     public function obtenerOperarioResponsable($registro)
     {
-        $puestoTrabajoNombre = null;
-        $tipoHallazgo = strtoupper($registro->tipoHallazgo->nombre ?? '');
-        $producto = $registro->producto->nombre ?? '';
-        $lado = strtoupper($registro->lado->nombre ?? '');
-        $ubicacion = strtoupper($registro->ubicacion->nombre ?? '');
-
-        // Determinar la paridad (PAR o IMPAR)
-        $paridad = '';
-        if (in_array($lado, ['PAR', 'IMPAR'])) {
-            $paridad = $lado;
-        } elseif (is_numeric($registro->codigo)) {
-            $paridad = ((int) $registro->codigo % 2 == 0) ? 'PAR' : 'IMPAR';
-        }
-
-        $esMediaCanal1 = strtoupper($producto) === 'MEDIA CANAL 1 LENGUA';
-        $esMediaCanal2 = strtoupper($producto) === 'MEDIA CANAL 2 COLA';
-
-        switch (true) {
-            // COBERTURA DE GRASA
-            case str_contains($tipoHallazgo, 'COBERTURA') && str_contains($tipoHallazgo, 'GRASA'):
-                if ($esMediaCanal1) {
-                    if ($ubicacion === 'CADERA') {
-                        $puestoTrabajoNombre = 'CADERA 1';
-                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'IMPAR') {
-                        $puestoTrabajoNombre = 'PRIMERA IMPAR';
-                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'PAR') {
-                        $puestoTrabajoNombre = 'PRIMERA PAR';
-                    }
-                } elseif ($esMediaCanal2) {
-                    if ($ubicacion === 'CADERA') {
-                        $puestoTrabajoNombre = 'CADERA 2';
-                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'IMPAR') {
-                        $puestoTrabajoNombre = 'SEGUNDA IMPAR';
-                    } elseif ($ubicacion === 'PIERNA' && $paridad === 'PAR') {
-                        $puestoTrabajoNombre = 'SEGUNDA PAR';
-                    }
-                }
-                break;
-
-                // CORTE EN PIERNA
-            case str_contains($tipoHallazgo, 'CORTE') && str_contains($tipoHallazgo, 'PIERNA'):
-                if ($esMediaCanal1) {
-                    $puestoTrabajoNombre = ($paridad === 'PAR') ? 'PRIMERA PAR' : 'PRIMERA IMPAR';
-                } elseif ($esMediaCanal2) {
-                    $puestoTrabajoNombre = ($paridad === 'PAR') ? 'SEGUNDA PAR' : 'SEGUNDA IMPAR';
-                }
-                break;
-
-                // SOBREBARRIGA ROTA
-            case str_contains($tipoHallazgo, 'SOBREBARRIGA'):
-                if ($esMediaCanal1) {
-                    $puestoTrabajoNombre = 'ZAPATA IZQUIERDA';
-                } elseif ($esMediaCanal2) {
-                    $puestoTrabajoNombre = 'ZAPATA DERECHA';
-                }
-                break;
-
-                // HEMATOMAS (cualquier variante)
-            case str_contains($tipoHallazgo, 'HEMATOMA'):
-                $puestoTrabajoNombre = 'LIMPIEZA SUPERIOR';
-                break;
-        }
-
-        if ($puestoTrabajoNombre) {
-            try {
-                $puestoTrabajo = DB::table('puestos_trabajo')
-                    ->whereRaw('UPPER(nombre) = ?', [strtoupper($puestoTrabajoNombre)])
-                    ->first();
-
-                if ($puestoTrabajo) {
-                    $fechaOperacion = ! empty($registro->fecha_operacion)
-                        ? Carbon::parse($registro->fecha_operacion)
-                        : Carbon::parse($registro->created_at);
-
-                    $asignacion = DB::table('operarios_por_dia')
-                        ->where('puesto_trabajo_id', $puestoTrabajo->id)
-                        ->whereDate('fecha_operacion', $fechaOperacion->toDateString())
-                        ->first();
-
-                    if ($asignacion) {
-                        $operario = DB::table('operarios')
-                            ->where('id', $asignacion->operario_id)
-                            ->first();
-                        if ($operario) {
-                            return $operario->nombre;
-                        }
-                    }
-                }
-            } catch (\Exception $e) {
-                // Log the exception for debugging
-            }
-        }
-
-        if ($registro->operario_id) {
-            $operarioDirecto = DB::table('operarios')
-                ->where('id', $registro->operario_id)
-                ->first();
-            if ($operarioDirecto) {
-                return $operarioDirecto->nombre;
-            }
-        }
-
-        return 'Aun no se ha ingresado operario a la fecha de hoy';
+        return HistorialRegistrosConsulta::operarioResponsable($registro);
     }
 
     /**
@@ -849,18 +725,6 @@ class HistorialRegistros extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Error al eliminar el registro');
         }
-    }
-
-    public function exportarExcel()
-    {
-        return redirect()->route('exportar.hallazgos', [
-            'fecha_inicio' => $this->fecha_inicio,
-            'fecha_fin' => $this->fecha_fin,
-            'producto_id' => $this->producto_id,
-            'tipo_hallazgo_id' => $this->tipo_hallazgo_id,
-            'numero_canal' => $this->numero_canal,
-            'solo_criticos' => $this->solo_criticos,
-        ]);
     }
 
     public function render()

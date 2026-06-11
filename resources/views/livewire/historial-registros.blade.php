@@ -62,7 +62,7 @@
                 <input type="text" wire:model.defer="numero_canal" placeholder="Buscar código..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
             </div>
         </div>
-        <div class="mt-4 flex justify-between items-center">
+        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
             <div>
                 <button wire:click="buscar" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium">
                     🔍 Buscar
@@ -70,6 +70,26 @@
                 <button wire:click="limpiarFiltros" class="ml-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     Limpiar Filtros
                 </button>
+            </div>
+            @php
+                $exportParams = array_filter([
+                    'fecha_inicio' => $fecha_inicio,
+                    'fecha_fin' => $fecha_fin,
+                    'producto_id' => $producto_id ?: null,
+                    'tipo_hallazgo_id' => $tipo_hallazgo_id ?: null,
+                    'numero_canal' => $numero_canal ?: null,
+                    'solo_criticos' => $solo_criticos ? '1' : null,
+                ], fn ($v) => $v !== null && $v !== '');
+            @endphp
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('hallazgos.historial.excel', $exportParams) }}"
+                   class="inline-flex items-center justify-center px-4 py-2 bg-emerald-700 text-white rounded-md hover:bg-emerald-800 font-medium text-sm shadow-sm">
+                    Descargar Excel
+                </a>
+                <a href="{{ route('hallazgos.historial.pdf', $exportParams) }}"
+                   class="inline-flex items-center justify-center px-4 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 font-medium text-sm shadow-sm">
+                    Descargar PDF
+                </a>
             </div>
         </div>
     </div>
