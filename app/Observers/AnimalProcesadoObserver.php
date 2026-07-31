@@ -6,6 +6,7 @@ use App\Models\AnimalProcesado;
 use App\Models\IndicadorDiario;
 use App\Models\RegistroHallazgo;
 use App\Models\TipoHallazgo;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class AnimalProcesadoObserver
@@ -28,15 +29,17 @@ class AnimalProcesadoObserver
     protected function recalcularIndicadores($fecha)
     {
         try {
-            $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fecha)->sum('cantidad_animales');
+            $fechaStr = is_string($fecha) ? $fecha : Carbon::parse($fecha)->toDateString();
+
+            $animalesProcesados = AnimalProcesado::where('fecha_operacion', $fechaStr)->sum('cantidad_animales');
             $mediasCanalTotal = $animalesProcesados * 2;
 
-            $statsQuery = RegistroHallazgo::where('fecha_operacion', $fecha)
-                ->selectRaw("
+            $statsQuery = RegistroHallazgo::porFechaConTurno($fechaStr)
+                ->selectRaw('
                     COUNT(*) as total_hallazgos,
                     SUM(CASE WHEN producto_id = 1 THEN 1 ELSE 0 END) as medias_canal_1,
                     SUM(CASE WHEN producto_id = 2 THEN 1 ELSE 0 END) as medias_canal_2
-                ");
+                ');
 
             $tiposHallazgo = TipoHallazgo::all();
             $desgloseHallazgos = [];
@@ -84,7 +87,7 @@ class AnimalProcesadoObserver
                     }
                 }
             }
-            
+
             $dataIndicadores = array_merge($dataIndicadores, [
                 'animales_procesados' => $animalesProcesados,
                 'medias_canales_total' => $mediasCanalTotal,
@@ -93,17 +96,17 @@ class AnimalProcesadoObserver
                 'total_hallazgos' => $stats->total_hallazgos ?? 0,
                 'participacion_total' => round($participacionTotal * 100, 2),
                 'desglose_hallazgos' => json_encode($desgloseHallazgos),
-                'mes' => date('m', strtotime($fecha)),
-                'año' => date('Y', strtotime($fecha)),
+                'mes' => date('m', strtotime($fechaStr)),
+                'año' => date('Y', strtotime($fechaStr)),
             ]);
 
             IndicadorDiario::updateOrCreate(
-                ['fecha_operacion' => $fecha],
+                ['fecha_operacion' => $fechaStr],
                 $dataIndicadores
             );
 
         } catch (\Exception $e) {
-            Log::error("Error al recalcular indicadores para la fecha {$fecha} desde AnimalProcesadoObserver: " . $e->getMessage());
+            Log::error("Error al recalcular indicadores para la fecha {$fecha} desde AnimalProcesadoObserver: ".$e->getMessage());
         }
     }
 }

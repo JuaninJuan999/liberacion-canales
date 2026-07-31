@@ -7,6 +7,7 @@ use App\Models\AnimalProcesado;
 use App\Models\IndicadorDiario;
 use App\Models\RegistroHallazgo;
 use App\Models\TipoHallazgo;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class RegistroHallazgoObserver
@@ -49,10 +50,11 @@ class RegistroHallazgoObserver
 
         if ($registroHallazgo->isDirty('fecha_operacion')) {
             $fechaAnterior = $registroHallazgo->getOriginal('fecha_operacion');
-            // Crear un objeto temporal para obtener la fecha efectiva anterior
-            $registroTemp = new RegistroHallazgo(['created_at' => $fechaAnterior]);
-            $fechaAnteriorEfectiva = $registroTemp->getFechaOperacionEfectiva();
-            $this->sincronizarIndicadoresParaFecha($fechaAnteriorEfectiva);
+            if ($fechaAnterior !== null && $fechaAnterior !== '') {
+                $this->sincronizarIndicadoresParaFecha(
+                    Carbon::parse($fechaAnterior)->toDateString()
+                );
+            }
         }
     }
 

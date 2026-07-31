@@ -71,21 +71,15 @@ class RegistroHallazgo extends Model
     }
 
     /**
-     * Calcula la fecha efectiva de operación considerando el turno de 12 PM a 7 AM
-     * Si se registra entre 00:00-06:59, cuenta como del día anterior
+     * Día operativo del registro para indicadores y recálculos.
+     *
+     * El turno (madrugada antes de las 07:00 → día anterior) ya se aplica al guardar
+     * en RegistroHallazgo::fecha_operacion. No volver a restar con created_at: eso
+     * desplazaba al día equivocado los hallazgos registrados después de medianoche.
      */
     public function getFechaOperacionEfectiva(): Carbon
     {
-        $horaCreacion = Carbon::parse($this->created_at);
-        $horaEnMinutos = $horaCreacion->hour * 60 + $horaCreacion->minute;
-
-        // 7 AM = 420 minutos, 12 PM = 720 minutos
-        // Si la hora está entre 00:00 (0 mins) y 06:59 (419 mins), resta un día
-        if ($horaEnMinutos < 420) { // Antes de las 7:00 AM
-            return Carbon::parse($this->fecha_operacion)->subDay();
-        }
-
-        return Carbon::parse($this->fecha_operacion);
+        return Carbon::parse($this->fecha_operacion)->startOfDay();
     }
 
     // Scopes para filtros
