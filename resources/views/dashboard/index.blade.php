@@ -434,13 +434,12 @@
                 const modal = document.getElementById('graficoModal');
                 const modalTitle = document.getElementById('modalGraficoTitulo');
                 const modalCanvas = document.getElementById('modalGraficoCanvas');
-                
-                // Actualizar título
+                const modalLeyenda = document.getElementById('modalGraficoLeyenda');
+
                 modalTitle.textContent = titulo;
-                
-                // Buscar el gráfico en las instancias de Chart.js
+
                 let chartOriginal = null;
-                
+
                 for (let key in Chart.instances) {
                     const instance = Chart.instances[key];
                     if (instance.canvas && instance.canvas.id === canvasId) {
@@ -448,50 +447,131 @@
                         break;
                     }
                 }
-                
+
                 if (chartOriginal) {
-                    // Destruir gráfico anterior en el modal si existe
                     if (window.modalChartInstance) {
                         window.modalChartInstance.destroy();
                         window.modalChartInstance = null;
                     }
-                    
-                    // Clonar configuración del gráfico
+
+                    const origOpts = chartOriginal.config.options || {};
+                    const origPlugins = origOpts.plugins || {};
+
                     const config = {
                         type: chartOriginal.config.type,
                         data: {
-                            labels: chartOriginal.data.labels,
-                            datasets: chartOriginal.data.datasets.map(ds => ({
-                                ...ds,
-                                data: [...ds.data]
-                            }))
+                            labels: [...chartOriginal.data.labels],
+                            datasets: chartOriginal.data.datasets.map(function (ds) {
+                                return {
+                                    ...ds,
+                                    data: [...ds.data],
+                                };
+                            }),
                         },
                         options: {
-                            ...chartOriginal.config.options,
+                            ...origOpts,
                             responsive: true,
-                            maintainAspectRatio: true
-                        }
+                            maintainAspectRatio: false,
+                            layout: { padding: 8 },
+                            plugins: {
+                                ...origPlugins,
+                                legend: { display: false },
+                            },
+                        },
                     };
-                    
-                    // Crear nuevo gráfico en el modal
+
                     const ctx = modalCanvas.getContext('2d');
                     window.modalChartInstance = new Chart(ctx, config);
+                    window.renderModalGraficoLeyenda(window.modalChartInstance);
+                } else if (modalLeyenda) {
+                    modalLeyenda.innerHTML = '<p class="text-sm text-gray-500">No se pudo cargar el detalle del gráfico.</p>';
                 }
-                
-                // Mostrar modal
+
                 modal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
+
+                requestAnimationFrame(function () {
+                    if (window.modalChartInstance) {
+                        window.modalChartInstance.resize();
+                    }
+                });
+            };
+
+            window.renderModalGraficoLeyenda = function(chart) {
+                const container = document.getElementById('modalGraficoLeyenda');
+                if (!container || !chart) return;
+
+                const labels = chart.data.labels || [];
+                const dataset = chart.data.datasets[0] || {};
+                const data = dataset.data || [];
+                const colors = dataset.backgroundColor || [];
+                const total = data.reduce(function (sum, value) {
+                    return sum + (Number(value) || 0);
+                }, 0);
+
+                container.innerHTML = '';
+
+                if (labels.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-gray-500">Sin datos para mostrar.</p>';
+                    return;
+                }
+
+                const headerRow = document.createElement('div');
+                headerRow.className = 'mb-1 flex items-center gap-2 pb-1 sm:gap-3';
+                headerRow.innerHTML =
+                    '<span class="h-3 w-3 shrink-0"></span>' +
+                    '<p class="flex-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:text-xs">Categoría</p>' +
+                    '<p class="w-10 shrink-0 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:w-12 sm:text-xs">Cant.</p>' +
+                    '<p class="w-12 shrink-0 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400 sm:w-14 sm:text-xs">%</p>';
+                container.appendChild(headerRow);
+
+                let sumaPorcentajes = 0;
+
+                labels.forEach(function (label, index) {
+                    const value = Number(data[index]) || 0;
+                    const pctNum = total > 0 ? (value / total) * 100 : 0;
+                    const pct = pctNum.toFixed(1);
+                    sumaPorcentajes += pctNum;
+                    const color = Array.isArray(colors) ? (colors[index] || '#6B7280') : (colors || '#6B7280');
+
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center gap-2 py-1.5 sm:gap-3';
+                    item.innerHTML =
+                        '<span class="h-3 w-3 shrink-0 rounded-full" style="background-color:' + color + '"></span>' +
+                        '<div class="min-w-0 flex-1">' +
+                            '<p class="text-xs font-medium text-gray-900 leading-snug break-words sm:text-sm">' + label + '</p>' +
+                        '</div>' +
+                        '<p class="w-10 shrink-0 text-right text-xs font-semibold text-gray-800 tabular-nums sm:w-12 sm:text-sm">' + value.toLocaleString('es-CO') + '</p>' +
+                        '<p class="w-12 shrink-0 text-right text-xs font-semibold text-gray-600 tabular-nums sm:w-14 sm:text-sm">' + pct + '%</p>';
+                    container.appendChild(item);
+                });
+
+                const totalRow = document.createElement('div');
+                totalRow.className = 'mt-3 border-t border-gray-200 pt-3 space-y-2';
+                totalRow.innerHTML =
+                    '<div class="flex items-center gap-2 sm:gap-3">' +
+                        '<span class="h-3 w-3 shrink-0"></span>' +
+                        '<p class="flex-1 text-xs font-bold uppercase tracking-wide text-gray-800 sm:text-sm">Total hallazgos</p>' +
+                        '<p class="w-10 shrink-0 text-right text-sm font-bold text-gray-900 tabular-nums sm:w-12">' + total.toLocaleString('es-CO') + '</p>' +
+                        '<p class="w-12 shrink-0 text-right text-sm font-bold text-gray-900 tabular-nums sm:w-14">' + sumaPorcentajes.toFixed(1) + '%</p>' +
+                    '</div>';
+                container.appendChild(totalRow);
             };
 
             // Función para cerrar modal
             window.cerrarGrafico = function() {
                 const modal = document.getElementById('graficoModal');
+                const modalLeyenda = document.getElementById('modalGraficoLeyenda');
                 modal.classList.add('hidden');
                 document.body.style.overflow = 'auto';
-                
+
                 if (window.modalChartInstance) {
                     window.modalChartInstance.destroy();
                     window.modalChartInstance = null;
+                }
+
+                if (modalLeyenda) {
+                    modalLeyenda.innerHTML = '';
                 }
             };
 
@@ -512,26 +592,26 @@
     </script>
 
     <!-- Modal para ampliar gráficos -->
-    <div id="graficoModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[9999] flex items-center justify-center p-2 sm:p-4" style="z-index: 9999;">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-7xl max-h-[98vh] sm:max-h-[95vh] overflow-auto" onclick="event.stopPropagation();">
-            <!-- Encabezado del modal -->
-            <div class="flex justify-between items-center p-3 sm:p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
-                <h2 id="modalGraficoTitulo" class="text-base sm:text-xl md:text-2xl font-bold text-gray-900 pr-2"></h2>
-                <button onclick="cerrarGrafico()" class="text-gray-500 hover:text-gray-700 text-2xl sm:text-3xl font-bold px-2 sm:px-4 py-1 sm:py-2 hover:bg-gray-100 rounded flex-shrink-0">
-                    ×
-                </button>
+    <div id="graficoModal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4">
+        <div class="flex w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl" onclick="event.stopPropagation();">
+            <div class="border-b border-gray-200 px-5 py-4 sm:px-6">
+                <h2 id="modalGraficoTitulo" class="text-base font-bold text-gray-900 sm:text-lg"></h2>
             </div>
 
-            <!-- Cuerpo del modal con gráfico -->
-            <div class="p-3 sm:p-6 md:p-8">
-                <div class="relative w-full" style="height: 50vh; min-height: 300px; max-height: 600px;">
-                    <canvas id="modalGraficoCanvas"></canvas>
+            <div class="grid grid-cols-2 items-center gap-3 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6">
+                <div class="flex items-center justify-center">
+                    <div class="relative h-[160px] w-[160px] sm:h-[280px] sm:w-[280px]">
+                        <canvas id="modalGraficoCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="max-h-[220px] overflow-y-auto sm:max-h-[320px]">
+                    <div id="modalGraficoLeyenda" class="space-y-1 sm:space-y-2"></div>
                 </div>
             </div>
 
-            <!-- Footer del modal -->
-            <div class="flex justify-end p-3 sm:p-6 border-t border-gray-200 bg-white sticky bottom-0">
-                <button onclick="cerrarGrafico()" class="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base">
+            <div class="border-t border-gray-200 bg-gray-50 px-5 py-4 sm:px-6">
+                <button type="button" onclick="cerrarGrafico()" class="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:text-base">
                     Cerrar
                 </button>
             </div>
