@@ -4,13 +4,15 @@ namespace App\Support;
 
 use App\Models\IndicadorDiario;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Tabla ACUMULADO LIBERACION DE CANALES (estilo Excel institucional).
  *
  * Por mes: (suma hallazgos del tipo / suma medias canales) × 100.
  * Promedio por ítem: media aritmética de los % mensuales de esa fila.
- * Total Hallazgos (mes): suma de los 4 ítems en ese mes.
+ * Total Hallazgos (mes): suma de los 4 ratios sobre medias canales, redondeada una sola vez
+ * (igual que la tarjeta «Acumulado del mes» del dashboard mensual).
  * Promedio del año (total): SUMA de los promedios de las 4 filas (=SI(SUMA(P6:P9)=0;"",SUMA(P6:P9))).
  */
 final class AcumuladoAnualLiberacion
@@ -69,8 +71,7 @@ final class AcumuladoAnualLiberacion
                 'label' => self::MESES_ETIQUETA[$m - 1],
             ];
 
-            $mesStr = str_pad((string) $m, 2, '0', STR_PAD_LEFT);
-            $inds = IndicadorDiario::where('mes', $mesStr)->where('año', $anio)->get();
+            $inds = self::indicadoresMesDeduplicados($m, $anio);
 
             if ($inds->isEmpty()) {
                 $cob[] = 0.0;
@@ -88,16 +89,21 @@ final class AcumuladoAnualLiberacion
             }
             $sumMedias = max(1, $sumMedias);
 
-            $pc = round(((int) $inds->sum('cobertura_grasa') / $sumMedias) * 100, 2);
-            $ps = round(((int) $inds->sum('sobrebarriga_rota') / $sumMedias) * 100, 2);
-            $pr = round(((int) $inds->sum('cortes_piernas') / $sumMedias) * 100, 2);
-            $ph = round(((int) $inds->sum('hematomas') / $sumMedias) * 100, 2);
+            $ratioCob = (int) $inds->sum('cobertura_grasa') / $sumMedias;
+            $ratioSob = (int) $inds->sum('sobrebarriga_rota') / $sumMedias;
+            $ratioCor = (int) $inds->sum('cortes_piernas') / $sumMedias;
+            $ratioHem = (int) $inds->sum('hematomas') / $sumMedias;
+
+            $pc = PorcentajeVista::mediaCanalPuntos2($ratioCob);
+            $ps = PorcentajeVista::mediaCanalPuntos2($ratioSob);
+            $pr = PorcentajeVista::mediaCanalPuntos2($ratioCor);
+            $ph = PorcentajeVista::mediaCanalPuntos2($ratioHem);
 
             $cob[] = $pc;
             $sob[] = $ps;
             $cor[] = $pr;
             $hem[] = $ph;
-            $totalesMes[] = round($pc + $ps + $pr + $ph, 2);
+            $totalesMes[] = PorcentajeVista::mediaCanalPuntos2($ratioCob + $ratioSob + $ratioCor + $ratioHem);
         }
 
         $promCob = self::promedioFila($cob);
@@ -199,6 +205,24 @@ final class AcumuladoAnualLiberacion
         }
 
         return number_format($valor, 2, ',', '.').'%';
+    }
+
+    /**
+     * Un registro por día (misma regla que el dashboard mensual).
+     *
+     * @return Collection<int, IndicadorDiario>
+     */
+    private static function indicadoresMesDeduplicados(int $mes, int $anio): Collection
+    {
+        $mesStr = str_pad((string) $mes, 2, '0', STR_PAD_LEFT);
+
+        return IndicadorDiario::where('mes', $mesStr)
+            ->where('año', $anio)
+            ->orderBy('fecha_operacion')
+            ->get()
+            ->groupBy(fn ($d) => Carbon::parse($d->fecha_operacion)->format('Y-m-d'))
+            ->map(fn ($rows) => $rows->sortBy(fn ($x) => $x->id)->last())
+            ->values();
     }
 
     /**
