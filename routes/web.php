@@ -77,6 +77,7 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard mensual
     Route::get('/dashboard/mensual', [DashboardMensualController::class, '__invoke'])->name('dashboard.mensual');
     Route::get('/dashboard/mensual/promedio-anual', [DashboardMensualController::class, 'promedioAnual'])->name('dashboard.mensual.promedio-anual');
+    Route::get('/dashboard/mensual/promedio-anual/excel', [DashboardMensualController::class, 'exportPromedioAnualExcel'])->name('dashboard.mensual.promedio-anual.excel');
     Route::get('/dashboard/mensual/graficas-excel', [DashboardMensualController::class, 'exportGraficasExcel'])->name('dashboard.mensual.graficas-excel');
 
     // Gestión de Operarios

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AcumuladoAnualLiberacionExport;
 use App\Exports\DashboardGraficasMensualesExport;
 use App\Models\HallazgoToleranciaZero;
 use App\Models\IndicadorDiario;
@@ -55,6 +56,15 @@ class DashboardMensualController extends Controller
             'anio' => $anio,
             'acumulado' => AcumuladoAnualLiberacion::build($anio),
         ]);
+    }
+
+    public function exportPromedioAnualExcel(Request $request)
+    {
+        $anio = (int) $request->get('anio', now()->year);
+        $acumulado = AcumuladoAnualLiberacion::build($anio);
+        $filename = 'acumulado-liberacion-canales-'.$anio.'.xlsx';
+
+        return Excel::download(new AcumuladoAnualLiberacionExport($acumulado), $filename);
     }
 
     /**
