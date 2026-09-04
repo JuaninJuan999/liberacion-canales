@@ -94,11 +94,11 @@
         </div>
     </div>
 
-    {{-- Cards de Estadísticas --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white border-l-4 border-red-600 rounded-lg p-4 shadow-md">
-            <p class="text-gray-600 text-sm font-medium">TOTAL REGISTROS</p>
-            <p class="text-3xl font-bold text-red-600">{{ $totalRegistros }}</p>
+    {{-- Cards de Estadísticas (una línea en pantallas amplias) --}}
+    <div class="flex flex-wrap xl:flex-nowrap gap-2 mb-4 overflow-x-auto pb-1">
+        <div class="flex-1 min-w-[9.5rem] bg-white border-l-4 border-red-600 rounded-lg px-3 py-2 shadow-md shrink-0">
+            <p class="text-gray-600 text-xs font-medium uppercase tracking-wide">Total registros</p>
+            <p class="text-xl font-bold text-red-600 leading-tight mt-0.5">{{ $totalRegistros }}</p>
         </div>
         
         @php
@@ -107,6 +107,7 @@
                 'SOBREBARRIGA ROTA' => ['bg' => 'bg-red-50', 'text' => 'text-red-600', 'border' => 'border-red-600'],
                 'HEMATOMAS' => ['bg' => 'bg-yellow-50', 'text' => 'text-yellow-600', 'border' => 'border-yellow-600'],
                 'CORTE EN PIERNA' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-600', 'border' => 'border-blue-600'],
+                'CORTES EN LA PIERNA' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-600', 'border' => 'border-blue-600'],
             ];
         @endphp
         
@@ -114,9 +115,9 @@
             @php
                 $estilos = $coloresPorTipo[$tipo] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-600', 'border' => 'border-gray-600'];
             @endphp
-            <div class="bg-white border-l-4 {{ $estilos['border'] }} rounded-lg p-4 shadow-md">
-                <p class="text-gray-600 text-sm font-medium">{{ strtoupper($tipo) }}</p>
-                <p class="text-3xl font-bold {{ $estilos['text'] }}">{{ $cantidad }}</p>
+            <div class="flex-1 min-w-[9.5rem] bg-white border-l-4 {{ $estilos['border'] }} rounded-lg px-3 py-2 shadow-md shrink-0">
+                <p class="text-gray-600 text-xs font-medium uppercase tracking-wide leading-snug">{{ strtoupper($tipo) }}</p>
+                <p class="text-xl font-bold {{ $estilos['text'] }} leading-tight mt-0.5">{{ $cantidad }}</p>
             </div>
         @empty
         @endforelse
@@ -134,9 +135,9 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Tipo Hallazgo</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Ubicación Hallazgo</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Detalle (Pierna)</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Usuario</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Operario</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Evidencia</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Usuario</th>
                         @if($this->usuarioPuedeEditarOHistorialHallazgos())
                             <th class="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase tracking-wider">Acciones</th>
                         @endif
@@ -171,9 +172,6 @@
                                     {{ $registro->lado->nombre ?? '' }}
                                 @endif
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <span class="inline-flex items-center">👤 {{ $registro->usuario->name ?? 'N/A' }}</span>
-                            </td>
                              <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $this->obtenerOperarioResponsable($registro) }}
                             </td>
@@ -185,6 +183,9 @@
                                 @else
                                     <span class="text-gray-400">N/A</span>
                                 @endif
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <span class="inline-flex items-center">👤 {{ $registro->usuario->name ?? 'N/A' }}</span>
                             </td>
                             @if($this->usuarioPuedeEditarOHistorialHallazgos())
                                 <td class="px-4 py-4 whitespace-nowrap text-sm">

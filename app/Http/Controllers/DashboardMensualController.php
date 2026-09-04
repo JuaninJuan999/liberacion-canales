@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\DashboardGraficasMensualesExport;
 use App\Models\HallazgoToleranciaZero;
 use App\Models\IndicadorDiario;
+use App\Support\AcumuladoAnualLiberacion;
 use App\Support\PorcentajeVista;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -44,6 +45,16 @@ class DashboardMensualController extends Controller
         ).'.xlsx';
 
         return Excel::download(new DashboardGraficasMensualesExport($data, $hojas), $filename);
+    }
+
+    public function promedioAnual(Request $request)
+    {
+        $anio = (int) $request->get('anio', now()->year);
+
+        return view('dashboard.promedio-anual', [
+            'anio' => $anio,
+            'acumulado' => AcumuladoAnualLiberacion::build($anio),
+        ]);
     }
 
     /**
@@ -177,7 +188,15 @@ class DashboardMensualController extends Controller
      * Por cada mes del año: (suma hallazgos del tipo / suma medias canales del mes) × 100.
      * Solo incluye meses hasta el actual si el año es el de hoy; años pasados = 12 meses.
      *
-     * @return array{anio: int, titulo_grafico: string, labels: list<string>, y_max: float, datasets: list{array<string, mixed>}}
+     * @return array{
+     *     anio: int,
+     *     titulo_grafico: string,
+     *     labels: list<string>,
+     *     y_max: float,
+     *     datasets: list{array<string, mixed>},
+     *     promedio_anual_pct_media: float,
+     *     meses_promedio: int,
+     * }
      */
     private function buildSeguimientoAnual(int $anio): array
     {
@@ -214,6 +233,8 @@ class DashboardMensualController extends Controller
                 'titulo_grafico' => 'CONSOLIDADO LIBERACION CANALES POR VARIABLE',
                 'labels' => [],
                 'y_max' => 1.5,
+                'promedio_anual_pct_media' => 0.0,
+                'meses_promedio' => 0,
                 'datasets' => [
                     array_merge($baseLine, [
                         'label' => 'Cobertura grasa - 1,5%',
@@ -280,12 +301,19 @@ class DashboardMensualController extends Controller
             $hem[] = $ph;
         }
 
+        $acumuladoAnual = AcumuladoAnualLiberacion::build($anio);
+        $promedioAnualPctMedia = $mesLimite > 0 && $acumuladoAnual['promedio_anual_total'] !== null
+            ? round($acumuladoAnual['promedio_anual_total'] / 100, 6)
+            : 0.0;
+
         return [
             'anio' => $anio,
             'titulo_grafico' => 'CONSOLIDADO LIBERACION CANALES POR VARIABLE',
             'labels' => $labels,
             /** Escala fija alrededor de la meta de referencia (p. ej. cobertura grasa 1,5%). */
             'y_max' => 1.5,
+            'promedio_anual_pct_media' => $promedioAnualPctMedia,
+            'meses_promedio' => $mesLimite,
             'datasets' => [
                 array_merge($baseLine, [
                     'label' => 'Cobertura grasa - 1,5%',

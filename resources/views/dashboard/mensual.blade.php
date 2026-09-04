@@ -44,6 +44,13 @@
                         </select>
                     </form>
                     <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+                        <a href="{{ route('dashboard.mensual.promedio-anual', ['anio' => $anio]) }}"
+                           class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg shadow transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            Promedio Del Año
+                        </a>
                         <button type="button" onclick="abrirModalDescarga()"
                                 class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -173,6 +180,7 @@
                 .mensual-kpi-grid > .mensual-kpi-card:nth-child(7) { animation-delay: 0.28s; }
                 .mensual-kpi-grid > .mensual-kpi-card:nth-child(8) { animation-delay: 0.32s; }
                 .mensual-kpi-grid > .mensual-kpi-card:nth-child(9) { animation-delay: 0.36s; }
+                .mensual-kpi-grid > .mensual-kpi-card:nth-child(10) { animation-delay: 0.40s; }
                 @media (prefers-reduced-motion: reduce) {
                     .mensual-kpi-card { animation: none !important; }
                 }
@@ -227,6 +235,18 @@
                     <p class="text-sm text-amber-900/80 uppercase tracking-wide">Acumulado del mes</p>
                     <p class="text-3xl font-bold text-amber-800 tabular-nums mt-1">{{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($sSeg['acumulado_pct_media'] ?? 0)) }}</p>
                 </div>
+
+                <a href="{{ route('dashboard.mensual.promedio-anual', ['anio' => $anio]) }}"
+                   class="mensual-kpi-card block overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border border-[#7ce8ad] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] no-underline"
+                   style="background: linear-gradient(145deg, #7ce8ad22 0%, #f9dff844 100%);">
+                    <p class="text-sm text-gray-800 uppercase tracking-wide font-semibold">Acumulado del Año</p>
+                    <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1">
+                        {{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($seguimientoAnual['promedio_anual_pct_media'] ?? 0)) }}
+                    </p>
+                    @if(!empty($seguimientoAnual['meses_promedio']))
+                        <p class="text-xs sm:text-sm text-gray-600 mt-2">{{ (int) $seguimientoAnual['meses_promedio'] }} {{ ((int) $seguimientoAnual['meses_promedio'] === 1) ? 'mes' : 'meses' }} · {{ $anio }}</p>
+                    @endif
+                </a>
             </div>
 
             @isset($seguimientoAnual)
@@ -237,6 +257,17 @@
                 </div>
                 <div class="p-4 sm:px-6 sm:pb-6">
                     @if(count($seguimientoAnual['labels'] ?? []) > 0)
+                        <div class="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <span class="text-sm font-semibold text-gray-700">Promedio del Año:</span>
+                            <span class="text-xl font-bold text-violet-800 tabular-nums tracking-tight">
+                                {{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($seguimientoAnual['promedio_anual_pct_media'] ?? 0)) }}
+                            </span>
+                            @if(($seguimientoAnual['meses_promedio'] ?? 0) > 0)
+                                <span class="text-xs text-gray-500">
+                                    ({{ (int) $seguimientoAnual['meses_promedio'] }} {{ ((int) $seguimientoAnual['meses_promedio'] === 1) ? 'mes' : 'meses' }})
+                                </span>
+                            @endif
+                        </div>
                         <div class="h-[26rem] max-w-6xl">
                             <canvas id="chartSeguimientoAnual"></canvas>
                         </div>
@@ -1207,7 +1238,9 @@
                 . number_format((float) ($seguimientoSemanalLinea['total_acumulado_promedios'] ?? 0), 2, ',', '.')
                 . ' %';
         }
-        $mensualSeguimientoAnualPngExtra = 'Año ' . (int) $anio;
+        $mensualSeguimientoAnualPngExtra = 'Año ' . (int) $anio
+            . ' · Promedio del Año: '
+            . \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($seguimientoAnual['promedio_anual_pct_media'] ?? 0));
     @endphp
     <script>
         window.__mensualPngContext = {

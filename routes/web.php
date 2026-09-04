@@ -5,11 +5,11 @@ use App\Http\Controllers\AnimalesController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardMensualController;
 use App\Http\Controllers\HallazgoController;
+use App\Http\Controllers\HistorialRegistrosExportController;
 use App\Http\Controllers\IndicadorController;
 use App\Http\Controllers\ManualUsuarioController;
 use App\Http\Controllers\OperarioController;
 use App\Http\Controllers\PuestoTrabajoController;
-use App\Http\Controllers\HistorialRegistrosExportController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TitulacionAcidoLacticoHistorialExcelController;
 use App\Http\Controllers\UsuarioController;
@@ -76,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard mensual
     Route::get('/dashboard/mensual', [DashboardMensualController::class, '__invoke'])->name('dashboard.mensual');
+    Route::get('/dashboard/mensual/promedio-anual', [DashboardMensualController::class, 'promedioAnual'])->name('dashboard.mensual.promedio-anual');
     Route::get('/dashboard/mensual/graficas-excel', [DashboardMensualController::class, 'exportGraficasExcel'])->name('dashboard.mensual.graficas-excel');
 
     // Gestión de Operarios
