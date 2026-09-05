@@ -51,6 +51,27 @@ final class AcumuladoAnualLiberacion
      *         is_total?: bool
      *     }>,
      *     promedio_anual_total: float|null,
+     *     totales: array{
+     *         dias_operados: int,
+     *         animales: int,
+     *         medias_canales: int,
+     *         hallazgos: int,
+     *         cobertura_grasa: int,
+     *         sobrebarriga_rota: int,
+     *         cortes_piernas: int,
+     *         hematomas: int
+     *     },
+     *     totales_por_mes: list<array{
+     *         mes: int,
+     *         dias_operados: int,
+     *         animales: int,
+     *         medias_canales: int,
+     *         hallazgos: int,
+     *         cobertura_grasa: int,
+     *         sobrebarriga_rota: int,
+     *         cortes_piernas: int,
+     *         hematomas: int
+     *     }>,
      *     chart: array{labels: list<string>, datasets: list<array<string, mixed>>}
      * }
      */
@@ -64,6 +85,19 @@ final class AcumuladoAnualLiberacion
         $cor = [];
         $hem = [];
         $totalesMes = [];
+
+        $totalesAnuales = [
+            'dias_operados' => 0,
+            'animales' => 0,
+            'medias_canales' => 0,
+            'hallazgos' => 0,
+            'cobertura_grasa' => 0,
+            'sobrebarriga_rota' => 0,
+            'cortes_piernas' => 0,
+            'hematomas' => 0,
+        ];
+
+        $totalesPorMes = [];
 
         for ($m = 1; $m <= $mesLimite; $m++) {
             $columnasMeses[] = [
@@ -79,6 +113,17 @@ final class AcumuladoAnualLiberacion
                 $cor[] = 0.0;
                 $hem[] = 0.0;
                 $totalesMes[] = 0.0;
+                $totalesPorMes[] = [
+                    'mes' => $m,
+                    'dias_operados' => 0,
+                    'animales' => 0,
+                    'medias_canales' => 0,
+                    'hallazgos' => 0,
+                    'cobertura_grasa' => 0,
+                    'sobrebarriga_rota' => 0,
+                    'cortes_piernas' => 0,
+                    'hematomas' => 0,
+                ];
 
                 continue;
             }
@@ -88,6 +133,27 @@ final class AcumuladoAnualLiberacion
                 $sumMedias = (int) max(0, $inds->sum('animales_procesados')) * 2;
             }
             $sumMedias = max(1, $sumMedias);
+
+            $totalesAnuales['dias_operados'] += $inds->count();
+            $totalesAnuales['animales'] += (int) $inds->sum('animales_procesados');
+            $totalesAnuales['medias_canales'] += $sumMedias;
+            $totalesAnuales['hallazgos'] += (int) $inds->sum('total_hallazgos');
+            $totalesAnuales['cobertura_grasa'] += (int) $inds->sum('cobertura_grasa');
+            $totalesAnuales['sobrebarriga_rota'] += (int) $inds->sum('sobrebarriga_rota');
+            $totalesAnuales['cortes_piernas'] += (int) $inds->sum('cortes_piernas');
+            $totalesAnuales['hematomas'] += (int) $inds->sum('hematomas');
+
+            $totalesPorMes[] = [
+                'mes' => $m,
+                'dias_operados' => $inds->count(),
+                'animales' => (int) $inds->sum('animales_procesados'),
+                'medias_canales' => $sumMedias,
+                'hallazgos' => (int) $inds->sum('total_hallazgos'),
+                'cobertura_grasa' => (int) $inds->sum('cobertura_grasa'),
+                'sobrebarriga_rota' => (int) $inds->sum('sobrebarriga_rota'),
+                'cortes_piernas' => (int) $inds->sum('cortes_piernas'),
+                'hematomas' => (int) $inds->sum('hematomas'),
+            ];
 
             $ratioCob = (int) $inds->sum('cobertura_grasa') / $sumMedias;
             $ratioSob = (int) $inds->sum('sobrebarriga_rota') / $sumMedias;
@@ -159,6 +225,8 @@ final class AcumuladoAnualLiberacion
             'columnas_meses' => $columnasMeses,
             'filas' => $filas,
             'promedio_anual_total' => $promedioAnualTotal,
+            'totales' => $totalesAnuales,
+            'totales_por_mes' => $totalesPorMes,
             'chart' => [
                 'labels' => $labelsChart,
                 'datasets' => [

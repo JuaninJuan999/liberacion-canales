@@ -60,6 +60,95 @@
                     No hay datos para mostrar en este año.
                 </div>
             @else
+                @php
+                    $totAnual = $acumulado['totales'] ?? [];
+                    $promPorClave = collect($acumulado['filas'] ?? [])->keyBy('key');
+                    $fmtProm = fn (string $key): string => \App\Support\AcumuladoAnualLiberacion::formatoPorcentaje($promPorClave[$key]['promedio'] ?? null);
+                @endphp
+
+                <style>
+                    @keyframes mensual-kpi-enter {
+                        from { opacity: 0; transform: translateY(14px) scale(0.98); }
+                        to { opacity: 1; transform: translateY(0) scale(1); }
+                    }
+                    .mensual-kpi-card {
+                        animation: mensual-kpi-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+                        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+                    }
+                    .mensual-kpi-card:hover {
+                        transform: translateY(-4px) scale(1.02);
+                        box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.12);
+                    }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(1) { animation-delay: 0.04s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(2) { animation-delay: 0.08s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(3) { animation-delay: 0.12s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(4) { animation-delay: 0.16s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(5) { animation-delay: 0.20s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(6) { animation-delay: 0.24s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(7) { animation-delay: 0.28s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(8) { animation-delay: 0.32s; }
+                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(9) { animation-delay: 0.36s; }
+                    @media (prefers-reduced-motion: reduce) {
+                        .mensual-kpi-card { animation: none !important; }
+                        .mensual-kpi-card:hover { transform: none; }
+                    }
+                </style>
+
+                <div id="kpiAcumuladoAnual" class="mensual-kpi-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <div class="mensual-kpi-card bg-blue-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-blue-300 hover:border-blue-500">
+                        <p class="text-sm text-blue-800/80 uppercase tracking-wide font-medium">Días Operados</p>
+                        <p class="text-3xl font-bold text-blue-600 mt-1 tabular-nums" data-kpi-total="dias_operados">{{ number_format($totAnual['dias_operados'] ?? 0, 0, ',', '.') }}</p>
+                        <p id="kpiMesesVisibles" class="text-xs text-blue-700/70 mt-2">{{ (int) ($acumulado['mes_limite'] ?? 0) }} {{ ((int) ($acumulado['mes_limite'] ?? 0) === 1) ? 'mes' : 'meses' }} · {{ $anio }}</p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-green-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-green-300 hover:border-green-500">
+                        <p class="text-sm text-green-800/80 uppercase tracking-wide font-medium">Total Animales</p>
+                        <p class="text-3xl font-bold text-green-600 mt-1 tabular-nums" data-kpi-total="animales">{{ number_format($totAnual['animales'] ?? 0, 0, ',', '.') }}</p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-teal-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-teal-300 hover:border-teal-500">
+                        <p class="text-sm text-teal-800/80 uppercase tracking-wide font-medium">Total Medias Canales</p>
+                        <p class="text-3xl font-bold text-teal-600 mt-1 tabular-nums" data-kpi-total="medias_canales">{{ number_format($totAnual['medias_canales'] ?? 0, 0, ',', '.') }}</p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-red-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-red-300 hover:border-red-500">
+                        <p class="text-sm text-red-800/80 uppercase tracking-wide font-medium">Total Hallazgos</p>
+                        <p class="text-3xl font-bold text-red-600 mt-1 tabular-nums" data-kpi-total="hallazgos">{{ number_format($totAnual['hallazgos'] ?? 0, 0, ',', '.') }}</p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-orange-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-orange-300 hover:border-orange-500">
+                        <p class="text-sm text-orange-800/80 uppercase tracking-wide font-medium">Sobrebarriga Rotas</p>
+                        <p class="text-3xl font-bold text-orange-600 mt-1 tabular-nums" data-kpi-total="sobrebarriga_rota">{{ number_format($totAnual['sobrebarriga_rota'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="text-xs sm:text-sm text-orange-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="sobrebarriga_rota">{{ $fmtProm('sobrebarriga_rota') }}</span></p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-purple-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-purple-300 hover:border-purple-500">
+                        <p class="text-sm text-purple-800/80 uppercase tracking-wide font-medium">Hematomas</p>
+                        <p class="text-3xl font-bold text-purple-600 mt-1 tabular-nums" data-kpi-total="hematomas">{{ number_format($totAnual['hematomas'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="text-xs sm:text-sm text-purple-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="hematomas">{{ $fmtProm('hematomas') }}</span></p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-yellow-50/70 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-yellow-400 hover:border-yellow-500">
+                        <p class="text-sm text-yellow-900/80 uppercase tracking-wide font-medium">Cobertura Grasa</p>
+                        <p class="text-3xl font-bold text-yellow-600 mt-1 tabular-nums" data-kpi-total="cobertura_grasa">{{ number_format($totAnual['cobertura_grasa'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="text-xs sm:text-sm text-yellow-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="cobertura_grasa">{{ $fmtProm('cobertura_grasa') }}</span></p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-pink-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-pink-300 hover:border-pink-500">
+                        <p class="text-sm text-pink-800/80 uppercase tracking-wide font-medium">Cortes Piernas</p>
+                        <p class="text-3xl font-bold text-pink-600 mt-1 tabular-nums" data-kpi-total="cortes_piernas">{{ number_format($totAnual['cortes_piernas'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="text-xs sm:text-sm text-pink-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="cortes_piernas">{{ $fmtProm('cortes_piernas') }}</span></p>
+                    </div>
+
+                    <div class="mensual-kpi-card bg-amber-50/90 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-amber-400 hover:border-amber-600">
+                        <p class="text-sm text-amber-900/80 uppercase tracking-wide font-semibold">Acumulado del Año</p>
+                        <p class="text-3xl font-bold text-amber-800 tabular-nums mt-1" data-kpi-promedio="acumulado_anual">{{ $fmtProm('total_hallazgos') }}</p>
+                        <p class="text-xs sm:text-sm text-amber-900/70 mt-2">Promedio anual consolidado</p>
+                    </div>
+                </div>
+
+                <script type="application/json" id="totalesPorMesData">@json($acumulado['totales_por_mes'] ?? [])</script>
+
                 <div id="tablaAcumuladoWrap" class="bg-white shadow-sm sm:rounded-lg p-4 sm:p-6 overflow-x-auto border border-[#7ce8ad]/60">
                     <table id="tablaAcumuladoAnual" class="min-w-full border-2 border-gray-800 text-sm border-collapse">
                         <thead>
@@ -83,7 +172,9 @@
                         </thead>
                         <tbody>
                             @foreach($acumulado['filas'] as $fila)
-                                <tr class="fila-acumulado {{ !empty($fila['is_total']) ? 'fila-total bg-[#7ce8ad]/25' : 'bg-white' }}" @if(!empty($fila['is_total'])) data-es-total="1" @endif>
+                                <tr class="fila-acumulado {{ !empty($fila['is_total']) ? 'fila-total bg-[#7ce8ad]/25' : 'bg-white' }}"
+                                    data-fila-key="{{ $fila['key'] ?? '' }}"
+                                    @if(!empty($fila['is_total'])) data-es-total="1" @endif>
                                     <td class="border-2 border-gray-800 px-3 py-2 font-semibold text-gray-900 {{ !empty($fila['is_total']) ? 'font-bold bg-[#7ce8ad]/40' : 'bg-[#7ce8ad]/15' }}">
                                         {{ $fila['label'] }}
                                     </td>
@@ -141,10 +232,17 @@
                 const mesesOcultosLista = document.getElementById('mesesOcultosLista');
                 const btnAlistarMeses = document.getElementById('btnAlistarMeses');
                 const mesLabels = {};
+                const totalesPorMesEl = document.getElementById('totalesPorMesData');
+                const totalesPorMes = totalesPorMesEl ? JSON.parse(totalesPorMesEl.textContent || '[]') : [];
+                const anioKpi = {{ (int) $anio }};
 
                 document.querySelectorAll('.mes-col-header').forEach(function (th) {
                     mesLabels[th.dataset.mesCol] = th.textContent.trim();
                 });
+
+                function formatNum(value) {
+                    return Number(value || 0).toLocaleString('es-CO');
+                }
 
                 function formatPct(value) {
                     if (value === null || value === undefined || isNaN(value)) {
@@ -160,6 +258,33 @@
                 function updateTituloColspan() {
                     if (!tituloTh) return;
                     tituloTh.colSpan = visibleMesCount() + 2;
+                }
+
+                function updateKpiTotales() {
+                    const visibles = totalesPorMes.filter(function (t) {
+                        return !hiddenMeses.has(String(t.mes));
+                    });
+
+                    const keys = [
+                        'dias_operados', 'animales', 'medias_canales', 'hallazgos',
+                        'sobrebarriga_rota', 'hematomas', 'cobertura_grasa', 'cortes_piernas',
+                    ];
+
+                    keys.forEach(function (key) {
+                        const total = visibles.reduce(function (acc, t) {
+                            return acc + (Number(t[key]) || 0);
+                        }, 0);
+                        const el = document.querySelector('[data-kpi-total="' + key + '"]');
+                        if (el) {
+                            el.textContent = formatNum(total);
+                        }
+                    });
+
+                    const mesesEl = document.getElementById('kpiMesesVisibles');
+                    if (mesesEl) {
+                        const n = visibleMesCount();
+                        mesesEl.textContent = n + (n === 1 ? ' mes' : ' meses') + ' · ' + anioKpi;
+                    }
                 }
 
                 function recalcPromedios() {
@@ -180,6 +305,13 @@
                         if (promCell) {
                             promCell.textContent = valores.length ? formatPct(prom) : '';
                         }
+                        const filaKey = tr.dataset.filaKey;
+                        if (filaKey) {
+                            const kpiEl = document.querySelector('[data-kpi-promedio="' + filaKey + '"]');
+                            if (kpiEl) {
+                                kpiEl.textContent = valores.length ? formatPct(prom) : '';
+                            }
+                        }
                     });
 
                     const totalRow = table.querySelector('tbody tr[data-es-total="1"]');
@@ -188,6 +320,10 @@
                         const promCell = totalRow.querySelector('[data-promedio-cell]');
                         if (promCell) {
                             promCell.textContent = sumProm > 0 ? formatPct(sumProm) : '';
+                        }
+                        const kpiAcum = document.querySelector('[data-kpi-promedio="acumulado_anual"]');
+                        if (kpiAcum) {
+                            kpiAcum.textContent = sumProm > 0 ? formatPct(sumProm) : '';
                         }
                     }
                 }
@@ -241,6 +377,7 @@
                     });
                     updateTituloColspan();
                     recalcPromedios();
+                    updateKpiTotales();
                     updateMesesOcultosPanel();
                 }
 
