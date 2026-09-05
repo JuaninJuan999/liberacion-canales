@@ -116,9 +116,13 @@
             }
 
             .brand-logo img {
-                max-width: 70px;
-                height: auto;
-                filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+                width: 72px;
+                height: 72px;
+                object-fit: contain;
+                filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
+                animation:
+                    brandLogoPop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+                    brandCowFloat 3.2s ease-in-out 0.85s infinite;
             }
 
             .brand-title {
@@ -179,7 +183,8 @@
                 justify-content: center;
                 background: var(--color-dark);
                 position: relative;
-                overflow-y: none;
+                overflow-y: auto;
+                padding: 24px 0;
             }
 
             .login-form-panel::before {
@@ -209,21 +214,25 @@
             }
 
             .login-header-logo {
-                width: 110px;
-                height: 110px;
-                border-radius: 26px;
-                background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                padding: 14px 22px;
+                border-radius: 16px;
+                background: #ffffff;
+                border: 2px solid #7ce8ad;
+                box-shadow:
+                    0 8px 24px rgba(0, 0, 0, 0.18),
+                    inset 0 0 0 4px #f9dff8;
                 margin-bottom: 16px;
-                box-shadow: 0 8px 24px rgba(16,185,129,0.3);
             }
 
             .login-header-logo img {
-                max-width: 70px;
+                width: 132px;
                 height: auto;
-                filter: brightness(0) invert(1);
+                max-height: 42px;
+                object-fit: contain;
+                display: block;
             }
 
             .login-header h1 {
@@ -506,6 +515,29 @@
                 }
             }
 
+            @keyframes brandLogoPop {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.4) rotate(-14deg);
+                }
+                65% {
+                    transform: scale(1.1) rotate(5deg);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1) rotate(0deg);
+                }
+            }
+
+            @keyframes brandCowFloat {
+                0%, 100% {
+                    transform: translateY(0) rotate(0deg);
+                }
+                50% {
+                    transform: translateY(-10px) rotate(3deg);
+                }
+            }
+
             .error-message {
                 color: #fca5a5;
                 font-size: 13px;
@@ -547,12 +579,12 @@
                     margin-bottom: 16px;
                 }
                 .login-header-logo {
-                    width: 90px;
-                    height: 90px;
+                    padding: 10px 16px;
                     margin-bottom: 12px;
                 }
                 .login-header-logo img {
-                    max-width: 56px;
+                    width: 104px;
+                    max-height: 34px;
                 }
                 .login-header h1 {
                     font-size: 20px;
@@ -575,13 +607,20 @@
                     margin-bottom: 20px;
                 }
                 .brand-logo img {
-                    max-width: 50px;
+                    width: 56px;
+                    height: 56px;
                 }
                 .brand-title {
                     font-size: 24px;
                 }
                 .brand-features {
                     margin-top: 28px;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .brand-logo img {
+                    animation: brandLogoPop 0.5s ease-out both;
                 }
             }
 
@@ -623,7 +662,7 @@
         <div class="brand-pattern"></div>
             <div class="brand-content">
                 <div class="brand-logo">
-                    <img src="/logo.png" alt="Logo">
+                    <img src="{{ asset('vaca.png') }}" alt="Colbeef">
                 </div>
                 <div class="brand-title">Sistema de Liberación de Canales </div>
                 <div class="brand-subtitle">Control de calidad en tiempo real</div>
@@ -655,7 +694,7 @@
             <div class="login-container">
                 <div class="login-header">
                     <div class="login-header-logo">
-                        <img src="/logo.png" alt="Logo">
+                        <img src="{{ asset('logo.png') }}" alt="Colbeef">
                     </div>
                     <span class="mobile-brand-name">Colbeef</span>
                     <h1>Bienvenido</h1>
