@@ -168,89 +168,135 @@
                     from { opacity: 0; transform: translateY(14px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
-                .mensual-kpi-card {
+                .mensual-kpi-grid .acumulado-kpi-card {
                     animation: mensual-kpi-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-                    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
                 }
-                .mensual-kpi-card:hover {
-                    transform: translateY(-4px) scale(1.02);
-                    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.12);
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(1) { animation-delay: 0.04s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(2) { animation-delay: 0.08s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(3) { animation-delay: 0.12s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(4) { animation-delay: 0.16s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(5) { animation-delay: 0.20s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(6) { animation-delay: 0.24s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(7) { animation-delay: 0.28s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(8) { animation-delay: 0.32s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(9) { animation-delay: 0.36s; }
+                .mensual-kpi-grid > .acumulado-kpi-card:nth-child(10) { animation-delay: 0.40s; }
+                .acumulado-kpi-card {
+                    --kpi-accent: #7ce8ad;
+                    min-height: 7.375rem;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    text-align: center;
+                    padding: 1.125rem 0.875rem;
+                    border-radius: 0.875rem;
+                    border: 1px solid #e8ecf0;
+                    border-top: 4px solid var(--kpi-accent);
+                    background: #ffffff;
+                    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+                    transition: transform 0.25s ease, box-shadow 0.25s ease;
                 }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(1) { animation-delay: 0.04s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(2) { animation-delay: 0.08s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(3) { animation-delay: 0.12s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(4) { animation-delay: 0.16s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(5) { animation-delay: 0.20s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(6) { animation-delay: 0.24s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(7) { animation-delay: 0.28s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(8) { animation-delay: 0.32s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(9) { animation-delay: 0.36s; }
-                .mensual-kpi-grid > .mensual-kpi-card:nth-child(10) { animation-delay: 0.40s; }
+                .acumulado-kpi-card:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+                }
+                .acumulado-kpi-card--highlight {
+                    border: 2px solid #7ce8ad;
+                    border-top-width: 4px;
+                    border-top-color: #7ce8ad;
+                    background: linear-gradient(160deg, rgba(124, 232, 173, 0.22) 0%, rgba(249, 223, 248, 0.35) 100%);
+                    box-shadow: 0 6px 20px rgba(124, 232, 173, 0.25);
+                }
+                .acumulado-kpi-card--highlight:hover {
+                    box-shadow: 0 10px 28px rgba(124, 232, 173, 0.32);
+                }
+                .acumulado-kpi-label {
+                    margin: 0;
+                    font-size: 0.625rem;
+                    font-weight: 700;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    color: #6b7280;
+                }
+                .acumulado-kpi-value {
+                    margin: 0.5rem 0 0;
+                    font-size: 1.75rem;
+                    font-weight: 800;
+                    line-height: 1.15;
+                    color: var(--kpi-accent);
+                }
+                .acumulado-kpi-card--highlight .acumulado-kpi-value { color: #065f46; }
+                .acumulado-kpi-sub {
+                    margin: 0.5rem 0 0;
+                    font-size: 0.6875rem;
+                    color: #6b7280;
+                }
+                .acumulado-kpi-sub span { color: #374151; font-weight: 700; }
                 @media (prefers-reduced-motion: reduce) {
-                    .mensual-kpi-card { animation: none !important; }
-                    .mensual-kpi-card:hover { transform: none; }
+                    .mensual-kpi-grid .acumulado-kpi-card { animation: none !important; }
+                    .acumulado-kpi-card:hover { transform: none; }
                 }
             </style>
             {{-- Tarjetas Resumen del Mes --}}
             <div class="mensual-kpi-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <div class="mensual-kpi-card bg-blue-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-blue-300 hover:border-blue-500 active:scale-[0.99]">
-                    <p class="text-sm text-blue-800/80 uppercase tracking-wide font-medium">Días Operados</p>
-                    <p class="text-3xl font-bold text-blue-600 mt-1 tabular-nums">{{ $totales['dias_operados'] }}</p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#2563eb">
+                    <p class="acumulado-kpi-label">Días Operados</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ $totales['dias_operados'] }}</p>
                 </div>
 
-                <div class="mensual-kpi-card bg-green-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-green-300 hover:border-green-500 active:scale-[0.99]">
-                    <p class="text-sm text-green-800/80 uppercase tracking-wide font-medium">Total Animales</p>
-                    <p class="text-3xl font-bold text-green-600 mt-1 tabular-nums">{{ number_format($totales['animales'], 0, ',', '.') }}</p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#16a34a">
+                    <p class="acumulado-kpi-label">Total Animales</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ number_format($totales['animales'], 0, ',', '.') }}</p>
                 </div>
 
-                <div class="mensual-kpi-card bg-teal-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-teal-300 hover:border-teal-500 active:scale-[0.99]">
-                    <p class="text-sm text-teal-800/80 uppercase tracking-wide font-medium">Total Medias Canales</p>
-                    <p class="text-3xl font-bold text-teal-600 mt-1 tabular-nums">{{ number_format($totales['medias_canales'], 0, ',', '.') }}</p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#0d9488">
+                    <p class="acumulado-kpi-label">Total Medias Canales</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ number_format($totales['medias_canales'], 0, ',', '.') }}</p>
                 </div>
 
-                <div class="mensual-kpi-card bg-red-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-red-300 hover:border-red-500 active:scale-[0.99]">
-                    <p class="text-sm text-red-800/80 uppercase tracking-wide font-medium">Total Hallazgos</p>
-                    <p class="text-3xl font-bold text-red-600 mt-1 tabular-nums">{{ number_format($totales['hallazgos'], 0, ',', '.') }}</p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#dc2626">
+                    <p class="acumulado-kpi-label">Total Hallazgos</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ number_format($totales['hallazgos'], 0, ',', '.') }}</p>
                 </div>
 
-                <div class="mensual-kpi-card bg-orange-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-orange-300 hover:border-orange-500 active:scale-[0.99]">
-                    <p class="text-sm text-orange-800/80 uppercase tracking-wide font-medium">Sobrebarriga Rotas</p>
-                    <p class="text-3xl font-bold text-orange-600 mt-1 tabular-nums">{{ number_format($totales['sobrebarriga_rotas'], 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-orange-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('sobrebarriga_rota') }}</span></p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#ea580c">
+                    <p class="acumulado-kpi-label">Sobrebarriga Rotas</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ number_format($totales['sobrebarriga_rotas'], 0, ',', '.') }}</p>
+                    <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums">{{ $pPct('sobrebarriga_rota') }}</span></p>
                 </div>
 
-                <div class="mensual-kpi-card bg-purple-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-purple-300 hover:border-purple-500 active:scale-[0.99]">
-                    <p class="text-sm text-purple-800/80 uppercase tracking-wide font-medium">Hematomas</p>
-                    <p class="text-3xl font-bold text-purple-600 mt-1 tabular-nums">{{ number_format($totales['hematomas'], 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-purple-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('hematomas') }}</span></p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#9333ea">
+                    <p class="acumulado-kpi-label">Hematomas</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ number_format($totales['hematomas'], 0, ',', '.') }}</p>
+                    <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums">{{ $pPct('hematomas') }}</span></p>
                 </div>
 
-                <div class="mensual-kpi-card bg-yellow-50/70 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-yellow-400 hover:border-yellow-500 active:scale-[0.99]">
-                    <p class="text-sm text-yellow-900/80 uppercase tracking-wide font-medium">Cobertura Grasa</p>
-                    <p class="text-3xl font-bold text-yellow-600 mt-1 tabular-nums">{{ number_format($totales['cobertura'], 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-yellow-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('cobertura_grasa') }}</span></p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#ca8a04">
+                    <p class="acumulado-kpi-label">Cobertura Grasa</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ number_format($totales['cobertura'], 0, ',', '.') }}</p>
+                    <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums">{{ $pPct('cobertura_grasa') }}</span></p>
                 </div>
 
-                <div class="mensual-kpi-card bg-pink-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-pink-300 hover:border-pink-500 active:scale-[0.99]">
-                    <p class="text-sm text-pink-800/80 uppercase tracking-wide font-medium">Cortes Piernas</p>
-                    <p class="text-3xl font-bold text-pink-600 mt-1 tabular-nums">{{ number_format($totales['cortes_piernas'], 0, ',', '.') }}</p>
-                    <p class="text-xs sm:text-sm text-pink-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums">{{ $pPct('cortes_piernas') }}</span></p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#db2777">
+                    <p class="acumulado-kpi-label">Cortes Piernas</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ number_format($totales['cortes_piernas'], 0, ',', '.') }}</p>
+                    <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums">{{ $pPct('cortes_piernas') }}</span></p>
                 </div>
 
-                <div class="mensual-kpi-card bg-amber-50/90 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-amber-400 hover:border-amber-600 active:scale-[0.99]">
-                    <p class="text-sm text-amber-900/80 uppercase tracking-wide font-semibold">Acumulado del mes</p>
-                    <p class="text-3xl font-bold text-amber-800 tabular-nums mt-1">{{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($sSeg['acumulado_pct_media'] ?? 0)) }}</p>
+                <div class="acumulado-kpi-card" style="--kpi-accent:#b45309">
+                    <p class="acumulado-kpi-label">Acumulado del mes</p>
+                    <p class="acumulado-kpi-value tabular-nums">{{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($sSeg['acumulado_pct_media'] ?? 0)) }}</p>
                 </div>
 
                 <a href="{{ route('dashboard.mensual.promedio-anual', ['anio' => $anio]) }}"
-                   class="mensual-kpi-card block overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-[#7ce8ad] hover:border-[#5dd99a] active:scale-[0.99] no-underline"
-                   style="background: linear-gradient(145deg, #7ce8ad33 0%, #f9dff855 100%);">
-                    <p class="text-sm text-gray-800 uppercase tracking-wide font-semibold">Acumulado del Año</p>
-                    <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1">
+                   class="acumulado-kpi-card acumulado-kpi-card--highlight no-underline">
+                    <p class="acumulado-kpi-label">Acumulado del Año</p>
+                    <p class="acumulado-kpi-value tabular-nums">
                         {{ \App\Support\PorcentajeVista::mediaCanalFormato2((float) ($seguimientoAnual['promedio_anual_pct_media'] ?? 0)) }}
                     </p>
                     @if(!empty($seguimientoAnual['meses_promedio']))
-                        <p class="text-xs sm:text-sm text-gray-600 mt-2">{{ (int) $seguimientoAnual['meses_promedio'] }} {{ ((int) $seguimientoAnual['meses_promedio'] === 1) ? 'mes' : 'meses' }} · {{ $anio }}</p>
+                        <p class="acumulado-kpi-sub">{{ (int) $seguimientoAnual['meses_promedio'] }} {{ ((int) $seguimientoAnual['meses_promedio'] === 1) ? 'mes' : 'meses' }} · {{ $anio }}</p>
                     @endif
                 </a>
             </div>

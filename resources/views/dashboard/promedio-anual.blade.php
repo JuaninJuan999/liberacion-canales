@@ -39,13 +39,21 @@
                                 </svg>
                                 Excel
                             </a>
-                            <button type="button" id="btnDescargarPngAcumulado"
+                            <button type="button" id="btnDescargarPngResumen"
                                     class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow transition hover:brightness-110"
                                     style="background-color:#2563eb;color:#fff;">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
-                                Imagen PNG
+                                PNG Resumen
+                            </button>
+                            <button type="button" id="btnDescargarPngTabla"
+                                    class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow transition hover:brightness-110"
+                                    style="background-color:#7c3aed;color:#fff;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                PNG Tabla
                             </button>
                         </div>
                     @endif
@@ -67,84 +75,232 @@
                 @endphp
 
                 <style>
-                    @keyframes mensual-kpi-enter {
-                        from { opacity: 0; transform: translateY(14px) scale(0.98); }
-                        to { opacity: 1; transform: translateY(0) scale(1); }
+                    #kpiExportFrame {
+                        overflow: hidden;
+                        border: 3px solid #7ce8ad;
+                        border-radius: 20px;
+                        box-shadow: 0 12px 40px rgba(124, 232, 173, 0.28), 0 4px 16px rgba(0, 0, 0, 0.06);
+                        background: #ffffff;
                     }
-                    .mensual-kpi-card {
-                        animation: mensual-kpi-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-                        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+                    #kpiExportHeader {
+                        display: flex;
+                        align-items: center;
+                        gap: 1rem;
+                        padding: 1.25rem 1.5rem;
+                        background: linear-gradient(135deg, #7ce8ad 0%, #a8f0c8 45%, #f9dff8 100%);
+                        border-bottom: 2px solid rgba(255, 255, 255, 0.65);
                     }
-                    .mensual-kpi-card:hover {
-                        transform: translateY(-4px) scale(1.02);
-                        box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.12);
+                    @media (min-width: 640px) {
+                        #kpiExportHeader { gap: 1.25rem; padding: 1.375rem 1.75rem; }
                     }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(1) { animation-delay: 0.04s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(2) { animation-delay: 0.08s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(3) { animation-delay: 0.12s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(4) { animation-delay: 0.16s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(5) { animation-delay: 0.20s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(6) { animation-delay: 0.24s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(7) { animation-delay: 0.28s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(8) { animation-delay: 0.32s; }
-                    .mensual-kpi-grid > .mensual-kpi-card:nth-child(9) { animation-delay: 0.36s; }
+                    #kpiExportHeader .kpi-export-logo,
+                    #kpiExportHeader .kpi-export-eyebrow {
+                        display: none;
+                    }
+                    #kpiExportHeader .kpi-export-title {
+                        margin-top: 0;
+                    }
+                    .kpi-export-logo {
+                        height: 2.75rem;
+                        width: auto;
+                        max-width: 5.5rem;
+                        object-fit: contain;
+                        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+                        flex-shrink: 0;
+                    }
+                    @media (min-width: 640px) {
+                        .kpi-export-logo { height: 3.25rem; }
+                    }
+                    .kpi-export-titles { flex: 1; min-width: 0; }
+                    .kpi-export-eyebrow {
+                        margin: 0;
+                        font-size: 0.6875rem;
+                        font-weight: 600;
+                        letter-spacing: 0.12em;
+                        text-transform: uppercase;
+                        color: rgba(17, 24, 39, 0.65);
+                    }
+                    .kpi-export-title {
+                        margin: 0.25rem 0 0;
+                        font-size: 1.125rem;
+                        font-weight: 800;
+                        color: #111827;
+                        line-height: 1.2;
+                    }
+                    @media (min-width: 640px) {
+                        .kpi-export-title { font-size: 1.375rem; }
+                    }
+                    .kpi-export-badge {
+                        flex-shrink: 0;
+                        padding: 0.5rem 1rem;
+                        border-radius: 9999px;
+                        background: rgba(255, 255, 255, 0.82);
+                        border: 1px solid rgba(255, 255, 255, 0.95);
+                        font-size: 0.8125rem;
+                        font-weight: 700;
+                        color: #065f46;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                    }
+                    #kpiAcumuladoAnual {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 1rem;
+                        padding: 1.25rem 1rem 1.5rem;
+                        background: linear-gradient(180deg, #fdf6fc 0%, #ffffff 120px);
+                    }
+                    @media (min-width: 640px) {
+                        #kpiAcumuladoAnual { gap: 1.125rem; padding: 1.5rem 1.75rem 1.75rem; }
+                    }
+                    .kpi-export-row {
+                        display: grid;
+                        gap: 1rem;
+                    }
+                    .kpi-export-row-5 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+                    .kpi-export-row-4 {
+                        grid-template-columns: repeat(1, minmax(0, 1fr));
+                        width: 100%;
+                    }
+                    @media (min-width: 640px) {
+                        .kpi-export-row-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                        .kpi-export-row-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                    }
+                    @media (min-width: 1024px) {
+                        .kpi-export-row-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+                        .kpi-export-row-4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+                    }
+                    @media (min-width: 1280px) {
+                        .kpi-export-row-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+                        .kpi-export-row-4 {
+                            grid-template-columns: repeat(4, minmax(0, 1fr));
+                            width: calc(80% + 12px);
+                            margin-left: auto;
+                            margin-right: auto;
+                        }
+                    }
+                    .acumulado-kpi-card {
+                        --kpi-accent: #7ce8ad;
+                        min-height: 7.375rem;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        text-align: center;
+                        padding: 1.125rem 0.875rem;
+                        border-radius: 0.875rem;
+                        border: 1px solid #e8ecf0;
+                        border-top: 4px solid var(--kpi-accent);
+                        background: #ffffff;
+                        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+                        transition: transform 0.25s ease, box-shadow 0.25s ease;
+                    }
+                    .acumulado-kpi-card:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+                    }
+                    .acumulado-kpi-card--highlight {
+                        border: 2px solid #7ce8ad;
+                        border-top-width: 4px;
+                        border-top-color: #7ce8ad;
+                        background: linear-gradient(160deg, rgba(124, 232, 173, 0.22) 0%, rgba(249, 223, 248, 0.35) 100%);
+                        box-shadow: 0 6px 20px rgba(124, 232, 173, 0.25);
+                    }
+                    .acumulado-kpi-card--highlight:hover {
+                        box-shadow: 0 10px 28px rgba(124, 232, 173, 0.32);
+                    }
+                    .acumulado-kpi-label {
+                        margin: 0;
+                        font-size: 0.625rem;
+                        font-weight: 700;
+                        letter-spacing: 0.08em;
+                        text-transform: uppercase;
+                        color: #6b7280;
+                    }
+                    .acumulado-kpi-value {
+                        margin: 0.5rem 0 0;
+                        font-size: 1.75rem;
+                        font-weight: 800;
+                        line-height: 1.15;
+                        color: var(--kpi-accent);
+                    }
+                    .acumulado-kpi-card--highlight .acumulado-kpi-value { color: #065f46; }
+                    .acumulado-kpi-sub {
+                        margin: 0.5rem 0 0;
+                        font-size: 0.6875rem;
+                        color: #6b7280;
+                    }
+                    .acumulado-kpi-sub span { color: #374151; font-weight: 700; }
                     @media (prefers-reduced-motion: reduce) {
-                        .mensual-kpi-card { animation: none !important; }
-                        .mensual-kpi-card:hover { transform: none; }
+                        .acumulado-kpi-card { transition: none; }
+                        .acumulado-kpi-card:hover { transform: none; }
                     }
                 </style>
 
-                <div id="kpiAcumuladoAnual" class="mensual-kpi-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    <div class="mensual-kpi-card bg-blue-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-blue-300 hover:border-blue-500">
-                        <p class="text-sm text-blue-800/80 uppercase tracking-wide font-medium">Días Operados</p>
-                        <p class="text-3xl font-bold text-blue-600 mt-1 tabular-nums" data-kpi-total="dias_operados">{{ number_format($totAnual['dias_operados'] ?? 0, 0, ',', '.') }}</p>
-                        <p id="kpiMesesVisibles" class="text-xs text-blue-700/70 mt-2">{{ (int) ($acumulado['mes_limite'] ?? 0) }} {{ ((int) ($acumulado['mes_limite'] ?? 0) === 1) ? 'mes' : 'meses' }} · {{ $anio }}</p>
+                <div id="exportAcumuladoWrap" class="space-y-6">
+                <div id="kpiExportFrame">
+                <div id="kpiExportHeader">
+                    <img src="{{ asset('logo.png') }}" alt="Colbeef" class="kpi-export-logo">
+                    <div class="kpi-export-titles">
+                        <p class="kpi-export-eyebrow">Liberación de Canales · Colbeef</p>
+                        <h2 class="kpi-export-title">Resumen acumulado {{ $anio }}</h2>
+                    </div>
+                    <span class="kpi-export-badge" id="kpiExportBadgeMeses">{{ (int) ($acumulado['mes_limite'] ?? 0) }} meses</span>
+                </div>
+                <div id="kpiAcumuladoAnual">
+                    <div class="kpi-export-row kpi-export-row-5">
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#2563eb">
+                        <p class="acumulado-kpi-label">Días Operados</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="dias_operados">{{ number_format($totAnual['dias_operados'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="acumulado-kpi-sub" id="kpiMesesVisibles">{{ (int) ($acumulado['mes_limite'] ?? 0) }} {{ ((int) ($acumulado['mes_limite'] ?? 0) === 1) ? 'mes' : 'meses' }} · {{ $anio }}</p>
                     </div>
 
-                    <div class="mensual-kpi-card bg-green-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-green-300 hover:border-green-500">
-                        <p class="text-sm text-green-800/80 uppercase tracking-wide font-medium">Total Animales</p>
-                        <p class="text-3xl font-bold text-green-600 mt-1 tabular-nums" data-kpi-total="animales">{{ number_format($totAnual['animales'] ?? 0, 0, ',', '.') }}</p>
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#16a34a">
+                        <p class="acumulado-kpi-label">Total Animales</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="animales">{{ number_format($totAnual['animales'] ?? 0, 0, ',', '.') }}</p>
                     </div>
 
-                    <div class="mensual-kpi-card bg-teal-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-teal-300 hover:border-teal-500">
-                        <p class="text-sm text-teal-800/80 uppercase tracking-wide font-medium">Total Medias Canales</p>
-                        <p class="text-3xl font-bold text-teal-600 mt-1 tabular-nums" data-kpi-total="medias_canales">{{ number_format($totAnual['medias_canales'] ?? 0, 0, ',', '.') }}</p>
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#0d9488">
+                        <p class="acumulado-kpi-label">Total Medias Canales</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="medias_canales">{{ number_format($totAnual['medias_canales'] ?? 0, 0, ',', '.') }}</p>
                     </div>
 
-                    <div class="mensual-kpi-card bg-red-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-red-300 hover:border-red-500">
-                        <p class="text-sm text-red-800/80 uppercase tracking-wide font-medium">Total Hallazgos</p>
-                        <p class="text-3xl font-bold text-red-600 mt-1 tabular-nums" data-kpi-total="hallazgos">{{ number_format($totAnual['hallazgos'] ?? 0, 0, ',', '.') }}</p>
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#dc2626">
+                        <p class="acumulado-kpi-label">Total Hallazgos</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="hallazgos">{{ number_format($totAnual['hallazgos'] ?? 0, 0, ',', '.') }}</p>
                     </div>
 
-                    <div class="mensual-kpi-card bg-orange-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-orange-300 hover:border-orange-500">
-                        <p class="text-sm text-orange-800/80 uppercase tracking-wide font-medium">Sobrebarriga Rotas</p>
-                        <p class="text-3xl font-bold text-orange-600 mt-1 tabular-nums" data-kpi-total="sobrebarriga_rota">{{ number_format($totAnual['sobrebarriga_rota'] ?? 0, 0, ',', '.') }}</p>
-                        <p class="text-xs sm:text-sm text-orange-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="sobrebarriga_rota">{{ $fmtProm('sobrebarriga_rota') }}</span></p>
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#ea580c">
+                        <p class="acumulado-kpi-label">Sobrebarriga Rotas</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="sobrebarriga_rota">{{ number_format($totAnual['sobrebarriga_rota'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums" data-kpi-promedio="sobrebarriga_rota">{{ $fmtProm('sobrebarriga_rota') }}</span></p>
+                    </div>
                     </div>
 
-                    <div class="mensual-kpi-card bg-purple-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-purple-300 hover:border-purple-500">
-                        <p class="text-sm text-purple-800/80 uppercase tracking-wide font-medium">Hematomas</p>
-                        <p class="text-3xl font-bold text-purple-600 mt-1 tabular-nums" data-kpi-total="hematomas">{{ number_format($totAnual['hematomas'] ?? 0, 0, ',', '.') }}</p>
-                        <p class="text-xs sm:text-sm text-purple-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="hematomas">{{ $fmtProm('hematomas') }}</span></p>
+                    <div class="kpi-export-row kpi-export-row-4">
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#9333ea">
+                        <p class="acumulado-kpi-label">Hematomas</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="hematomas">{{ number_format($totAnual['hematomas'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums" data-kpi-promedio="hematomas">{{ $fmtProm('hematomas') }}</span></p>
                     </div>
 
-                    <div class="mensual-kpi-card bg-yellow-50/70 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-yellow-400 hover:border-yellow-500">
-                        <p class="text-sm text-yellow-900/80 uppercase tracking-wide font-medium">Cobertura Grasa</p>
-                        <p class="text-3xl font-bold text-yellow-600 mt-1 tabular-nums" data-kpi-total="cobertura_grasa">{{ number_format($totAnual['cobertura_grasa'] ?? 0, 0, ',', '.') }}</p>
-                        <p class="text-xs sm:text-sm text-yellow-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="cobertura_grasa">{{ $fmtProm('cobertura_grasa') }}</span></p>
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#ca8a04">
+                        <p class="acumulado-kpi-label">Cobertura Grasa</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="cobertura_grasa">{{ number_format($totAnual['cobertura_grasa'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums" data-kpi-promedio="cobertura_grasa">{{ $fmtProm('cobertura_grasa') }}</span></p>
                     </div>
 
-                    <div class="mensual-kpi-card bg-pink-50/60 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-pink-300 hover:border-pink-500">
-                        <p class="text-sm text-pink-800/80 uppercase tracking-wide font-medium">Cortes Piernas</p>
-                        <p class="text-3xl font-bold text-pink-600 mt-1 tabular-nums" data-kpi-total="cortes_piernas">{{ number_format($totAnual['cortes_piernas'] ?? 0, 0, ',', '.') }}</p>
-                        <p class="text-xs sm:text-sm text-pink-900/70 mt-2">Promedio: <span class="font-semibold text-gray-800 tabular-nums" data-kpi-promedio="cortes_piernas">{{ $fmtProm('cortes_piernas') }}</span></p>
+                    <div class="acumulado-kpi-card" style="--kpi-accent:#db2777">
+                        <p class="acumulado-kpi-label">Cortes Piernas</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-total="cortes_piernas">{{ number_format($totAnual['cortes_piernas'] ?? 0, 0, ',', '.') }}</p>
+                        <p class="acumulado-kpi-sub">Promedio: <span class="tabular-nums" data-kpi-promedio="cortes_piernas">{{ $fmtProm('cortes_piernas') }}</span></p>
                     </div>
 
-                    <div class="mensual-kpi-card bg-amber-50/90 overflow-hidden shadow-sm sm:rounded-xl p-6 text-center border-2 border-amber-400 hover:border-amber-600">
-                        <p class="text-sm text-amber-900/80 uppercase tracking-wide font-semibold">Acumulado del Año</p>
-                        <p class="text-3xl font-bold text-amber-800 tabular-nums mt-1" data-kpi-promedio="acumulado_anual">{{ $fmtProm('total_hallazgos') }}</p>
-                        <p class="text-xs sm:text-sm text-amber-900/70 mt-2">Promedio anual consolidado</p>
+                    <div class="acumulado-kpi-card acumulado-kpi-card--highlight">
+                        <p class="acumulado-kpi-label">Acumulado del Año</p>
+                        <p class="acumulado-kpi-value tabular-nums" data-kpi-promedio="acumulado_anual">{{ $fmtProm('total_hallazgos') }}</p>
+                        <p class="acumulado-kpi-sub">Promedio anual consolidado</p>
                     </div>
+                    </div>
+                </div>
                 </div>
 
                 <script type="application/json" id="totalesPorMesData">@json($acumulado['totales_por_mes'] ?? [])</script>
@@ -196,6 +352,7 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
 
                 <div id="mesesOcultosPanel"
                      class="hidden bg-white shadow-sm sm:rounded-lg p-4 sm:p-5 border border-[#f9dff8]">
@@ -226,7 +383,8 @@
             document.addEventListener('DOMContentLoaded', function () {
                 const hiddenMeses = new Set();
                 const table = document.getElementById('tablaAcumuladoAnual');
-                const wrap = document.getElementById('tablaAcumuladoWrap');
+                const kpiExportFrame = document.getElementById('kpiExportFrame');
+                const tablaWrap = document.getElementById('tablaAcumuladoWrap');
                 const tituloTh = document.getElementById('tituloAcumuladoColspan');
                 const mesesOcultosPanel = document.getElementById('mesesOcultosPanel');
                 const mesesOcultosLista = document.getElementById('mesesOcultosLista');
@@ -284,6 +442,12 @@
                     if (mesesEl) {
                         const n = visibleMesCount();
                         mesesEl.textContent = n + (n === 1 ? ' mes' : ' meses') + ' · ' + anioKpi;
+                    }
+
+                    const badgeMeses = document.getElementById('kpiExportBadgeMeses');
+                    if (badgeMeses) {
+                        const n = visibleMesCount();
+                        badgeMeses.textContent = n + (n === 1 ? ' mes' : ' meses');
                     }
                 }
 
@@ -400,28 +564,115 @@
                     });
                 }
 
-                const btnPng = document.getElementById('btnDescargarPngAcumulado');
-                if (btnPng && wrap && typeof html2canvas !== 'undefined') {
-                    btnPng.addEventListener('click', function () {
-                        btnPng.disabled = true;
-                        btnPng.classList.add('opacity-70');
-                        html2canvas(wrap, {
-                            scale: 2,
-                            backgroundColor: '#ffffff',
-                            useCORS: true,
-                            logging: false,
-                        }).then(function (canvas) {
-                            const enlace = document.createElement('a');
-                            enlace.download = 'acumulado-liberacion-canales-{{ $anio }}.png';
-                            enlace.href = canvas.toDataURL('image/png');
-                            enlace.click();
-                        }).catch(function (err) {
-                            console.error(err);
-                            alert('No se pudo generar la imagen. Intente de nuevo.');
-                        }).finally(function () {
-                            btnPng.disabled = false;
-                            btnPng.classList.remove('opacity-70');
-                        });
+                function prepararCloneResumenKpi(clonedDoc) {
+                    const frame = clonedDoc.getElementById('kpiExportFrame');
+                    if (!frame) return;
+
+                    frame.style.display = 'inline-block';
+                    frame.style.boxSizing = 'border-box';
+                    frame.style.width = '1280px';
+
+                    const badge = clonedDoc.getElementById('kpiExportBadgeMeses');
+                    if (badge) {
+                        const mesesVisibles = visibleMesCount();
+                        badge.textContent = mesesVisibles + (mesesVisibles === 1 ? ' mes' : ' meses');
+                    }
+
+                    const logo = clonedDoc.querySelector('.kpi-export-logo');
+                    if (logo) {
+                        logo.style.display = 'block';
+                    }
+
+                    const eyebrow = clonedDoc.querySelector('.kpi-export-eyebrow');
+                    if (eyebrow) {
+                        eyebrow.style.display = 'block';
+                    }
+
+                    const title = clonedDoc.querySelector('#kpiExportHeader .kpi-export-title');
+                    if (title) {
+                        title.style.marginTop = '0.25rem';
+                    }
+
+                    clonedDoc.querySelectorAll('.acumulado-kpi-card').forEach(function (card) {
+                        card.style.transform = 'none';
+                    });
+
+                    const row4 = clonedDoc.querySelector('.kpi-export-row-4');
+                    if (row4) {
+                        row4.style.width = 'calc(80% + 12px)';
+                        row4.style.marginLeft = 'auto';
+                        row4.style.marginRight = 'auto';
+                        row4.style.gridTemplateColumns = 'repeat(4, minmax(0, 1fr))';
+                    }
+
+                    const row5 = clonedDoc.querySelector('.kpi-export-row-5');
+                    if (row5) {
+                        row5.style.gridTemplateColumns = 'repeat(5, minmax(0, 1fr))';
+                    }
+                }
+
+                function descargarPngAcumulado(element, filename, btn, onCloneExtra) {
+                    if (!element || typeof html2canvas === 'undefined') return;
+
+                    btn.disabled = true;
+                    btn.classList.add('opacity-70');
+
+                    html2canvas(element, {
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        useCORS: true,
+                        logging: false,
+                        scrollX: 0,
+                        scrollY: -window.scrollY,
+                        width: element.id === 'kpiExportFrame' ? 1280 : element.scrollWidth,
+                        windowWidth: element.id === 'kpiExportFrame' ? 1280 : element.scrollWidth,
+                        onclone: onCloneExtra
+                            ? function (clonedDoc) { onCloneExtra(clonedDoc); }
+                            : undefined,
+                    }).then(function (canvas) {
+                        const enlace = document.createElement('a');
+                        enlace.download = filename;
+                        enlace.href = canvas.toDataURL('image/png');
+                        enlace.click();
+                    }).catch(function (err) {
+                        console.error(err);
+                        alert('No se pudo generar la imagen. Intente de nuevo.');
+                    }).finally(function () {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-70');
+                    });
+                }
+
+                const btnPngResumen = document.getElementById('btnDescargarPngResumen');
+                if (btnPngResumen && kpiExportFrame) {
+                    btnPngResumen.addEventListener('click', function () {
+                        descargarPngAcumulado(
+                            kpiExportFrame,
+                            'acumulado-resumen-{{ $anio }}.png',
+                            btnPngResumen,
+                            prepararCloneResumenKpi
+                        );
+                    });
+                }
+
+                const btnPngTabla = document.getElementById('btnDescargarPngTabla');
+                if (btnPngTabla && tablaWrap) {
+                    btnPngTabla.addEventListener('click', function () {
+                        descargarPngAcumulado(
+                            tablaWrap,
+                            'acumulado-tabla-{{ $anio }}.png',
+                            btnPngTabla,
+                            function (clonedDoc) {
+                                const tabla = clonedDoc.getElementById('tablaAcumuladoWrap');
+                                if (!tabla) return;
+                                tabla.style.boxSizing = 'border-box';
+                                tabla.style.border = '4px solid #7ce8ad';
+                                tabla.style.boxShadow = 'inset 0 0 0 8px #f9dff8';
+                                tabla.style.borderRadius = '12px';
+                                tabla.style.padding = '16px';
+                                tabla.style.background = '#ffffff';
+                            }
+                        );
                     });
                 }
             });
