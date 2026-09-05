@@ -11,11 +11,26 @@ class OperarioController extends Controller
     /**
      * Mostrar lista de operarios
      */
-    public function index()
+    public function index(Request $request)
     {
-        $operarios = Operario::orderBy('nombre')->paginate(20);
-        
-        return view('operarios.index', compact('operarios'));
+        $buscar = trim((string) $request->get('buscar', ''));
+
+        $operarios = Operario::query()
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->where('nombre', 'ilike', "%{$buscar}%")
+                        ->orWhere('documento', 'ilike', "%{$buscar}%");
+
+                    if (ctype_digit($buscar)) {
+                        $q->orWhere('id', (int) $buscar);
+                    }
+                });
+            })
+            ->orderBy('nombre')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('operarios.index', compact('operarios', 'buscar'));
     }
 
     /**
@@ -61,7 +76,7 @@ class OperarioController extends Controller
     {
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:100'],
-            'documento' => ['nullable', 'string', 'max:20', 'unique:operarios,documento,' . $operario->id],
+            'documento' => ['nullable', 'string', 'max:20', 'unique:operarios,documento,'.$operario->id],
             'activo' => ['boolean'],
         ]);
 
@@ -81,13 +96,13 @@ class OperarioController extends Controller
     {
         try {
             $operario->delete();
-            
+
             return redirect()
                 ->route('operarios.index')
                 ->with('success', '✅ Operario eliminado exitosamente');
         } catch (\Exception $e) {
-            Log::error('Error al eliminar operario: ' . $e->getMessage());
-            
+            Log::error('Error al eliminar operario: '.$e->getMessage());
+
             return redirect()
                 ->route('operarios.index')
                 ->with('error', '❌ No se puede eliminar el operario porque tiene registros asociados');
@@ -100,11 +115,11 @@ class OperarioController extends Controller
     public function toggleEstado(Operario $operario)
     {
         $operario->update([
-            'activo' => !$operario->activo
+            'activo' => ! $operario->activo,
         ]);
 
         $estado = $operario->activo ? 'activado' : 'desactivado';
-        
+
         return redirect()
             ->route('operarios.index')
             ->with('success', "✅ Operario {$estado} exitosamente");

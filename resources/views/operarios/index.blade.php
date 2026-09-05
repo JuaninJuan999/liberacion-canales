@@ -27,10 +27,44 @@
 
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
                 <div class="p-6">
-                    <div class="mb-4 flex justify-between items-center">
+                    <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">Lista de Operarios</h3>
                         <span class="text-sm text-gray-600">Total: {{ $operarios->total() }}</span>
                     </div>
+
+                    <form method="GET" action="{{ route('operarios.index') }}" class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div class="relative flex-1">
+                            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text"
+                                   name="buscar"
+                                   value="{{ $buscar ?? '' }}"
+                                   class="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Buscar por nombre, documento o ID...">
+                        </div>
+                        <div class="flex shrink-0 gap-2">
+                            <button type="submit"
+                                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                Buscar
+                            </button>
+                            @if(!empty($buscar))
+                                <a href="{{ route('operarios.index') }}"
+                                   class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
+                                    Limpiar
+                                </a>
+                            @endif
+                        </div>
+                    </form>
+
+                    @if(!empty($buscar))
+                        <p class="mb-4 text-sm text-gray-600">
+                            Resultados para: <span class="font-semibold text-gray-900">«{{ $buscar }}»</span>
+                        </p>
+                    @endif
 
                     @if($operarios->count() > 0)
                         <div class="overflow-x-auto">
@@ -129,7 +163,14 @@
                     @else
                         <div class="text-center py-12">
                             <div class="text-gray-400 mb-4 text-4xl">👥</div>
-                            <p class="text-gray-500">No hay operarios registrados. ¡Crea el primero!</p>
+                            @if(!empty($buscar))
+                                <p class="text-gray-500">No se encontraron operarios con «{{ $buscar }}».</p>
+                                <a href="{{ route('operarios.index') }}" class="mt-3 inline-block text-sm font-semibold text-blue-600 hover:text-blue-800">
+                                    Ver todos los operarios
+                                </a>
+                            @else
+                                <p class="text-gray-500">No hay operarios registrados. ¡Crea el primero!</p>
+                            @endif
                         </div>
                     @endif
                 </div>
